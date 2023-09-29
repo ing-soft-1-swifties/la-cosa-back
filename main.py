@@ -1,49 +1,49 @@
 # fastAPI entry
 from fastapi import FastAPI
 
-# modelos de base de datos
-from app.models import models
-
 # todos los endpoints distintos
 from app.endpoints import submodule
 
-#importamos los esquemas
-from app.schemas import schemas
+# modelos de base de datos -> Base de datos
+from app.models import * 
 
+# importamos los esquemas -> Fastapi
+from app.schemas import *
+
+# imports ponyORM
 from pony.orm import *
 
 app = FastAPI()
 
-db = Database()
 
+db = Database()
 db.bind(provider='sqlite', filename='database/database.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
 
 
-
-@app.get("/")   
+@app.get("/")
 def read_root():
 
     with db_session:
-        obstacles = models.Card.select()
 
-        asd = list(obstacles)
-        
-        print(type(asd[0]))
+        raw_cards = Card.select()
 
-    return {"Hello": asd[0].name}
+        print(type(raw_cards))
+        cards = [CardSchema.model_validate(card, from_attributes=True) for card in raw_cards]
+
+    return {"Hello": cards}
 
 
 @app.get("/save")
 def add_obstacle():
 
     with db_session:
-        card = models.Card(name="Alejo", description="gordito lindo", type=2, sub_type=5)
+        card = Card(name="nombreCarta", description="descripcionCarta", type=0, sub_type=0)
         commit()
-        return {"Hello": "ya guarde"}
+        return {"Hello": "Guardado!"}
 
 
 
-
-app.include_router(submodule.router)
+# Conecciones de routers
+app.include_router(router=submodule.router)
 
