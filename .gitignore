@@ -25,3 +25,7 @@ build/
 
 # Ignore local configuration files
 local_settings.py
+
+
+# SQLitedatabase
+database/
