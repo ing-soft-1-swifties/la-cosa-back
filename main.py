@@ -1,3 +1,5 @@
+import uvicorn
+
 # fastAPI entry
 from fastapi import FastAPI
 
@@ -14,6 +16,8 @@ from app.schemas import *
 from pony.orm import db_session
 
 from database.database import db
+
+from app.sockets import sio_app
 
 app = FastAPI()
 
@@ -37,7 +41,12 @@ def add_card():
         return {"Hello": "Guardado!"}
 
 
-
 # Conecciones de routers
 app.include_router(router=rooms.router)
 
+# conexiones persistentes
+app.mount("/socket", sio_app)
+
+
+if __name__ == '__main__':
+    uvicorn.run('main:app', reload=True)
