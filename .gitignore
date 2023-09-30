@@ -28,4 +28,4 @@ local_settings.py
 
 
 # SQLitedatabase
-database/
+database/la_cosa.sqlite
