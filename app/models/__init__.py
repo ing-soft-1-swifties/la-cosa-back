@@ -29,6 +29,7 @@ class Player(db.Entity):
     hosting = Optional('Room', reverse='host')
     playing = Optional('Room', reverse='players')
     sid = Optional(str)
+    token = str
 
 
 class Room(db.Entity):

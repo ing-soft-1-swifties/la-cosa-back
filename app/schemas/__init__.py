@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List
 
 class ObstacleSchema(BaseModel):
@@ -30,6 +30,34 @@ class PlayerSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RoomJoiningInfo(BaseModel):
+    name: str
+    room_id: int
+
+class ConnectionCredentials(BaseModel):
+    token: str
+
+class NewRoomSchema(BaseModel):
+    room_name: str
+    host_name: str
+    min_players: int
+    max_players: int
+
+    @field_validator("min_players", "max_players", mode="after")
+    @classmethod
+    def check_range(cls, v: int):
+        if v < 4 or v > 12:
+            raise ValueError("should be between 4 and 12, including these bounds.")
+
+    @model_validator(mode="after")
+    def check_player_range(self) -> 'NewRoomSchema':
+
+        # no deberian poder ser None, pero al iniciar el server da error si no checkeamos esto :)
+        if self.max_players is not None and self.min_players is not None and self.max_players < self.min_players:
+            raise ValueError("`min_players` should be lesser or equal than `max_players`")
+        return self
+
 
 class RoomSchema(BaseModel):
     name: str

@@ -1,25 +1,37 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from app.models import Room
-from app.schemas import RoomSchema
+from app.schemas import ConnectionCredentials, NewRoomSchema, RoomSchema, RoomJoiningInfo
 
 from pony.orm import db_session
+from app.services.rooms import RoomsService
 
 from database.database import db
 
 
 router = APIRouter()
 
-
-
-
 @router.post("/create")
-def crear_partida(raw_room: RoomSchema):
-    with db_session:
-        room = Room(raw_room.model_dump())
-        db.commit()
+def create_room(new_room: NewRoomSchema):
+    rs = RoomsService(db)
 
-    return {"guardado": f"id: {room.id}"}
+    try:
+        token = rs.create_room(room = new_room)
+        return ConnectionCredentials(token=token)
+    except Exception as e:
+        # TODO: mejorar este handling
+        raise e
 
+@router.post("/join")
+def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
+
+    rs = RoomsService(db)
+
+    try:
+        token = rs.join_player(joining_info.name, joining_info.room_id)
+        return ConnectionCredentials(token=token)
+    except Exception as e:
+        # TODO: mejorar este handling
+        raise e
 
 @router.get("/all")
 def listar_partida():

@@ -15,4 +15,7 @@ async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
     # ack de conexion para el cliente si es que es necesario
-    await sio_server.emit('connected', room=sid)
+    print(sid)
+    print(environ)
+    print(auth)
+
