@@ -12,5 +12,7 @@ sio_app = socketio.ASGIApp(
 
 @sio_server.event
 async def connect(sid, environ, auth):
-    print(f'{sid}: connected')
+    # autenticar jugador con token
+    # guardar en jugador el socket id
+    # ack de conexion para el cliente si es que es necesario
     await sio_server.emit('connected', room=sid)

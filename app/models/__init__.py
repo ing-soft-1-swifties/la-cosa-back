@@ -28,6 +28,7 @@ class Player(db.Entity):
     status = Required(int)          # {Vivo, Muerto, Cuarentena}
     hosting = Optional('Room', reverse='host')
     playing = Optional('Room', reverse='players')
+    sid = Optional(str)
 
 
 class Room(db.Entity):
