@@ -82,3 +82,37 @@ class RoomsService(DBSessionMixin):
         new_room.players.add(host)
 
         return token
+
+    @db_session
+    def start_game(self, actual_sid : str):
+        #si el jugador es propietario de una partida y esta no esta iniciada
+        #dadas las condiciones para que se pueda iniciar una partida, esta se inicia
+
+        expected_player = Player.get(sid = actual_sid)
+        if expected_player is None:
+            raise InvalidSidException()
+        if expected_player.hosting is None:
+            raise NotOwnerExeption()
+        
+        expected_room = Room.get(id = expected_player.hosting)
+        if expected_room is None:
+            raise InvalidRoomException()
+        if (len(expected_room.playes) < expected_room.min_players or 
+            len(expected_room.players) > expected_room.max_players):
+
+        
+
+        
+
+        Room(
+                min_players = room.min_players, 
+                max_players = room.max_players, 
+                host = host,
+                status=0, 
+                is_private=room.is_private,
+                name = room.room_name
+        )
+
+        self.db.commit()
+
+        return token
