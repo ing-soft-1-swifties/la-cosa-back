@@ -5,6 +5,7 @@ from app.models import Player
 from pony.orm import db_session
 from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.players import PlayersService
+from app.services.rooms import RoomsService
 
 from database.database import db
 import socketio
@@ -24,19 +25,28 @@ sio_app = socketio.ASGIApp(
 async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
-    # ack de conexion para el cliente si es que es necesario
-    # token = environ.get("QUERY_STRING")
+    ps = PlayersService(db)
     token = auth.token
     try:
-        connect_player(token, sid)
+        ps.connect_player(token, sid)
     except Exception as e:
         return False
 
-# @sio.event
-# def connect(sid, environ):
-#     token = environ.get("QUERY_STRING")  # Obtén el token de la query string
-#     if validar_token(token):
-#         print(f"Usuario {sid} conectado con token válido")
-#     else:
-#         print(f"Usuario {sid} intentó conectar con token inválido")
-#         return False  # Esto evitará que la conexión sea aceptada
+@sio_server.event
+def start_game(sid):
+    # Aquí puedes realizar la lógica para iniciar la partida
+    rs = RoomsService(db)
+    try:
+        rs.start_game(sid)
+    except Exception as e:
+        return False
+    print(f"Partida iniciada por el usuario {sid}")
+    try:
+        players_sid = rs.get_players_sid()
+    except Exception as e:
+        return False
+    for player_sid in players_sid:
+        sio_server.emit("room/start", player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
+
+    

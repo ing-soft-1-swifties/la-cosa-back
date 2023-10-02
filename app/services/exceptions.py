@@ -11,3 +11,21 @@ class DuplicatePlayerNameException(Exception):
 
 class InvalidRoomException(Exception):
     pass
+
+class InvalidTokenException(Exception):
+    pass
+
+class InvalidSidException(Exception):
+    pass
+
+class NotOwnerExeption(Exception):
+    pass
+
+class NotInLobbyException(Exception):
+    pass
+
+class NotEnoughPlayersException(Exception):
+    pass
+
+class TooManyPlayersException(Exception):
+    pass
