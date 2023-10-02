@@ -13,16 +13,18 @@ import socketio
 
 sio_server = socketio.AsyncServer(
         async_mode = "asgi",
-        cors_allowed_origins= ["*"]
+        cors_allowed_origins="*"
 )
 
 sio_app = socketio.ASGIApp(
     socketio_server=sio_server,
-    socketio_path="sockets"
+    socketio_path="/"
 )
 
 @sio_server.event
-async def connect(sid, environ, auth):
+async def connect(sid):
+    print("hola")
+    return True
     # autenticar jugador con token
     # guardar en jugador el socket id
     ps = PlayersService(db)
