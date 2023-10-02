@@ -35,3 +35,18 @@ def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
     except InvalidRoomException as e:
         raise HTTPException(status_code=404, detail="Invalid room id")
 
+
+@router.get("/list")
+def list_rooms():
+    """
+    lista los ids de las partidas disponibles
+    """
+
+    rs = RoomsService(db)
+
+    try:
+        return rs.list_rooms()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500)
+        
