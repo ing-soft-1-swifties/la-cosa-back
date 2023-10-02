@@ -7,7 +7,7 @@ from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomExc
 from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 
-from database.database import db
+from app.models import db
 import socketio
 
 
