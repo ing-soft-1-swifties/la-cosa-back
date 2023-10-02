@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Response
 from app.models import Room
 from app.schemas import ConnectionCredentials, NewRoomSchema, RoomSchema, RoomJoiningInfo
 
 from pony.orm import db_session
+from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.rooms import RoomsService
 
 from database.database import db
@@ -18,12 +19,8 @@ def create_room(new_room: NewRoomSchema) -> ConnectionCredentials:
     """
     rs = RoomsService(db)
 
-    try:
-        token = rs.create_room(room = new_room)
-        return ConnectionCredentials(token=token)
-    except Exception as e:
-        # TODO: mejorar este handling
-        raise e
+    token = rs.create_room(room = new_room)
+    return ConnectionCredentials(token=token)
 
 @router.post("/join")
 def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
@@ -36,9 +33,10 @@ def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
     try:
         token = rs.join_player(joining_info.name, joining_info.room_id)
         return ConnectionCredentials(token=token)
-    except Exception as e:
-        # TODO: mejorar este handling
-        raise e
+    except DuplicatePlayerNameException as e:
+        raise HTTPException(status_code=400, detail="Duplicate player name")
+    except InvalidRoomException as e:
+        raise HTTPException(status_code=404, detail="Invalid room id")
 
 @router.get("/all")
 def listar_partida():
