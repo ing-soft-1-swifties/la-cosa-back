@@ -1,13 +1,10 @@
-from fastapi import APIRouter, HTTPException, Response
-from app.models import Room
-from app.schemas import ConnectionCredentials, NewRoomSchema, RoomSchema, RoomJoiningInfo
-
-from pony.orm import db_session
+from fastapi import APIRouter, HTTPException
+from database.database import get_db
+from app.schemas import ConnectionCredentials, NewRoomSchema, RoomJoiningInfo
 from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.rooms import RoomsService
 
-from database.database import db
-
+db = get_db()
 
 router = APIRouter()
 

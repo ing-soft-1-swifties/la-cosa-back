@@ -46,9 +46,3 @@ class Room(db.Entity):
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')
-
-
-db.bind(provider='sqlite', filename='../../database/la_cosa.sqlite', create_db=True)
-db.generate_mapping(create_tables=True)
-
-
