@@ -14,6 +14,7 @@ class Card(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str)
     description = Optional(str)
+    deck = Required(int)
     type = Required(int)            # {Alejate, Panico}
     sub_type = Optional(int)        # {Contagio, Accion, Defensa, Obstaculo}
     roomsA = Set('Room', reverse='available_cards')
@@ -46,3 +47,7 @@ class Room(db.Entity):
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')
+
+
+db.bind(provider='sqlite', filename=f'la_cosa.sqlite', create_db=True)
+db.generate_mapping(create_tables=True)
