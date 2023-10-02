@@ -12,10 +12,12 @@ class RoomsService(DBSessionMixin):
         return "dummy_token"
 
     @db_session
-    def create_room(self, room: NewRoomSchema):
+    def create_room(self, room: NewRoomSchema) -> str:
         # crear instancia de jugador y partida nueva que lo referencie
 
-        host = Player(name=room.host_name, token=str(uuid4()))
+        token = str(uuid4())
+
+        host = Player(name=room.host_name, token=token)
 
         Room(
                 min_players = room.min_players, 
@@ -28,4 +30,4 @@ class RoomsService(DBSessionMixin):
 
         self.db.commit()
 
-        return host.token
+        return token
