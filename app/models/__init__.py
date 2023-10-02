@@ -26,8 +26,8 @@ class Player(db.Entity):
     position = Optional(int)
     rol = Optional(int)             # {Humano, LaCosa, Infectado}
     status = Optional(int)          # {Vivo, Muerto, Cuarentena}
-    hosting = Optional('Room', reverse='host')
-    playing = Optional('Room', reverse='players')
+    playing = Required('Room', reverse='players')
+    is_host = Required(bool, default=False)
     sid = Optional(str)             # socket id
     token = Required(str)
 
@@ -43,7 +43,6 @@ class Room(db.Entity):
     status = Required(int)          # {lobby, in_game, finished}
     turn = Optional(int)
     direction = Optional(bool)
-    host = Required(Player, reverse='hosting')
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')

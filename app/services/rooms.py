@@ -68,12 +68,11 @@ class RoomsService(DBSessionMixin):
         """
         token = str(uuid4())
 
-        host = Player(name=room.host_name, token=token)
+        host = Player(name=room.host_name, token=token, is_host=True)
         
         new_room = Room(
             min_players = room.min_players, 
             max_players = room.max_players, 
-            host = host,
             status=0, 
             is_private=room.is_private,
             name = room.room_name
