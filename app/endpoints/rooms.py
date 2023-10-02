@@ -16,7 +16,6 @@ def create_room(new_room: NewRoomSchema) -> ConnectionCredentials:
     """
     Crea partida con la configuración recibida 
     y devuelve un token correspondiente al jugador host
-
     """
     rs = RoomsService(db)
 
@@ -39,10 +38,3 @@ def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
     except InvalidRoomException as e:
         raise HTTPException(status_code=404, detail="Invalid room id")
 
-@router.get("/all")
-def listar_partida():
-    with db_session:
-        raw_room = Room.select()
-        rooms = [RoomSchema.model_validate(room, from_attributes=True) for room in raw_room]
-
-    return rooms
