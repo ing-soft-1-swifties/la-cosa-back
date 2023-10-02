@@ -13,14 +13,14 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def create_room(self, room: NewRoomSchema):
-        # TODO: crear instancia de jugador y partida nueva que lo referencie
+        # crear instancia de jugador y partida nueva que lo referencie
 
-        host = Player(name=room.host_name, token=str(uuid4))
+        host = Player(name=room.host_name, token=str(uuid4()))
 
-        new_room = Room(
+        Room(
                 min_players = room.min_players, 
                 max_players = room.max_players, 
-                host = host.id, 
+                host = host,
                 status=0, 
                 is_private=room.is_private,
                 name = room.room_name
