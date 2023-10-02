@@ -11,7 +11,11 @@ from database.database import db
 router = APIRouter()
 
 @router.post("/create")
-def create_room(new_room: NewRoomSchema):
+def create_room(new_room: NewRoomSchema) -> ConnectionCredentials:
+    """
+    Crea partida con la configuración recibida 
+    y devuelve un token correspondiente al jugador host
+    """
     rs = RoomsService(db)
 
     try:
@@ -23,6 +27,9 @@ def create_room(new_room: NewRoomSchema):
 
 @router.post("/join")
 def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
+    """
+    Une a un jugador a la partida especificada
+    """
 
     rs = RoomsService(db)
 

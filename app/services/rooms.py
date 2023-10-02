@@ -1,5 +1,6 @@
 from pony.orm import db_session
-from app.models import Player
+from pony.orm.dbapiprovider import uuid4
+from app.models import Player, Room
 from app.schemas import NewRoomSchema
 from app.services.mixins import DBSessionMixin
 
@@ -10,7 +11,21 @@ class RoomsService(DBSessionMixin):
 
         return "dummy_token"
 
-    def create_room(self, room: NewRoomSchema = NewRoomSchema(room_name="room", host_name="host", min_players=4, max_players=12)):
+    @db_session
+    def create_room(self, room: NewRoomSchema):
         # TODO: crear instancia de jugador y partida nueva que lo referencie
 
-        return "dummy_token"
+        host = Player(name=room.host_name, token=str(uuid4))
+
+        new_room = Room(
+                min_players = room.min_players, 
+                max_players = room.max_players, 
+                host = host.id, 
+                status=0, 
+                is_private=room.is_private,
+                name = room.room_name
+        )
+
+        self.db.commit()
+
+        return host.token

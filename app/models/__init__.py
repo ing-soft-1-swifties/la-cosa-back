@@ -23,13 +23,13 @@ class Card(db.Entity):
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str)
-    position = Required(int)
-    rol = Required(int)             # {Humano, LaCosa, Infectado}
-    status = Required(int)          # {Vivo, Muerto, Cuarentena}
+    position = Optional(int)
+    rol = Optional(int)             # {Humano, LaCosa, Infectado}
+    status = Optional(int)          # {Vivo, Muerto, Cuarentena}
     hosting = Optional('Room', reverse='host')
     playing = Optional('Room', reverse='players')
-    sid = Optional(str)
-    token = str
+    sid = Optional(str)             # socket id
+    token = Required(str)
 
 
 class Room(db.Entity):

@@ -43,12 +43,14 @@ class NewRoomSchema(BaseModel):
     host_name: str
     min_players: int
     max_players: int
+    is_private: bool = False
 
     @field_validator("min_players", "max_players", mode="after")
     @classmethod
     def check_range(cls, v: int):
         if v < 4 or v > 12:
             raise ValueError("should be between 4 and 12, including these bounds.")
+        return v
 
     @model_validator(mode="after")
     def check_player_range(self) -> 'NewRoomSchema':
