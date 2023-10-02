@@ -26,7 +26,7 @@ app.add_middleware(
 app.include_router(router=rooms.router)
 
 # conexiones persistentes
-app.mount("/sockets", sio_app)
+app.mount("/socket.io", sio_app)
 
 
 if __name__ == '__main__':
