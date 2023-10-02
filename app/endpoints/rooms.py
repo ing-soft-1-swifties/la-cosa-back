@@ -16,6 +16,7 @@ def create_room(new_room: NewRoomSchema) -> ConnectionCredentials:
     """
     Crea partida con la configuración recibida 
     y devuelve un token correspondiente al jugador host
+
     """
     rs = RoomsService(db)
 
@@ -44,4 +45,4 @@ def listar_partida():
         raw_room = Room.select()
         rooms = [RoomSchema.model_validate(room, from_attributes=True) for room in raw_room]
 
-    return rooms;
+    return rooms

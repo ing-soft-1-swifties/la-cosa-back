@@ -11,9 +11,30 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def join_player(self, name: str, room_id: int):
-        # TODO: validar partida y union del jugador
-        
+        """
+        Registra a un jugador en una sala existente.
+
+        Parameters
+        ----------
+        name : str
+            El nombre del jugador que se va a registrar en la sala.
+        room_id : int
+            El identificador único de la sala a la que se unirá el jugador.
+
+        Returns
+        -------
+        token : str
+            Un token único generado para el jugador recién registrado.
+
+        Raises
+        ------
+        InvalidRoomException
+            Se lanza si no se encuentra una sala con el ID proporcionado.
+        DuplicatePlayerNameException
+            Se lanza si ya existe un jugador con el mismo nombre en la sala.
+        """
         expected_room = Room.get(id=room_id)
+
         if expected_room is None:
             raise InvalidRoomException()
 
@@ -32,21 +53,32 @@ class RoomsService(DBSessionMixin):
     @db_session
     def create_room(self, room: NewRoomSchema) -> str:
         # crear instancia de jugador y partida nueva que lo referencie
+        """
+        Crea una nueva sala de juego con el anfitrión especificado.
 
+        Parameters
+        ----------
+        room : NewRoomSchema
+            Un objeto que contiene la información necesaria para crear la sala.
+
+        Returns
+        -------
+        token : str 
+            Un token único generado para el anfitrion de la sala.
+        """
         token = str(uuid4())
 
         host = Player(name=room.host_name, token=token)
         
-
-        Room(
-                min_players = room.min_players, 
-                max_players = room.max_players, 
-                host = host,
-                status=0, 
-                is_private=room.is_private,
-                name = room.room_name
+        new_room = Room(
+            min_players = room.min_players, 
+            max_players = room.max_players, 
+            host = host,
+            status=0, 
+            is_private=room.is_private,
+            name = room.room_name
         )
 
-        self.db.commit()
+        new_room.players.add(host)
 
         return token
