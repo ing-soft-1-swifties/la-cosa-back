@@ -19,7 +19,7 @@ class Card(db.Entity):
     sub_type = Optional(int)        # {Contagio, Accion, Defensa, Obstaculo}
     roomsA = Set('Room', reverse='available_cards')
     roomsD = Set('Room', reverse='discarted_cards')
-    playerhand = Set('Player', reverse='hand')
+    player_hand = Set('Player', reverse='hand')
     
 
 
@@ -33,7 +33,7 @@ class Player(db.Entity):
     is_host = Required(bool, default=False)
     sid = Optional(str)             # socket id
     token = Required(str)
-    hand = Optional(Set('Card', reverse='player_hand'))
+    hand = Set('Card', reverse='player_hand')
 
 
 class Room(db.Entity):

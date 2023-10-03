@@ -6,7 +6,6 @@ from app.schemas import NewRoomSchema, RoomSchema
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
-import json
 
 class RoomsService(DBSessionMixin):
 
