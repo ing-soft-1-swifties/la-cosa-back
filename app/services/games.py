@@ -73,7 +73,10 @@ class GamesService(DBSessionMixin):
         
     @db_session
     def next_turn(self, room:Room):
-        room.turn = (room.turn + 1) % (len(room.players))
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status != 1)))    #cantidad de jugadores que siguen jugando
         expected_player = Player.get(position = room.turn)
         if expected_player is None:
             print(f"el jugador con turno {room.turn} no esta en la partida")
