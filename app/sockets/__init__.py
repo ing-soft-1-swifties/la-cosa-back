@@ -40,8 +40,9 @@ async def connect(sid, environ, auth):
         return False
     for player_sid in players_sid:
         if player_sid != sid:
-            aux = sio_server.emit("room/newPlayer", {"gameState": gs.get_game_status(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-    return {"gameState": gs.get_game_status(sid)}
+            await sio_server.emit("room/newPlayer", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+    await sio_server.emit("newGameState", {"gameState": gs.get_game_status_by_sid(sid)}, sid)
+    return True
 
 @sio_server.event
 def start_game(sid):
@@ -58,7 +59,7 @@ def start_game(sid):
     except Exception as e:
         return False
     for player_sid in players_sid:
-        aux = sio_server.emit("room/start", {"gameState": gs.get_game_status(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        aux = sio_server.emit("room/start", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
 
 
@@ -77,5 +78,6 @@ def get_game_status(sid):
     except Exception as e:
         return False
     for player_sid in players_sid:
-        sio_server.emit("room/start", player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        aux = sio_server.emit("room/start", player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
+    return 
