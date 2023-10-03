@@ -1,16 +1,26 @@
 from ast import List
-from fastapi import HTTPException
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
-from pony.orm.dbapiprovider import uuid4
-from app.schemas import CardSchema, NewRoomSchema
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 import random
 
 class GamesService(DBSessionMixin):
+
+
+    def card_to_JSON(self, card: Card):
+        return {
+            'id': card.id,
+            'name': card.name,
+            'description': card.description,
+            'deck': card.deck,
+            'type': card.type,
+            'sub_type': card.sub_type
+        }
+
+
 
     @db_session
     def game_state(self, room : Room):
@@ -56,10 +66,18 @@ class GamesService(DBSessionMixin):
         #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
         #a todos los afectados por el evento se les reenvia el game_state
         pass
-
+    
+    @db_session
     def get_card(self, player:Player, room:Room):
-        #se entrega una carta del mazo de disponibles al usuario
-        pass
+        # se entrega una carta del mazo de disponibles al usuario
+        # se borra la carta de room.available, se asigna la carta al usuario y se retorna el objeto carta
+
+        card_to_deal = room.available_cards.random(1)
+        player.hand.add(card_to_deal)
+        room.available_cards.remove(card_to_deal)
+
+
+        return self.card_to_JSON(card_to_deal) 
 
     def discard_card(self, player:Player, room:Room):
         #hay que verificar que pueda, si es asi se agrega al mazo de descartes y se quita del jugador
@@ -90,7 +108,7 @@ class GamesService(DBSessionMixin):
         qty_cards_to_deal = count(room.players)*4
 
         # obtenemos todas todas las cartas menos la cosa
-        cards_to_deal = list(room.available_cards.select(lambda c : c.name is not 'La cosa' and c.type is 'ACCION'))
+        cards_to_deal = room.available_cards.select(lambda c : c.name is not 'La cosa' and c.type is 'ACCION')
 
         # obtiene de forma random qty_cards_to_deal-1 cartas
         cards_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
