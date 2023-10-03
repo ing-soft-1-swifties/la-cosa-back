@@ -70,8 +70,9 @@ class GamesService(DBSessionMixin):
         """
         player_count = count(room.players)
 
-        card = list(Card.select(lambda card : card.deck <= player_count))
-        room.available_cards.copy(card)
+        card = list(Card.select(lambda c : c.deck <= player_count))
+        
+        room.available_cards = card.copy()
         
         return 
 
@@ -81,17 +82,38 @@ class GamesService(DBSessionMixin):
         """
         Repartir las cartas iniciales.
         """
-
-        cards_to_deal = room.available_cards.select(lambda card : card.name!='La cosa')
+        # cantidad de cartas a repartir
         qty_cards_to_deal = count(room.players)*4
-        deck_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
-        deck_to_deal.append(Card.get(name='La cosa'))
 
-        room.available_cards.remove(deck_to_deal)
+        # obtenemos todas todas las cartas menos la cosa
+        cards_to_deal = list(room.available_cards.select(lambda c : c.name is not 'La cosa' and c.type is 'ACCION'))
 
-           
-        # por cada player de la room
+        # obtiene de forma random qty_cards_to_deal-1 cartas
+        cards_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
+
+        # agrega a las cartas a repartir la carta LA COSA
+        cards_to_deal.append(room.available_cards.get(name='La cosa'))
+
+        random.shuffle(cards_to_deal)
+
+
+        # eliminamos todas las cartas a repartir del mazo de cartas disponibles
+        for card in list(cards_to_deal):
+            room.available_cards.remove(card)
+
+        # room.available_cards.remove(cards_to_deal)
+        # repartimos
+        players_dealed = 0
         for player in list(room.players):
-            player.hand = random.sample(deck_to_deal, 4)
-            deck_to_deal.remove(player.hand)
+            for card_index in range(4):
+                player.hand.add(cards_to_deal[players_dealed*4 + card_index])
             
+            players_dealed += 1
+
+        return
+        
+        
+    
+
+        
+           

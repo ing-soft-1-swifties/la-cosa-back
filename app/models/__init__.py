@@ -15,8 +15,8 @@ class Card(db.Entity):
     name = Required(str)
     description = Optional(str)
     deck = Required(int)
-    type = Required(int)            # {Alejate, Panico}
-    sub_type = Optional(int)        # {Contagio, Accion, Defensa, Obstaculo}
+    type = Required(str)            # {Alejate, Panico}
+    sub_type = Optional(str)        # {Contagio, Accion, Defensa, Obstaculo}
     roomsA = Set('Room', reverse='available_cards')
     roomsD = Set('Room', reverse='discarted_cards')
     player_hand = Set('Player', reverse='hand')

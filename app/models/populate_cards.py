@@ -12,6 +12,7 @@
 from pony.orm import db_session
 from __init__ import Card
 
+
 cardsJSON = [
     {
         'name': 'La cosa',
@@ -136,16 +137,8 @@ cardsJSON = [
     }
 ]
 
-# with db_session:
-#     for i in range(len(cardsJSON)):
-#         for j in range(len(cardsJSON[i]['amounts'])):
-#             for k in range(cardsJSON[i]['amounts'][j]):
-#                 Card(name=cardsJSON[i]['name'], deck=j+4, type=0)
-
 with db_session:
-    cards = list(Card.select(lambda card: card.name=='Hacha'))
-    for card in cards:
-        print(f'{card.name}, {card.deck}')
-
-
-
+    for i in range(len(cardsJSON)):
+        for j in range(len(cardsJSON[i]['amounts'])):
+            for k in range(cardsJSON[i]['amounts'][j]):
+                Card(name=cardsJSON[i]['name'], deck=j+4, type='ACCION')
