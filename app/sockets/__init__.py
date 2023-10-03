@@ -26,8 +26,11 @@ sio_app = socketio.ASGIApp(
 async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
+    print("hola")
+    return True
     ps = PlayersService(db)
     gs = GamesService(db)
+    print(auth)
     try:
         token = auth["token"]
         ps.connect_player(token, sid)
@@ -52,7 +55,8 @@ def start_game(sid):
     try:
         rs.start_game(sid)
     except Exception as e:
-        return False
+        #checkear esto
+        return False, {e.__str__()}
     print(f"Partida iniciada por el usuario {sid}")
     try:
         players_sid = rs.get_players_sid(sid)
@@ -66,18 +70,13 @@ def start_game(sid):
     
 @sio_server.event
 def get_game_status(sid):
-    # Aquí puedes realizar la lógica para iniciar la partida
+    gs = GamesService(db)
     rs = RoomsService(db)
-    try:
-        rs.start_game(sid)
-    except Exception as e:
-        return False
-    print(f"Partida iniciada por el usuario {sid}")
     try:
         players_sid = rs.get_players_sid()
     except Exception as e:
         return False
     for player_sid in players_sid:
-        aux = sio_server.emit("room/start", player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        aux = sio_server.emit("room/start",{"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
     return 

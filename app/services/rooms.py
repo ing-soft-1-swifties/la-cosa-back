@@ -91,7 +91,7 @@ class RoomsService(DBSessionMixin):
     def list_rooms(self):
 
         def get_json(room):
-            return {  
+            return { 
                 'id': room.id,
                 'name': room.name,
                 'max_players' : room.max_players,
