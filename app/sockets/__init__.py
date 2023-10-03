@@ -1,16 +1,11 @@
-# from fastapi import APIRouter, HTTPException, Response
 from app.models import Player
-# from app.schemas import ConnectionCredentials, NewRoomSchema, RoomSchema, RoomJoiningInfo
-
 from pony.orm import db_session
 from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.games import GamesService
-
 from app.models import db
 import socketio
-
 
 sio_server = socketio.AsyncServer(
         async_mode = "asgi",
@@ -28,14 +23,11 @@ async def connect(sid, environ, auth):
     # guardar en jugador el socket id
     ps = PlayersService(db)
     gs = GamesService(db)
+    rs = RoomsService(db)
     print(auth)
     try:
         token = auth["token"]
         ps.connect_player(token, sid)
-    except Exception as e:
-        return False
-    rs = RoomsService(db)
-    try:
         players_sid = rs.get_players_sid(sid)
     except Exception as e:
         return False
@@ -46,7 +38,47 @@ async def connect(sid, environ, auth):
     return True
 
 @sio_server.event
-def start_game(sid):
+async def disconnect(sid):
+    ps = PlayersService(db)
+    gs = GamesService(db)
+    try:
+        ps.disconnect_player(sid)
+        #abria que definir bien que pasa si la partida ya inicio
+    except Exception as e:
+        return False
+    return True
+
+@sio_server.event
+async def quit_game(sid):
+    ps = PlayersService(db)
+    gs = GamesService(db)
+    rs = RoomsService(db)
+    try:
+        ps.disconnect_player(sid)
+        players_sid = rs.get_players_sid(sid)
+    except Exception as e:
+        return False
+    for player_sid in players_sid:
+        if player_sid != sid:
+            await sio_server.emit("room/PlayerLeft", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+    return False    #se cierra la conexion
+
+@sio_server.event
+async def end_game(sid):
+    rs = RoomsService(db)
+    try:
+        players_sid = rs.get_players_sid(sid)
+        rs.end_game(sid)
+    except Exception as e:
+        print(f"fallo al querer terminar la partida del jugador con sid:{sid}")
+        return True
+    for player_sid in players_sid:
+        await sio_server.emit("room/end")   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.disconnect(player_sid)
+    return False    #se cierra la conexion
+
+@sio_server.event
+def start_game(sid : str): 
     # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
@@ -62,9 +94,6 @@ def start_game(sid):
         return False
     for player_sid in players_sid:
         aux = sio_server.emit("room/start", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
-
-
     
 @sio_server.event
 def get_game_status(sid):
@@ -76,5 +105,4 @@ def get_game_status(sid):
         return False
     for player_sid in players_sid:
         aux = sio_server.emit("room/start",{"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        #sio.emit("mensaje_desde_servidor", {"mensaje": mensaje}, room=connection_id)
-    return 
+    return True 

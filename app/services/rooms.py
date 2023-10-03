@@ -1,11 +1,12 @@
 from fastapi import HTTPException
-from pony.orm import db_session
+from pony.orm import count, db_session, Set
 from pony.orm.dbapiprovider import uuid4
-from app.models import Player, Room
+from app.models import Player, Room, Card
 from app.schemas import NewRoomSchema, RoomSchema
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+import random
 
 class RoomsService(DBSessionMixin):
 
@@ -85,6 +86,25 @@ class RoomsService(DBSessionMixin):
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
+        try:
+            self.initial_deal(expected_room)
+            self.initial_deal(expected_room)
+        except Exception as e:
+            print("Error al iniciar mazo y repartir")
+        #capaz falta algo
+
+    @db_session
+    def end_game(self, actual_sid : str):
+        #si el jugador es propietario de una partida esta se termina
+        expected_player = Player.get(sid = actual_sid)
+        if expected_player is None:
+            raise InvalidSidException()
+        if expected_player.is_host == False:
+            raise NotOwnerExeption()
+        expected_room = expected_player.playing
+        if expected_room is None:
+            raise InvalidRoomException()
+        expected_room.status = 2    #end
         #capaz falta algo
 
     @db_session
@@ -101,3 +121,45 @@ class RoomsService(DBSessionMixin):
             }
 
         return [get_json(room) for room in Room.select()]
+    
+
+    @db_session
+    def initialize_deck(self, room : Room):
+        """
+        Se cargan las cartas que se van a usar en la partida dependiendo de la cantidad de players.
+        """
+        player_count = count(room.players)
+        card = list(Card.select(lambda c : c.deck <= player_count))
+        room.available_cards = card.copy()
+        return 
+
+    @db_session
+    def initial_deal(self, room : Room):
+        """
+        Repartir las cartas iniciales.
+        """
+        # cantidad de cartas a repartir
+        qty_cards_to_deal = count(room.players)*4
+        # obtenemos todas todas las cartas menos la cosa
+        cards_to_deal = room.available_cards.select(lambda c : c.name is not 'La cosa' and c.type is 'ACCION')
+        # obtiene de forma random qty_cards_to_deal-1 cartas
+        cards_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
+        # agrega a las cartas a repartir la carta LA COSA
+        cards_to_deal.append(room.available_cards.get(name='La cosa'))
+        random.shuffle(cards_to_deal)
+        # eliminamos todas las cartas a repartir del mazo de cartas disponibles
+        for card in list(cards_to_deal):
+            room.available_cards.remove(card)
+        # room.available_cards.remove(cards_to_deal)
+        # repartimos
+        players_dealed = 0
+        for player in list(room.players):
+            for card_index in range(4):
+                player.hand.add(cards_to_deal[players_dealed*4 + card_index])
+            
+            players_dealed += 1
+        return
+
+
+
+

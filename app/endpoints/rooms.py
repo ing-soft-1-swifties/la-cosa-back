@@ -43,9 +43,7 @@ def list_rooms():
     """
     lista los ids de las partidas disponibles
     """
-
     rs = RoomsService(db)
-
     try:
         return rs.list_rooms()
     except Exception as e:
@@ -58,8 +56,6 @@ def room_status(room_id : int):
     """
     muestra el estado de una partida especificada como argumento
     """
-
-
     try:
         gs = GamesService(db)
         ret = gs.get_game_status_by_rid(room_id)

@@ -45,7 +45,7 @@ class Room(db.Entity):
     is_private = Required(bool) 
     password = Optional(str)
     status = Required(int)          # {lobby, in_game, finished}
-    turn = Optional(int)
+    turn =  Optional(int)
     direction = Optional(bool)
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
