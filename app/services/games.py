@@ -3,6 +3,8 @@ from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+from app.services.players import PlayersService
+from app.models import db
 
 class GamesService(DBSessionMixin):
 
@@ -61,11 +63,22 @@ class GamesService(DBSessionMixin):
         )
         return player_in_game_state
 
-    def play_card(self, player:Player, card:Card):
+    @db_session
+    def play_card(self, sent_sid : str, cid : int):
+        player = Player.get(sid = sent_sid)
+        card = Card.get(id = cid)
+        if player is None:
+            raise InvalidSidException
+        if card is None:
+            raise InvalidCidException
+        room = player.playing
+        ps = PlayersService(db)
+        if ps.has_card(player, card) == False:
+            raise InvalidCardException
+        
         #se juega una carta, notar que van a ocurrir eventos (ej:alguien muere), debemos llevar registro
         #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
         #a todos los afectados por el evento se les reenvia el game_state
-        room = player.playing
         self.next_turn(room)
         #el metodo anterior retorna la carta que recibio alguna la siguiente persona
         #falta implementar la muestra de eventos

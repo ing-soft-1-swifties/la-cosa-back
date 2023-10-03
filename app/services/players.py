@@ -1,5 +1,5 @@
 from pony.orm import db_session
-from app.models import Player
+from app.models import Player, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 
@@ -21,3 +21,7 @@ class PlayersService(DBSessionMixin):
             raise InvalidSidException()
         (expected_player.playing).players.remove(expected_player)
         #falta borrar el player de la base de datos
+
+    @db_session
+    def has_card(self, player : Player, card : Card):
+        return Card in player.hand

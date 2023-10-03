@@ -18,6 +18,12 @@ class InvalidTokenException(Exception):
 class InvalidSidException(Exception):
     pass
 
+class InvalidCidException(Exception):
+    pass
+
+class InvalidCardException(Exception):
+    pass
+
 class NotOwnerExeption(Exception):
     pass
 
