@@ -26,8 +26,6 @@ sio_app = socketio.ASGIApp(
 async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
-    print("hola")
-    return True
     ps = PlayersService(db)
     gs = GamesService(db)
     print(auth)
