@@ -51,6 +51,13 @@ class Room(db.Entity):
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')
 
+    def get_host(self):
+        for player in self.players:
+            if player.is_host:
+                return player
+        raise Exception()   #muerte
+
+
 
 db.bind(provider='sqlite', filename=f'la_cosa.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)

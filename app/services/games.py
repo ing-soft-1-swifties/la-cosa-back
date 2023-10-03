@@ -18,15 +18,25 @@ class GamesService(DBSessionMixin):
         def player_state(player):
             return{
                 "name" : player.name,
-                "state" : player.status,
+                "status" : player.status,
                 "position" : player.position,
             }
         game_state = {
-            "game_status" : room.status,
+            "config" : {
+                "id" : room.id,
+                "name" : room.name,
+                "host" : room.get_host().name,
+                "minPlayers" : room.min_players,
+                "maxPlayers" : room.max_players
+            },
+            "status" : room.status,
             "turn" : room.turn,
-            "players_state" : [player_state(player) for player in room.players]
+            "players" : [player_state(player) for player in room.players]
         }
         return game_state
+    
+    def get_game_status(self, sent_sid : int):
+        return self.game_state(Player.get(sid = sent_sid).playing)
 
     @db_session
     def personal_game_state(self, player : Player):
