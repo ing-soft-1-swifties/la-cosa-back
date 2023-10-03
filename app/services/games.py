@@ -48,7 +48,7 @@ class GamesService(DBSessionMixin):
         return self.game_state(Room.get(id = sent_rid))
 
     @db_session
-    def personal_game_state_by_sid(self, sent_sid : str):
+    def get_personal_game_status_by_sid(self, sent_sid : str):
         player = Player.get(sid = sent_sid)
         #devuelve un diccionario que representa el estado del juego desde la vision de un jugador
         player_in_game_state = self.game_state(player.playing)
