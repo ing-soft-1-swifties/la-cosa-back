@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.schemas import ConnectionCredentials, NewRoomSchema, RoomJoiningInfo
 from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.rooms import RoomsService
+from app.services.games import GamesService
 from app.models import db
 
 
@@ -49,3 +50,19 @@ def list_rooms():
         print(e)
         raise HTTPException(status_code=500)
         
+#este endpoint esta de mas, por ahora lo dejamos por si se quiere testear el estado de una partida con api rest
+@router.get("/game_status/{room_id}")
+def room_status(room_id : int):
+    """
+    muestra el estado de una partida especificada como argumento
+    """
+
+
+    try:
+        gs = GamesService(db)
+        ret = gs.get_game_status_by_rid(room_id)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500)
+    return {"gameStatus" : ret} 
+    

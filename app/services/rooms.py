@@ -16,10 +16,14 @@ class RoomsService(DBSessionMixin):
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
-
+        if expected_room.status != 0:   #not in lobby
+            raise NotInLobbyException()
+        # if len(expected_room.playes) >= expected_room.max_players:
+        #     raise TooManyPlayersException()
         token = str(uuid4())
         if expected_room.players.select(lambda player : player.name == name).count() > 0:
             raise DuplicatePlayerNameException()
+
 
         new_player = Player(name = name, token=token, playing=expected_room, is_host = False)
 
@@ -45,16 +49,16 @@ class RoomsService(DBSessionMixin):
     @db_session
     def get_players_sid(self, actual_sid):
         expected_player = Player.get(sid = actual_sid)
-        expected_room = Room.get(lambda room : room.players.__contains__(expected_player.id))
+        expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
-        return [(Player.get(id = player_id)).sid for player_id in expected_room.players()]
+        return [player for player in list(expected_room.players)]
 
     @db_session
     def assign_turns(self, room : Room):
         turn = 0
         for player in room.players:
-            player.turn = turn
+            player.position = turn
             turn += 1 
         self.db.commit()
 
