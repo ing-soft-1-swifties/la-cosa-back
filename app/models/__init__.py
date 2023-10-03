@@ -41,7 +41,7 @@ class Room(db.Entity):
     obstacles = Set(Obstacle)
     name = Required(str)
     min_players = Required(int)
-    max_players = Optional(int)
+    max_players = Required(int)
     is_private = Required(bool) 
     password = Optional(str)
     status = Required(int)          # {lobby, in_game, finished}

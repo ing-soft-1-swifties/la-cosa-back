@@ -18,8 +18,8 @@ class RoomsService(DBSessionMixin):
             raise InvalidRoomException()
         if expected_room.status != 0:   #not in lobby
             raise NotInLobbyException()
-        # if len(expected_room.playes) >= expected_room.max_players:
-        #     raise TooManyPlayersException()
+        if len(expected_room.players) >= expected_room.max_players:
+            raise TooManyPlayersException()
         token = str(uuid4())
         if expected_room.players.select(lambda player : player.name == name).count() > 0:
             raise DuplicatePlayerNameException()
@@ -91,7 +91,7 @@ class RoomsService(DBSessionMixin):
     def list_rooms(self):
 
         def get_json(room):
-            return {
+            return {  
                 'id': room.id,
                 'name': room.name,
                 'max_players' : room.max_players,

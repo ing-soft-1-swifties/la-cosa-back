@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas import ConnectionCredentials, NewRoomSchema, RoomJoiningInfo
-from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
+from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException, TooManyPlayersException
 from app.services.rooms import RoomsService
 from app.services.games import GamesService
 from app.models import db
@@ -34,6 +34,8 @@ def join_room(joining_info: RoomJoiningInfo) -> ConnectionCredentials:
         raise HTTPException(status_code=400, detail="Duplicate player name")
     except InvalidRoomException as e:
         raise HTTPException(status_code=404, detail="Invalid room id")
+    except TooManyPlayersException as e:
+        raise HTTPException(status_code=404, detail="Maximun people capacity reached")
 
 
 @router.get("/list")
