@@ -12,6 +12,7 @@ class PlayersService(DBSessionMixin):
         expected_player = Player.get(token=sent_token)
         if expected_player is None:
             raise InvalidTokenException()
-        if expected_player.sid is not None:
-            raise InvalidTokenException()
+        # habria que ver si se estaba usando ese jugador, levantar exepcion y en su handler matar la coneccion vieja
+        # if expected_player.sid is not None:
+        #     raise UsedTokenException()
         expected_player.sid = actual_sid

@@ -23,12 +23,11 @@ sio_app = socketio.ASGIApp(
 
 @sio_server.event
 async def connect(sid, environ, auth):
-    return True
     # autenticar jugador con token
     # guardar en jugador el socket id
     ps = PlayersService(db)
-    token = auth.token
     try:
+        token = auth["token"]
         ps.connect_player(token, sid)
     except Exception as e:
         return False
