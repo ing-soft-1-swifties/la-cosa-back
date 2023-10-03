@@ -1,9 +1,14 @@
+from ast import List
 from fastapi import HTTPException
-from pony.orm import db_session
+from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+from pony.orm.dbapiprovider import uuid4
+from app.schemas import CardSchema, NewRoomSchema
+#from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
+import random
 
 class GamesService(DBSessionMixin):
 
@@ -45,3 +50,38 @@ class GamesService(DBSessionMixin):
     def discard_card(self, player:Player, room:Room):
         #hay que verificar que pueda, si es asi se agrega al mazo de descartes y se quita del jugador
         pass
+        return 
+
+
+    @db_session
+    def initialize_deck(self, room : Room):
+        """
+        Se cargan las cartas que se van a usar en la partida dependiendo de la cantidad de players.
+        """
+        player_count = count(room.players)
+
+        card = list(Card.select(lambda card : card.deck <= player_count))
+        room.available_cards.copy(card)
+        
+        return 
+
+
+    @db_session
+    def initial_deal(self, room : Room):
+        """
+        Repartir las cartas iniciales.
+        """
+
+        cards_to_deal = room.available_cards.select(lambda card : card.name!='La cosa')
+        qty_cards_to_deal = count(room.players)*4
+        deck_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
+        deck_to_deal.append(Card.get(name='La cosa'))
+
+        room.available_cards.remove(deck_to_deal)
+
+           
+        # por cada player de la room
+        for player in list(room.players):
+            player.hand = random.sample(deck_to_deal, 4)
+            deck_to_deal.remove(player.hand)
+            
