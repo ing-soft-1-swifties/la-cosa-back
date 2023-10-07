@@ -1,14 +1,57 @@
-from rooms import RoomsService
+from pony.orm import Database, db_session
 import unittest
+from app.models.entities import Player, Room
+from app.schemas import NewRoomSchema
+from app.services.rooms import RoomsService
+
+unittest.TestLoader.sortTestMethodsUsing = None
 
 class TestRoomsService(unittest.TestCase):
+    db: Database
+    rs: RoomsService
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        from app.models.testing_db import db
+        cls.db = db
+        cls.rs = RoomsService(db = cls.db)
 
-    def test_join_room_successful(self):
+    @db_session
+    def test_create_room_succesful(self):
+        """
+        Deberia poder crear esta Room sin errores
+        """
+        roomname = "newroom"
+        hostname = "hostname"
+        newroom = NewRoomSchema(
+            room_name   =  roomname,
+            host_name   = hostname,
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        rooms = Room.select()
+        assert rooms.count() == 1;
+        room = rooms.first()
+        assert room is not None
+        assert room.name == roomname 
+
+        host = room.get_host() 
+        assert host.name == hostname
+
+    def test_join_room(self):
+        pass
+        
+    
+    def test_join_room_duplicate_user(self):
         pass
     
-    def test_join_room_successful_duplicate_user(self):
+    def test_join__invalid_room(self):
         pass
-    
-    def test_join_room_successful_invalid_room(self):
-        pass
+
+    @classmethod
+    @db_session
+    def tearDownClass(cls) -> None:
+        Room.select().delete()
+        Player.select().delete()

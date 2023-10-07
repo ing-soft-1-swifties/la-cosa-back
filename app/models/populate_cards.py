@@ -10,7 +10,7 @@
 #     roomsD = Set('Room', reverse='discarted_cards')
 
 from pony.orm import db_session
-from __init__ import Card
+from .entities import Card
 
 
 cardsJSON = [

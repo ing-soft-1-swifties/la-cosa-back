@@ -4,7 +4,6 @@ from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
-from app.models import db
 
 class GamesService(DBSessionMixin):
 
@@ -72,7 +71,7 @@ class GamesService(DBSessionMixin):
         if card is None:
             raise InvalidCidException
         room = player.playing
-        ps = PlayersService(db)
+        ps = PlayersService(self.db)
         if ps.has_card(player, card) == False:
             raise InvalidCardException
         
