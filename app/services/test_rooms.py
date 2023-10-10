@@ -1,7 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room
+from app.models.entities import Player, Room, Card
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
@@ -152,7 +152,7 @@ class TestRoomsService(unittest.TestCase):
     def test_join_invalid_room(self):
         pass
     
-    @db_session
+    db_session
     def test_initial_deal_succesful(self):
         """
         Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
@@ -240,43 +240,6 @@ class TestRoomsService(unittest.TestCase):
             assert len(room.available_cards) != 0 
 
 
-    
-    db_session
-    def test_initial_deal_succesful(self):
-        """
-        Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
-        """
-        rooms = Room.select()
-        room = rooms.first()
-        
-        
-        if rooms.count() == 0:
-            roomname = "newroom"
-            hostname = "hostname"
-            newroom = NewRoomSchema(
-                room_name   =  roomname,
-                host_name   = hostname,
-                min_players =  4,
-                max_players =  12,
-                is_private  =  False
-            )
-            self.rs.create_room(newroom)
-        else:     
-            room = rooms.first()
-            
-    
-        self.rs.join_player(self.rs, "p1", room.id)
-        self.rs.join_player(self.rs, "p2", room.id)
-        self.rs.join_player(self.rs, "p3", room.id)
-        assert room.players.count() == 4
-        self.rs.initial_deal(room)
-        assert room.discarted_cards.count() == 0
-        assert room.available_cards.count() != 0
-        are_from_deck = True
-        for card in room.available_cards:
-                are_from_deck = are_from_deck && card.deck
-        
-        
         
 
     @classmethod
