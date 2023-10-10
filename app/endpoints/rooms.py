@@ -3,7 +3,7 @@ from app.schemas import ConnectionCredentials, NewRoomSchema, RoomJoiningInfo
 from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException, TooManyPlayersException
 from app.services.rooms import RoomsService
 from app.services.games import GamesService
-from app.models import db
+from app.models.db import db
 
 
 router = APIRouter()
