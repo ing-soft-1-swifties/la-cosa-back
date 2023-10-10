@@ -39,14 +39,20 @@ async def connect(sid, environ, auth):
 
 @sio_server.event
 async def disconnect(sid : str):
-    ps = PlayersService(db)
-    gs = GamesService(db)
-    try:
-        ps.disconnect_player(sid)
-        #abria que definir bien que pasa si la partida ya inicio
-    except Exception as e:
-        return False
-    return True
+    #por ahora no vamos a hacer nada ya que no lo especifica el cliente
+    #si la persona intenta volver a conectarse con su token, el sistema 
+    #lo vuelve a reconectar.
+    # ps = PlayersService(db)
+    # gs = GamesService(db)
+    # rs = GamesService(db)
+    # try:
+    #     ps.disconnect_player(sid)
+    #     #si este es el host, se mata la partida
+    #     #abria que definir bien que pasa si la partida ya inicio
+    # except Exception as e:
+    #     return False
+    # return True
+    pass
 
 @sio_server.event
 async def quit_game(sid : str):
@@ -54,13 +60,18 @@ async def quit_game(sid : str):
     gs = GamesService(db)
     rs = RoomsService(db)
     try:
-        ps.disconnect_player(sid)
-        players_sid = rs.get_players_sid(sid)
+        if ps.is_host(sid):
+            await end_game(sid)
+        else:
+            ps.disconnect_player(sid)
+            players_sid = rs.get_players_sid(sid)
+            for player_sid in players_sid:
+                if player_sid != sid:
+                    await sio_server.emit("room/PlayerLeft", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception as e:
-        return False
-    for player_sid in players_sid:
-        if player_sid != sid:
-            await sio_server.emit("room/PlayerLeft", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        print(f"fallo al intentar sacar de la partida al jugador con sid{sid}")
+        #falta ver como le comunicamos el incoveniente al cliente
+        return True
     return False    #se cierra la conexion
 
 @sio_server.event
@@ -86,7 +97,7 @@ def start_game(sid : str):
         rs.start_game(sid)
     except Exception as e:
         #checkear esto
-        return False, {e.__str__()}
+        return True, {e.__str__()}
     print(f"Partida iniciada por el usuario {sid}")
     try:
         players_sid = rs.get_players_sid(sid)

@@ -23,5 +23,12 @@ class PlayersService(DBSessionMixin):
         #falta borrar el player de la base de datos
 
     @db_session
+    def is_host(self, actual_sid : str):
+        expected_player = Player.get(sid=actual_sid)
+        if expected_player is None:
+            raise InvalidSidException()
+        return (expected_player.is_host)
+
+    @db_session
     def has_card(self, player : Player, card : Card):
         return Card in player.hand
