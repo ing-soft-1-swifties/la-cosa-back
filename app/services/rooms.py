@@ -53,7 +53,7 @@ class RoomsService(DBSessionMixin):
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
-        return [player for player in list(expected_room.players)]
+        return [player.sid for player in list(expected_room.players)]
 
     @db_session
     def assign_turns(self, room : Room):
