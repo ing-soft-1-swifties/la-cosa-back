@@ -32,9 +32,7 @@ async def connect(sid, environ, auth):
     except Exception as e:
         return False
     for player_sid in players_sid:
-        if player_sid != sid:
-            await sio_server.emit("room/newPlayer", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-    await sio_server.emit("newGameState", {"gameState": gs.get_game_status_by_sid(sid)}, sid)
+        await sio_server.emit("on_room_new_player", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     return True
 
 @sio_server.event
@@ -55,7 +53,7 @@ async def disconnect(sid : str):
     pass
 
 @sio_server.event
-async def quit_game(sid : str):
+async def room_quit_game(sid : str):
     ps = PlayersService(db)
     gs = GamesService(db)
     rs = RoomsService(db)
@@ -63,20 +61,24 @@ async def quit_game(sid : str):
         if ps.is_host(sid):
             await end_game(sid)
         else:
-            ps.disconnect_player(sid)
             players_sid = rs.get_players_sid(sid)
+            ps.disconnect_player(sid)
             for player_sid in players_sid:
                 if player_sid != sid:
-                    await sio_server.emit("room/PlayerLeft", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+                    await sio_server.emit("on_room_left_player", {"gameState": gs.get_game_status_by_sid(player_sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception as e:
         print(f"fallo al intentar sacar de la partida al jugador con sid{sid}")
+        import logging
+        logging.getLogger().exception("Expection description")
         #falta ver como le comunicamos el incoveniente al cliente
         return True
     return False    #se cierra la conexion
 
-@sio_server.event
+# @sio_server.event
+# TODO! Check (room_quit_game)
 async def end_game(sid : str):
     rs = RoomsService(db)
+    gs = GamesService(db)
     try:
         players_sid = rs.get_players_sid(sid)
         rs.end_game(sid)
@@ -84,12 +86,12 @@ async def end_game(sid : str):
         print(f"fallo al querer terminar la partida del jugador con sid:{sid}")
         return True
     for player_sid in players_sid:
-        await sio_server.emit("room/end")   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_room_cancelled_game", {"gameState": gs.get_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         await sio_server.disconnect(player_sid)
     return False    #se cierra la conexion
 
 @sio_server.event
-def start_game(sid : str): 
+async def room_start_game(sid : str): 
     # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
@@ -97,21 +99,21 @@ def start_game(sid : str):
         rs.start_game(sid)
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
-            aux = sio_server.emit("room/start", {"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception as e:
         #hay que determinar si eliminamos la partida si ocurre un error
         print(f"error al querer iniciar la partida del jugador con sid: {sid}")
         return True
     print(f"Partida iniciada por el usuario {sid}")
     
-@sio_server.event
-def get_game_status(sid: str):
-    gs = GamesService(db)
-    rs = RoomsService(db)
-    try:
-        players_sid = rs.get_players_sid()
-    except Exception as e:
-        return False
-    for player_sid in players_sid:
-        aux = sio_server.emit("room/status",{"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-    return True 
+# @sio_server.event
+# def get_game_status(sid: str):
+#     gs = GamesService(db)
+#     rs = RoomsService(db)
+#     try:
+#         players_sid = rs.get_players_sid()
+#     except Exception as e:
+#         return False
+#     for player_sid in players_sid:
+#         aux = sio_server.emit("room/status",{"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+#     return True 
