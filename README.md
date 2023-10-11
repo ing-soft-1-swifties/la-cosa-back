@@ -13,3 +13,6 @@
 # Makefile
 - **populate_cards**: crea en la base de datos todas las entidades de cartas
 - **cleandb**: borra la base de datos (elimina el archivo de sqlite)
+- **test**: test
+- **test-cov**: test
+
