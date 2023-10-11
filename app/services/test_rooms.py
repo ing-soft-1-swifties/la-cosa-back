@@ -38,7 +38,7 @@ class TestRoomsService(unittest.TestCase):
         )
         self.rs.create_room(newroom)
         rooms = Room.select()
-        assert rooms.count() == 1;
+        assert rooms.count() == 1
         room = rooms.first()
         assert room is not None
         assert room.name == roomname 
@@ -155,7 +155,7 @@ class TestRoomsService(unittest.TestCase):
     def test_join_invalid_room(self):
         pass
     
-    db_session
+    @db_session
     def test_initial_deal_succesful(self):
         """
         Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
