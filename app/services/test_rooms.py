@@ -42,14 +42,43 @@ class TestRoomsService(unittest.TestCase):
         host = room.get_host() 
         assert host.name == hostname
 
+    @db_session
     def test_join_room(self):
-        pass
+        """
+        Deberia unir un jugador a una partida
+        """
+        # borramos todas las rooms y jugadores
+        Room.select().delete()
+        Player.select().delete()
+
+        # creamos una partida
+        roomname = f"test_join_room"
+        hostname = "hostname"
+        newroom = NewRoomSchema(
+            room_name   =  roomname,
+            host_name   = hostname,
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+
+        room = Room.get(name=roomname)
         
-    def test_join_room_duplicate_user(self):
-        pass
+        self.rs.join_player(name='player_in_room', room_id=room.id)
+
+        players_in_room = list(room.players.select())
+        player_in_room = Player.get(name='player_in_room')
+
+        assert player_in_room is not None
+        assert player_in_room in players_in_room
+        
+
+    # def test_join_room_duplicate_user(self):
+    #     pass
     
-    def test_join_invalid_room(self):
-        pass
+    # def test_join_invalid_room(self):
+    #     pass
 
     @db_session
     def test_initialize_deck(self):

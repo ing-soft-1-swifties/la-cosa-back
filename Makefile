@@ -9,3 +9,10 @@ populate_cards:
 
 run:
 	python3 main.py
+
+test:
+	pytest -W ignore::DeprecationWarning
+
+
+test-cov:
+	pytest --cov -W ignore::DeprecationWarning

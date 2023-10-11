@@ -17,16 +17,20 @@ class RoomsService(DBSessionMixin):
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
+        
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
+        
         if len(expected_room.players) >= expected_room.max_players:
             raise TooManyPlayersException()
+        
         token = str(uuid4())
+        
         if expected_room.players.select(lambda player : player.name == name).count() > 0:
             raise DuplicatePlayerNameException()
 
 
-        new_player = Player(name = name, token=token, playing=expected_room, is_host = False)
+        new_player = Player(name=name, token=token, playing=expected_room, is_host=False)
 
         expected_room.players.add(new_player)
 
