@@ -1,7 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room, Card
+from app.models.entities import Player, Room
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
