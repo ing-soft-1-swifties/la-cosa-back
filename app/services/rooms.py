@@ -1,3 +1,4 @@
+from pickle import EMPTY_LIST
 from fastapi import HTTPException
 from pony.orm import count, db_session, Set
 from pony.orm.dbapiprovider import uuid4
@@ -150,32 +151,28 @@ class RoomsService(DBSessionMixin):
         Repartir las cartas iniciales.
         """
         # cantidad de cartas a repartir
-        qty_cards_to_deal = count(room.players)*4
-        # obtenemos todas todas las cartas menos la cosa
-        cards_to_deal = room.available_cards.select(lambda c : c.name is not 'La cosa' and c.type is 'ACCION')
-        # obtiene de forma random qty_cards_to_deal-1 cartas
-        cards_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
-        # agrega a las cartas a repartir la carta LA COSA
-        cards_to_deal.append(room.available_cards.get(name='La cosa'))
+        qty_cards_to_deal = len(room.players)*4
+        # obtenemos todas todas las cartas alejate menos las de contagio
+        cards_to_deal = list(room.available_cards \
+                            .select(lambda c : c.name != 'La cosa' and c.type != 'PANICO' and c.sub_type != 'CONTAGIO')\
+                            .limit(qty_cards_to_deal -1))
+        #se agrega la cosa a las cartas repartibles 
+        cards_to_deal.append(list(room.available_cards.select(lambda lacosa : lacosa.name == 'La cosa') ))
+        
+        
+        # mezclamos las cartas
         random.shuffle(cards_to_deal) 
         # eliminamos todas las cartas a repartir del mazo de cartas disponibles
-        for card in list(cards_to_deal):
+        for card in cards_to_deal:
             room.available_cards.remove(card)
-        # room.available_cards.remove(cards_to_deal)
+        
+        # room.available_cards.select(lambda c : c in cards_to_deal).delete()
+
         # repartimos
-        players_dealed = 0
         for player in list(room.players):
             for card_index in range(4):
-                player.hand.add(cards_to_deal[players_dealed*4 + card_index])
-            
-            players_dealed += 1
-
-        qty_cards_to_deal = len(room.players) *4
-        cards_to_deal.add(list(room.available_cards.select(lambda card: card.name != 'La cosa' and card.type == 'ACCION')))
-        cards_to_deal
-
-
-        
+                player.hand.add(cards_to_deal.pop(len(cards_to_deal)-1))
+                
         return
     
     @db_session

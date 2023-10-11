@@ -176,17 +176,27 @@ class TestRoomsService(unittest.TestCase):
         self.rs.join_player(name="p2", room_id=room.id)
         self.rs.join_player(name="p3", room_id=room.id)
         
+        
+        self.rs.initialize_deck(room)
+        print(list(room.available_cards))
+        print(len(room.available_cards))
+        
         self.rs.initial_deal(room)
+
+        print(list(room.available_cards))
+        print(len(room.available_cards))
+
+        for player in room.players:
+            print(list(player.hand))
+            assert len(player.hand) == 4
 
         for player in room.players: 
             for card in player.hand: 
-                assert card.type == 'ACCION'
+                assert card.type == 'ALEJATE'
 
         for card in room.available_cards:
             assert card.name != 'La cosa'
 
-        for player in room.players:
-            assert len(player.hand) == 4
 
   
         
