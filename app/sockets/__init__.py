@@ -24,7 +24,7 @@ async def connect(sid, environ, auth):
     ps = PlayersService(db)
     gs = GamesService(db)
     rs = RoomsService(db)
-    print(auth)
+    print("authentication: ", auth)
     try:
         token = auth["token"]
         ps.connect_player(token, sid)
@@ -95,16 +95,14 @@ def start_game(sid : str):
     gs = GamesService(db)
     try:
         rs.start_game(sid)
-    except Exception as e:
-        #checkear esto
-        return True, {e.__str__()}
-    print(f"Partida iniciada por el usuario {sid}")
-    try:
         players_sid = rs.get_players_sid(sid)
+        for player_sid in players_sid:
+            aux = sio_server.emit("room/start", {"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception as e:
-        return False
-    for player_sid in players_sid:
-        aux = sio_server.emit("room/start", {"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        #hay que determinar si eliminamos la partida si ocurre un error
+        print(f"error al querer iniciar la partida del jugador con sid: {sid}")
+        return True
+    print(f"Partida iniciada por el usuario {sid}")
     
 @sio_server.event
 def get_game_status(sid: str):
