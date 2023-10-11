@@ -107,8 +107,6 @@ class TestRoomsService(unittest.TestCase):
         with self.assertRaises(DuplicatePlayerNameException):
             self.rs.join_player(name='player_in_room', room_id=room.id)
 
-
-
     @db_session
     def test_initialize_deck(self):
         """
@@ -148,10 +146,7 @@ class TestRoomsService(unittest.TestCase):
 
 
         pass
-    
-    def test_join_invalid_room(self):
-        pass
-    
+        
     db_session
     def test_initial_deal_succesful(self):
         """
@@ -196,51 +191,6 @@ class TestRoomsService(unittest.TestCase):
 
         for card in room.available_cards:
             assert card.name != 'La cosa'
-
-
-  
-        
-        
-
-    @db_session
-    def test_initialize_deck(self):
-        """
-        Deberia popular el set available_cards con la cantidad de cartas correspondientes
-        """
-        Room.select().delete()
-        Player.select().delete()
-        for i in range(4, 12):
-            # eliminamos todas las partidas y jugadores de la db
-            # creamos una room
-            roomname = f"test_initialize_deck-{i}"
-            hostname = "hostname"
-            newroom = NewRoomSchema(
-                room_name   =  roomname,
-                host_name   = hostname,
-                min_players =  4,
-                max_players =  12,
-                is_private  =  False
-            )
-            self.rs.create_room(newroom)
-            
-            # obtenemos la entidad room, como es la unica tiene id=1
-            room = Room.get(name=roomname)
-
-            # creamos y unimos los jugadores
-            for j in range(i-1):
-                self.rs.join_player(name=f'player{j}', room_id=room.id)            
-
-            # inicializamos las cartas
-            self.rs.initialize_deck(room)
-
-            # probamos que esten las cartas correspondientes        
-            for card in list(room.available_cards):
-                assert card.deck <= i
-
-            assert len(room.available_cards) != 0 
-
-
-        
 
     @classmethod
     @db_session
