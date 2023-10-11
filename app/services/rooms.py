@@ -128,9 +128,17 @@ class RoomsService(DBSessionMixin):
         """
         Se cargan las cartas que se van a usar en la partida dependiendo de la cantidad de players.
         """
-        player_count = count(room.players)
-        card = list(Card.select(lambda c : c.deck <= player_count))
-        room.available_cards = card.copy()
+
+        # cantidad de jugadores
+        player_count = len(room.players)
+        # query para conseguir las cartas correspondientes a la cantidad de jugadores
+        cards = list(Card.select(lambda c : c.deck <= player_count))
+        # limpiamos los sets de relaciones
+        room.available_cards.clear()
+        room.discarted_cards.clear()
+        # agregamos las cartas
+        room.available_cards.add(cards)
+
         return 
 
     @db_session
