@@ -160,36 +160,38 @@ class TestRoomsService(unittest.TestCase):
         """
         Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
         """
-        rooms = Room.select()
-        room = rooms.first()
-        
-        
-        if rooms.count() == 0:
-            roomname = "newroom"
-            hostname = "hostname"
-            newroom = NewRoomSchema(
-                room_name   =  roomname,
-                host_name   = hostname,
-                min_players =  4,
-                max_players =  12,
-                is_private  =  False
-            )
-            self.rs.create_room(newroom)
-        else:     
-            room = rooms.first()
-            
+        Room.select().delete()
+        Player.select().delete()
+
+        roomname = "newroom"
+        hostname = "p0"
+        newroom = NewRoomSchema(
+            room_name   =  roomname,
+            host_name   = hostname,
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        room = Room.select().first()    
     
-        self.rs.join_player(self.rs, "p1", room.id)
-        self.rs.join_player(self.rs, "p2", room.id)
-        self.rs.join_player(self.rs, "p3", room.id)
-        assert room.players.count() == 4
-        self.rs.initial_deal(room)
-        assert room.discarted_cards.count() == 0
-        assert room.available_cards.count() != 0
-        are_from_deck = True
-        for card in room.available_cards:
-                are_from_deck = are_from_deck && card.deck
+        self.rs.join_player(name="p1", room_id=room.id)
+        self.rs.join_player(name="p2", room_id=room.id)
+        self.rs.join_player(name="p3", room_id=room.id)
         
+        self.rs.initial_deal(room=room)
+
+        for player in room.players: 
+            for card in player.hand: 
+                assert card.type == 'ACCION'
+
+        for card in room.available_cards:
+            assert card.name != 'La cosa'
+
+        for player in room.players:
+            assert len(player.hand) == 4
+
+  
         
         
 
