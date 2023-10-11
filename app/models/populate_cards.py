@@ -6,7 +6,6 @@
 #     deck = Required(int)
 #     type = Required(int)            # {ALEJATE, PANICO}
 #     sub_type = Optional(int)        # {CONTAGIO, ACCION, DEFENSA, OBSTACULO}
-from .db import db
 from .entities import Card
 from pony.orm import db_session
 
@@ -206,6 +205,8 @@ def populate():
 
 
 if __name__ == '__main__':
+    from .db import db
+
     populate()
     with db_session:
         print(f"Total de cartas en la db: {len(Card.select())}")
