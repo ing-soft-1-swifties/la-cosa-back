@@ -4,6 +4,7 @@ from app.models.populate_cards import populate
 from app.models.entities import Player, Room, Card
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
+from app.services.exceptions import *
 
 unittest.TestLoader.sortTestMethodsUsing = None
 
@@ -73,12 +74,40 @@ class TestRoomsService(unittest.TestCase):
         assert player_in_room is not None
         assert player_in_room in players_in_room
         
-
-    # def test_join_room_duplicate_user(self):
-    #     pass
+    @db_session
+    def test_join_invalid_room(self):
+        # borramos todas las rooms y jugadores
+        Room.select().delete()
+        Player.select().delete()
     
-    # def test_join_invalid_room(self):
-    #     pass
+        with self.assertRaises(InvalidRoomException):
+            self.rs.join_player(name='player_in_room', room_id=17128371)
+
+    @db_session
+    def test_join_room_duplicate_user(self):
+        # borramos todas las rooms y jugadores
+        Room.select().delete()
+        Player.select().delete()
+
+        # creamos una partida
+        roomname = f"test_join_room"
+        hostname = "hostname"
+        newroom = NewRoomSchema(
+            room_name   =  roomname,
+            host_name   = hostname,
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+
+        room = Room.get(name=roomname)
+        
+        self.rs.join_player(name='player_in_room', room_id=room.id)
+        with self.assertRaises(DuplicatePlayerNameException):
+            self.rs.join_player(name='player_in_room', room_id=room.id)
+
+
 
     @db_session
     def test_initialize_deck(self):
