@@ -1,10 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
-<<<<<<< HEAD
 from app.models.populate_cards import populate
-=======
->>>>>>> test-initialdeal
-from app.models.entities import Player, Room, Card
+from app.models.entities import Player, Room
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
@@ -179,7 +176,7 @@ class TestRoomsService(unittest.TestCase):
         self.rs.join_player(name="p2", room_id=room.id)
         self.rs.join_player(name="p3", room_id=room.id)
         
-        self.rs.initial_deal(room=room)
+        self.rs.initial_deal(room)
 
         for player in room.players: 
             for card in player.hand: 

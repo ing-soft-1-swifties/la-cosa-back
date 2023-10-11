@@ -157,7 +157,7 @@ class RoomsService(DBSessionMixin):
         cards_to_deal = random.sample(cards_to_deal, qty_cards_to_deal-1)
         # agrega a las cartas a repartir la carta LA COSA
         cards_to_deal.append(room.available_cards.get(name='La cosa'))
-        random.shuffle(cards_to_deal)
+        random.shuffle(cards_to_deal) 
         # eliminamos todas las cartas a repartir del mazo de cartas disponibles
         for card in list(cards_to_deal):
             room.available_cards.remove(card)
@@ -169,6 +169,13 @@ class RoomsService(DBSessionMixin):
                 player.hand.add(cards_to_deal[players_dealed*4 + card_index])
             
             players_dealed += 1
+
+        qty_cards_to_deal = len(room.players) *4
+        cards_to_deal.add(list(room.available_cards.select(lambda card: card.name != 'La cosa' and card.type == 'ACCION')))
+        cards_to_deal
+
+
+        
         return
     
     @db_session
