@@ -26,7 +26,7 @@ class RoomsService(DBSessionMixin):
         
         token = str(uuid4())
         
-        if expected_room.players.select(lambda player : player.name == name).count() > 0:
+        if len(expected_room.players.select(lambda player : player.name == name)) > 0:
             raise DuplicatePlayerNameException()
 
 
