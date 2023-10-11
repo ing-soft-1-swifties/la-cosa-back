@@ -6,9 +6,9 @@
 #     deck = Required(int)
 #     type = Required(int)            # {ALEJATE, PANICO}
 #     sub_type = Optional(int)        # {CONTAGIO, ACCION, DEFENSA, OBSTACULO}
-
-from pony.orm import db_session
+from .db import db
 from .entities import Card
+from pony.orm import db_session
 
 cardsJSON = [
     {
@@ -196,8 +196,16 @@ cardsJSON = [
     }
 ]
 
-with db_session:
-    for i in range(len(cardsJSON)):
-        for j in range(len(cardsJSON[i]['amounts'])):
-            for k in range(cardsJSON[i]['amounts'][j]):
-                Card(name=cardsJSON[i]['name'], deck=j+4, type='ACCION')
+
+def populate():
+    with db_session:
+        for i in range(len(cardsJSON)):
+            for j in range(len(cardsJSON[i]['amounts'])):
+                for k in range(cardsJSON[i]['amounts'][j]):
+                    Card(name=cardsJSON[i]['name'], deck=j+4, type=cardsJSON[i]['type'], sub_type=cardsJSON[i]['sub-type'])
+
+
+if __name__ == '__main__':
+    populate()
+    with db_session:
+        print(f"Total de cartas en la db: {len(Card.select())}")
