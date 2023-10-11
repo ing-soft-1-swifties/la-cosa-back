@@ -7,4 +7,5 @@ populate_cards:
 	python3 -m app.models.populate_cards
 	
 
-
+run:
+	python3 main.py

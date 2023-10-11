@@ -45,7 +45,6 @@ class TestRoomsService(unittest.TestCase):
     def test_join_room(self):
         pass
         
-    
     def test_join_room_duplicate_user(self):
         pass
     

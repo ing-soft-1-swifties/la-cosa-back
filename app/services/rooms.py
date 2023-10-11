@@ -17,7 +17,7 @@ class RoomsService(DBSessionMixin):
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
-        if expected_room.status != 0:   #not in lobby
+        if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.players) >= expected_room.max_players:
             raise TooManyPlayersException()
@@ -39,7 +39,7 @@ class RoomsService(DBSessionMixin):
         new_room = Room(
                 min_players = room.min_players, 
                 max_players = room.max_players, 
-                status=0, 
+                status="LOBBY", 
                 is_private=room.is_private,
                 name = room.room_name
         )
@@ -76,18 +76,18 @@ class RoomsService(DBSessionMixin):
         #expected_room = Room.get(lambda room : room.players.__contains__(expected_player.id))
         if expected_room is None:
             raise InvalidRoomException()
-        if expected_room.status != 0:   #not in lobby
+        if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.playes) < expected_room.min_players:
             raise NotEnoughPlayersException()
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
-        expected_room.status = 1    #in game
+        expected_room.status = "IN_GAME"    #in game
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
         try:
-            self.initial_deal(expected_room)
+            self.initialize_deck(expected_room)
             self.initial_deal(expected_room)
         except Exception as e:
             print("Error al iniciar mazo y repartir")
@@ -104,7 +104,7 @@ class RoomsService(DBSessionMixin):
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
-        expected_room.status = 2    #end
+        expected_room.status = "FINISH"    #end
         #capaz falta algo
 
     @db_session
@@ -122,7 +122,6 @@ class RoomsService(DBSessionMixin):
 
         return [get_json(room) for room in Room.select()]
     
-
     @db_session
     def initialize_deck(self, room : Room):
         """
@@ -167,7 +166,8 @@ class RoomsService(DBSessionMixin):
             
             players_dealed += 1
         return
-
-
-
-
+    
+    @db_session
+    def discard_card(self, player: Player, card: Card):
+        pass
+    
