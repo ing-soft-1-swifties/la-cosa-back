@@ -88,8 +88,7 @@ class RoomsService(DBSessionMixin):
             raise NotEnoughPlayersException()
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
-        #this line was comented for recicling rooms, uncomment asp
-        #expected_room.status = "IN_GAME"    #in game
+        expected_room.status = "IN_GAME"    #in game
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
