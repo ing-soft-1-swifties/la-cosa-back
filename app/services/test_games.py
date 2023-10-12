@@ -147,6 +147,9 @@ class TestRoomsService(unittest.TestCase):
         with self.assertRaises(InvalidRoomException):
             self.gs.discard_card(player, card)
 
+    # @db_session
+    # def test_give_card_with_invalid_card(self):
+    #     TODO: 
 
     @classmethod
     @db_session
