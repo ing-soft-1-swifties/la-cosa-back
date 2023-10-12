@@ -129,21 +129,29 @@ class GamesService(DBSessionMixin):
 
         Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
         """
-
-        # for player in list(room.players.select(lambda p : p.rol )):
-        condition_cosa_is_dead = len(room.players.select(lambda p : p.rol == 'LA_COSA' and p.status == 'MUERTO')) == 0
-        if condition_cosa_is_dead:
-            return 'HUMANS_WON'
-        else:
-            condition_cosa_is_alone = len(room.players.select(lambda p : p.status != 'MUERTO')) == 1 and len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol == 'LA_COSA'))
-            if condition_cosa_is_alone:
-                return 'LA_COSA_WON'
+        
+        ret = 'GAME_IN_PROGRESS'
+        # Si queda solo un sobreviviente     
+        if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
+            survivor : Player = room.players.select(lambda p : p.status != 'MUERTO')
+            # Chequeo si es la cosa
+            if survivor.rol == 'LA_COSA':
+                ret='LA_COSA_WON'
             else: 
-                return 'GAME_IN_PROGRESS'
+                ret='HUMANS_WON'
         
+        # Chequeo el estado de la cosa
+        la_cosa : Player = room.players.select(lambda p : p.rol == 'LA_COSA')
+        if la_cosa.status == 'MUERTO':
+            ret='HUMANS_WON'
         
-
-
+        qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
+        qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
+        if qty_alive_non_human_players == qty_alive_players: 
+            ret='LA_COSA_WON'
+                
+        return ret
+    
     @db_session
     def discard_card(self, player: Player, card: Card):
         """
