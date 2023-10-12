@@ -172,7 +172,10 @@ class RoomsService(DBSessionMixin):
         for player in list(room.players):
             for card_index in range(4):
                 player.hand.add(cards_to_deal.pop(len(cards_to_deal)-1))
-                
+            
+            for card in player.hand:
+                if card.name == 'La cosa':
+                    player.rol = 'LA_COSA'
         return
     
     @db_session

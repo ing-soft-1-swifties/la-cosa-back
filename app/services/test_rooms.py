@@ -187,7 +187,15 @@ class TestRoomsService(unittest.TestCase):
 
         for card in room.available_cards:
             assert card.name != 'La cosa'
+            
+        qty_la_cosa = 0    
+        for player in room.players:
+            for card in player.hand:
+                if card.name == 'La cosa':
+                    assert player.rol == 'LA_COSA'
+                    qty_la_cosa += 1
 
+        assert qty_la_cosa == 1
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
