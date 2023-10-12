@@ -145,8 +145,8 @@ class GamesService(DBSessionMixin):
         room = player.playing
         
         # Jugador no esta en la sala
-        if room is None:
-            raise PlayerNotInRoom()
+        if room is None or room.status != 'IN_GAME':
+            raise InvalidRoomException()
 
         # La carta no pertenece a las cartas del jugador
         if card not in player.hand:

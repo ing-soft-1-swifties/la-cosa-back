@@ -39,8 +39,5 @@ class TooManyPlayersException(Exception):
 class CardNotInPlayerHandExeption(Exception):
     pass
 
-class PlayerNotInRoom(Exception):
-    pass
-
 class PlayerNotInTurn(Exception):
     pass
