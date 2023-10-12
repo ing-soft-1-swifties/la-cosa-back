@@ -63,12 +63,7 @@ class TestRoomsService(unittest.TestCase):
 
         self.gs.give_card(player, room)
         assert len(player.hand) == 5
-
-    # @db_session
-    # def test_give_card_with_shuffle(self):
-    #     # TODO: no se puede hacer hasta que este implementado y testeado `discard_card` 
-    #     pass
-
+        
     @db_session
     def test_discard_card_successful(self):
         # room del jugador
@@ -150,6 +145,38 @@ class TestRoomsService(unittest.TestCase):
     # @db_session
     # def test_give_card_with_invalid_card(self):
     #     TODO: 
+
+    @db_session 
+    def test_is_game_finished(self):
+        
+        room:Room = self.create_valid_room(roomname='test_is_game_finished', qty_players=4)
+        
+        for player in room.players.select():
+            player.rol = 'HUMANO'
+            player.status = 'VIVO'
+        list(room.players.select())[0].rol = 'LA_COSA'
+        
+        assert self.gs.is_game_finished(room) == 'GAME_IN_PROGRESS'
+        
+        list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'MUERTO'
+        
+        assert self.gs.is_game_finished(room) == 'HUMANS_WON' 
+        
+        for player in room.players.select():
+            player.rol = 'INFECTADO'
+            player.status = 'VIVO'
+        list(room.players.select())[0].rol = 'LA_COSA'
+        
+        assert self.gs.is_game_finished(room) == 'LA_COSA_WON' 
+               
+        for player in room.players.select():
+            player.rol = 'HUMANO'
+            player.status = 'MUERTO'
+        list(room.players.select())[0].rol = 'LA_COSA' 
+        list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'VIVO'
+
+        assert self.gs.is_game_finished(room) == 'LA_COSA_WON'
+        
 
     @classmethod
     @db_session
