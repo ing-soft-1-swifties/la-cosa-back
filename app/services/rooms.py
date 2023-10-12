@@ -109,8 +109,9 @@ class RoomsService(DBSessionMixin):
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
-        expected_room.status = "FINISH"    #end
-        #capaz falta algo
+        for player in expected_room.players:
+            player.delete()
+        expected_room.delete()
 
     @db_session
     def list_rooms(self):

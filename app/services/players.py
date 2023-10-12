@@ -20,6 +20,7 @@ class PlayersService(DBSessionMixin):
         if expected_player is None:
             raise InvalidSidException()
         (expected_player.playing).players.remove(expected_player)
+        expected_player.delete()
         #falta borrar el player de la base de datos
 
     @db_session
