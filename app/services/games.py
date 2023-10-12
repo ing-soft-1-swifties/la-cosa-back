@@ -4,7 +4,6 @@ from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
-import random
 
 class GamesService(DBSessionMixin):
 
@@ -112,12 +111,14 @@ class GamesService(DBSessionMixin):
             # asignamos el deck temporal a las cartas disponibles 
             room.available_cards.add(temp_deck)
         
-        # 
-        card_to_deal = list(room.available_cards.random(1))
+        # obtenemos una carta y la eliminamos
+        card_to_deal = list(room.available_cards.random(1))[0]
         room.available_cards.remove(card_to_deal)
         
+        # agregamos la carta al jugador
         player.hand.add(card_to_deal)
 
+        # computamos el JSON con la info de la carta y retornamos.
         return self.card_to_JSON(card_to_deal)
 
     @db_session

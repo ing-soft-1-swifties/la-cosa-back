@@ -27,25 +27,24 @@ class TestRoomsService(unittest.TestCase):
         populate()
         
     @db_session
-    def create_valid_room(self) -> Room:
+    def create_valid_room(self, roomname:str='newroom', qty_players:int=12) -> Room:
         
         Room.select().delete()
         Player.select().delete()
 
-
         rs = RoomsService(self.db)
 
         newroom = NewRoomSchema(
-            room_name   = "roomName",
+            room_name   = roomname,
             host_name   = "hostName",
             min_players =  4,
             max_players =  12,
             is_private  =  False
         )
         rs.create_room(newroom)
-        room = Room.get(name="roomName")
+        room = Room.get(name=roomname)
 
-        for i in range(10):
+        for i in range(qty_players-1):
             rs.join_player(f"player-{i}", room.id)
 
         rs.initialize_deck(room)
@@ -55,12 +54,14 @@ class TestRoomsService(unittest.TestCase):
         return room
 
 
-
+    @db_session
     def test_give_card(self):
 
-        
+        room = self.create_valid_room(roomname='test_give_card', qty_players=12)
+        player = list(room.players.random(1))[0]
 
-        assert True
+        self.gs.give_card(player, room)
+        assert len(player.hand) == 5
 
 
     @classmethod
