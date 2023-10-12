@@ -55,7 +55,7 @@ class TestRoomsService(unittest.TestCase):
 
 
     @db_session
-    def test_give_card(self):
+    def test_give_card_without_shuffle(self):
 
         room = self.create_valid_room(roomname='test_give_card', qty_players=12)
         player = list(room.players.random(1))[0]
@@ -63,6 +63,9 @@ class TestRoomsService(unittest.TestCase):
         self.gs.give_card(player, room)
         assert len(player.hand) == 5
 
+    def test_give_card_with_shuffle(self):
+        # TODO: no se puede hacer hasta que este implementado y testeado `discard_card` 
+        pass
 
     @classmethod
     @db_session
