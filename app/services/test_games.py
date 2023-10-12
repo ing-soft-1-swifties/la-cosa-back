@@ -70,8 +70,43 @@ class TestRoomsService(unittest.TestCase):
 
     @db_session
     def test_discard_card_successful(self):
-        pass
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
 
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position
+
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.add(card)
+
+        cards_in_hand_before = len(player.hand)
+        self.gs.discard_card(player, card)
+
+        assert card not in player.hand
+        assert card in room.discarted_cards
+        assert len(player.hand) == cards_in_hand_before - 1 
+
+    @db_session
+    def test_discard_card_invalid_turn(self):
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position + 1
+        
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.add(card)
+
+        with self.assertRaises(PlayerNotInTurn):
+            self.gs.discard_card(player, card)
 
     @classmethod
     @db_session

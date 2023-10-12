@@ -149,7 +149,7 @@ class GamesService(DBSessionMixin):
             raise PlayerNotInRoom()
 
         # La carta no pertenece a las cartas del jugador
-        if card not in list(player.hand):
+        if card not in player.hand:
             raise CardNotInPlayerHandExeption()        
 
         # Jugador no esta en su turno
