@@ -121,8 +121,49 @@ class GamesService(DBSessionMixin):
         # computamos el JSON con la info de la carta y retornamos.
         return self.card_to_JSON(card_to_deal)
 
+
     @db_session
-    def discard_card(self, player:Player, room:Room):
-        #hay que verificar que pueda, si es asi se agrega al mazo de descartes y se quita del jugador
-        pass
-        return 
+    def discard_card(self, player: Player, card: Card):
+        """
+        Descarta una carta del jugador en la sala actual.
+
+        Parámetros:
+            player (Player): El jugador que desea descartar una carta.
+            card (Card): La carta que el jugador desea descartar.
+
+        Excepciones:
+            PlayerNotInRoom: Si el jugador no se encuentra en ninguna sala.
+            CardNotInPlayerHandException: Si la carta no pertenece a las cartas del jugador.
+            PlayerNotInTurn: Si el jugador no se encuentra en su turno.
+            InvalidCardException: Si se intenta descartar una carta inválida, como "Infectado" cuando el jugador es un "INFECTADO"
+                y solo tiene una carta "Infectado" en su mano, o una carta "La cosa".
+
+        Retorna:
+            None
+        """
+        # room que esta jugando el jugador
+        room = player.playing
+        
+        # Jugador no esta en la sala
+        if room is None:
+            raise PlayerNotInRoom()
+
+        # La carta no pertenece a las cartas del jugador
+        if card not in list(player.hand):
+            raise CardNotInPlayerHandExeption()        
+
+        # Jugador no esta en su turno
+        if player.position != room.turn:
+            raise PlayerNotInTurn()
+
+        # Carta invalida
+        infected_count = len(player.hand.select(name='Infectado'))
+        invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
+        invalid_discard_la_cosa = card.name == 'La cosa'
+        if invalid_discard_infected or invalid_discard_la_cosa:
+            raise InvalidCardException() 
+
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+
+        return

@@ -67,6 +67,12 @@ class TestRoomsService(unittest.TestCase):
         # TODO: no se puede hacer hasta que este implementado y testeado `discard_card` 
         pass
 
+
+    @db_session
+    def test_discard_card_successful(self):
+        pass
+
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
