@@ -147,7 +147,7 @@ class TestRoomsService(unittest.TestCase):
 
         pass
         
-    db_session
+    @db_session
     def test_initial_deal_succesful(self):
         """
         Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
