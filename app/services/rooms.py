@@ -18,20 +18,17 @@ class RoomsService(DBSessionMixin):
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
-        
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
-        
         if len(expected_room.players) >= expected_room.max_players:
             raise TooManyPlayersException()
-        
         token = str(uuid4())
         
         if len(expected_room.players.select(lambda player : player.name == name)) > 0:
             raise DuplicatePlayerNameException()
 
 
-        new_player = Player(name=name, token=token, playing=expected_room, is_host=False)
+        new_player = Player(name = name, token=token, playing=expected_room, is_host = False)
 
         expected_room.players.add(new_player)
 
@@ -91,6 +88,7 @@ class RoomsService(DBSessionMixin):
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
+        expected_room.machine_state = "INITIAL"
         try:
             self.initialize_deck(expected_room)
             self.initial_deal(expected_room)
@@ -112,6 +110,7 @@ class RoomsService(DBSessionMixin):
         for player in expected_room.players:
             player.delete()
         expected_room.delete()
+
 
     @db_session
     def list_rooms(self):

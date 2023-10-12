@@ -91,13 +91,28 @@ async def end_game(sid : str):
         await sio_server.disconnect(player_sid)
     return False    #se cierra la conexion
 
+async def give_card(sid : str):
+    rs = RoomsService(db)
+    gs = GamesService(db)
+    ps = PlayersService(db)
+    try:
+        (card_json, player_sid) = gs.next_turn(sid)   #entrega carta a quien le toca
+        players_sid = rs.get_players_sid(sid)
+        for player_sid in players_sid:
+            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(player_sid), "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_game_player_steal_card", {"cards":{card_json}, "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+    except Exception:
+        #falta determinar que hacemos si falla
+        pass
+
 @sio_server.event
 async def room_start_game(sid : str): 
     # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
+    ps = PlayersService(db)
     try:
-        rs.start_game(sid)
+        rs.start_game(sid)  #prepara lo mazos y reparte
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
             await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
@@ -105,8 +120,17 @@ async def room_start_game(sid : str):
         rootlog.exception(f"error al querer iniciar la partida del jugador con sid: {sid}")
         #hay que determinar si eliminamos la partida si ocurre un error
         return True
-    print(f"Partida iniciada por el usuario {sid}")
+    print(f"Partida iniciada por el jugador con socket_id = {sid}")
     
+# @sio_server.event
+# async def play_card(sid : str, data): 
+#     # Aquí puedes realizar la lógica para iniciar la partida
+#     rs = RoomsService(db)
+#     gs = GamesService(db)
+#     ps = PlayersService(db)
+#     try:
+#     except Exception as e:
+
 # @sio_server.event
 # def get_game_status(sid: str):
 #     gs = GamesService(db)

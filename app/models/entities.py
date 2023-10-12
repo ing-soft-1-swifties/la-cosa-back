@@ -1,4 +1,4 @@
-from pony.orm import (Database, PrimaryKey, Required, Set, Optional)
+from pony.orm import (Database, PrimaryKey, Required, Set, Optional, Json)
 
 db = Database()
 
@@ -49,6 +49,8 @@ class Room(db.Entity):
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')
+    machine_state = Optional(str)
+    machine_state_options = Optional(Json)
 
     def get_host(self):
         for player in self.players:
