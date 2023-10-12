@@ -13,6 +13,6 @@
 # Makefile
 - **populate_cards**: crea en la base de datos todas las entidades de cartas
 - **cleandb**: borra la base de datos (elimina el archivo de sqlite)
-- **test**: test
-- **test-cov**: test
-
+- **test**: corre todos los tests
+- **test-cov**: corre todos los tests y dice coverage
+- **test-report**: crea un reporte de test, donde se puede ver toda la info de coverage

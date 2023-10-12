@@ -99,18 +99,27 @@ class GamesService(DBSessionMixin):
     def give_card(self, player:Player, room:Room):
         # se entrega una carta del mazo de disponibles al usuario
         # se borra la carta de room.available, se asigna la carta al usuario y se retorna el objeto carta
-        if len(room.available_cards) > 0:
-            card_to_deal = room.available_cards.random(1)
-        else:
-            #habria que mezclar el mazo de descartes y que sea el nuevo mazo de disponibles
-            raise Exception
-            random.shuffle(room.discarted_cards)
-            room.available_cards = room.discarted_cards
-            rooom.discard_card.clear()
-            #lo de arriba es una aproximacion, falta ver que funcione
-        player.hand.add(card_to_deal)
+
+        shuffle = len(room.available_cards) == 0
+            
+        if shuffle:
+            # deck temporal que contiene las cartas descartadas
+            temp_deck = list(room.discarted_cards)
+            # eliminamos todas las cartas descartadas
+            room.discarted_cards.clear()
+            room.available_cards.clear()
+            # asignamos el deck temporal a las cartas disponibles 
+            room.available_cards.add(temp_deck)
+        
+        # obtenemos una carta y la eliminamos
+        card_to_deal = list(room.available_cards.random(1))[0]
         room.available_cards.remove(card_to_deal)
-        return self.card_to_JSON(card_to_deal) 
+        
+        # agregamos la carta al jugador
+        player.hand.add(card_to_deal)
+
+        # computamos el JSON con la info de la carta y retornamos.
+        return self.card_to_JSON(card_to_deal)
 
     @db_session
     def discard_card(self, player:Player, room:Room):
