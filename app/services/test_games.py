@@ -1,6 +1,6 @@
 import unittest
 from pony.orm import Database, db_session
-from app.models.entities import Player, Room
+from app.models.entities import Player, Room, Card
 from app.models.populate_cards import populate
 from app.services.games import GamesService
 from app.services.rooms import RoomsService
@@ -15,11 +15,23 @@ class TestRoomsService(unittest.TestCase):
     db: Database
     gs: GamesService
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        from app.models.testing_db import db
+        cls.db = db
+        cls.gs = GamesService(db = cls.db) 
+        with db_session:
+            Room.select().delete()
+            Player.select().delete()
+            Card.select().delete()
+        populate()
+        
     @db_session
     def create_valid_room(self) -> Room:
         
         Room.select().delete()
         Player.select().delete()
+
 
         rs = RoomsService(self.db)
 
@@ -42,20 +54,11 @@ class TestRoomsService(unittest.TestCase):
 
         return room
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        from app.models.testing_db import db
-        cls.db = db
-        cls.gs = GamesService(db = cls.db) 
-        populate()
+
 
     def test_give_card(self):
-        room = self.create_valid_room()
 
-        print(list(room.players))
-
-
-        # pytest -v app/services/test_games.py
+        
 
         assert True
 
@@ -65,4 +68,4 @@ class TestRoomsService(unittest.TestCase):
     def tearDownClass(cls) -> None:
         Room.select().delete()
         Player.select().delete()
-        pass
+        Card.select().delete()

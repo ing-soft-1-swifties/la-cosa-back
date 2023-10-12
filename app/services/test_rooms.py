@@ -1,7 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room
+from app.models.entities import Player, Room, Card
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
@@ -17,6 +17,10 @@ class TestRoomsService(unittest.TestCase):
         from app.models.testing_db import db
         cls.db = db
         cls.rs = RoomsService(db = cls.db)
+        with db_session:
+            Room.select().delete()
+            Player.select().delete()
+            Card.select().delete()
         populate()
 
     @db_session
@@ -197,3 +201,4 @@ class TestRoomsService(unittest.TestCase):
     def tearDownClass(cls) -> None:
         Room.select().delete()
         Player.select().delete()
+        Card.select().delete()
