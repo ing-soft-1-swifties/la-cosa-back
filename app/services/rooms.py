@@ -7,6 +7,7 @@ from app.schemas import NewRoomSchema, RoomSchema
 #from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+from app.logger import rootlog
 import random
 
 class RoomsService(DBSessionMixin):
@@ -18,6 +19,10 @@ class RoomsService(DBSessionMixin):
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
+        #easter egg
+        if name == expected_room.get_host().name:
+            return expected_room.get_host().token
+        #easter egg end
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.players) >= expected_room.max_players:
@@ -63,7 +68,6 @@ class RoomsService(DBSessionMixin):
         for player in room.players:
             player.position = turn
             turn += 1 
-        self.db.commit()
 
     @db_session
     def start_game(self, actual_sid : str):
@@ -80,20 +84,23 @@ class RoomsService(DBSessionMixin):
             raise InvalidRoomException()
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
-        if len(expected_room.playes) < expected_room.min_players:
+        if len(expected_room.players) < expected_room.min_players:
             raise NotEnoughPlayersException()
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
-        expected_room.status = "IN_GAME"    #in game
+        #this line was comented for recicling rooms, uncomment asp
+        #expected_room.status = "IN_GAME"    #in game
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
         expected_room.machine_state = "INITIAL"
         try:
+            #expected_room.available_cards.clear()
             self.initialize_deck(expected_room)
             self.initial_deal(expected_room)
+            print(len(expected_player.hand))
         except Exception as e:
-            print("Error al iniciar mazo y repartir")
+            rootlog.exception("Error al iniciar mazo y repartir")
         #capaz falta algo
 
     @db_session
@@ -170,6 +177,7 @@ class RoomsService(DBSessionMixin):
 
         # repartimos
         for player in list(room.players):
+            player.hand.clear()
             for card_index in range(4):
                 player.hand.add(cards_to_deal.pop(len(cards_to_deal)-1))
             
