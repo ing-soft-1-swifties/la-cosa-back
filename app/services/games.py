@@ -133,7 +133,7 @@ class GamesService(DBSessionMixin):
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
         if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
-            survivor : Player = room.players.select(lambda p : p.status != 'MUERTO')
+            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0]
             # Chequeo si es la cosa
             if survivor.rol == 'LA_COSA':
                 ret='LA_COSA_WON'
@@ -141,7 +141,7 @@ class GamesService(DBSessionMixin):
                 ret='HUMANS_WON'
         
         # Chequeo el estado de la cosa
-        la_cosa : Player = room.players.select(lambda p : p.rol == 'LA_COSA')
+        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0]
         if la_cosa.status == 'MUERTO':
             ret='HUMANS_WON'
         
