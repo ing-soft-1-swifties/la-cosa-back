@@ -1,7 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room, Card
+from app.models.entities import Player, Room
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
@@ -35,7 +35,7 @@ class TestRoomsService(unittest.TestCase):
         )
         self.rs.create_room(newroom)
         rooms = Room.select()
-        assert rooms.count() == 1;
+        assert rooms.count() == 1
         room = rooms.first()
         assert room is not None
         assert room.name == roomname 
@@ -107,8 +107,6 @@ class TestRoomsService(unittest.TestCase):
         with self.assertRaises(DuplicatePlayerNameException):
             self.rs.join_player(name='player_in_room', room_id=room.id)
 
-
-
     @db_session
     def test_initialize_deck(self):
         """
@@ -146,6 +144,53 @@ class TestRoomsService(unittest.TestCase):
 
             assert len(room.available_cards) != 0 
 
+
+        pass
+        
+    @db_session
+    def test_initial_deal_succesful(self):
+        """
+        Deberia poder repartir sin errores (popular room.available_cards y las manos de cada player)
+        """
+        Room.select().delete()
+        Player.select().delete()
+
+        roomname = "newroom"
+        hostname = "p0"
+        newroom = NewRoomSchema(
+            room_name   =  roomname,
+            host_name   = hostname,
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        room = Room.select().first()    
+    
+        self.rs.join_player(name="p1", room_id=room.id)
+        self.rs.join_player(name="p2", room_id=room.id)
+        self.rs.join_player(name="p3", room_id=room.id)
+        
+        
+        self.rs.initialize_deck(room)
+        print(list(room.available_cards))
+        print(len(room.available_cards))
+        
+        self.rs.initial_deal(room)
+
+        print(list(room.available_cards))
+        print(len(room.available_cards))
+
+        for player in room.players:
+            print(list(player.hand))
+            assert len(player.hand) == 4
+
+        for player in room.players: 
+            for card in player.hand: 
+                assert card.type == 'ALEJATE'
+
+        for card in room.available_cards:
+            assert card.name != 'La cosa'
 
     @classmethod
     @db_session
