@@ -142,9 +142,41 @@ class TestRoomsService(unittest.TestCase):
         with self.assertRaises(InvalidRoomException):
             self.gs.discard_card(player, card)
 
-    # @db_session
-    # def test_give_card_with_invalid_card(self):
-    #     TODO: 
+    @db_session
+    def test_give_card_with_invalid_card(self):
+        # creamos una room con 4 jugadores
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position
+
+        # eliminamos las cartas de infeccion del jugador
+        infected_player_cards = list(player.hand.select(lambda c: c.name == 'Infectado'))
+        player.hand.remove(infected_player_cards)
+
+        # conseguimos una carta de infeccion y se la agregamos al jugador
+        card = list(Card.select(lambda c: c.name == 'Infectado').random(1))[0]
+        player.hand.add(card)
+
+        # cambiamos el rol del jugador
+        player.rol = 'INFECTADO'
+
+        # intentamos descartar la carta de infeccion
+        with self.assertRaises(InvalidCardException):
+            self.gs.discard_card(player, card)
+
+        # Test: el jugador con rol "la cosa" intenta descartar la cosa
+        
+        # conseguimos la carta y se la damos al jugador
+        card = list(Card.select(lambda c: c.name == 'La cosa').random(1))[0]
+        player.hand.add(card)
+        #intentamos descartar la carta "la cosa" (no se puede descartar en ningun caso)
+        with self.assertRaises(InvalidCardException):
+            self.gs.discard_card(player, card)
+
 
     @db_session 
     def test_end_game_condition(self):
