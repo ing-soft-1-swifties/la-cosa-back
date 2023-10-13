@@ -179,7 +179,3 @@ class RoomsService(DBSessionMixin):
                     player.rol = 'LA_COSA'
         return
     
-    @db_session
-    def discard_card(self, player: Player, card: Card):
-        pass
-    

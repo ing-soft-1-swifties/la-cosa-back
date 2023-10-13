@@ -47,6 +47,7 @@ class TestRoomsService(unittest.TestCase):
         for i in range(qty_players-1):
             rs.join_player(f"player-{i}", room.id)
 
+        room.status = 'IN_GAME' 
         rs.initialize_deck(room)
         rs.initial_deal(room)
         rs.assign_turns(room)
@@ -63,9 +64,92 @@ class TestRoomsService(unittest.TestCase):
         self.gs.give_card(player, room)
         assert len(player.hand) == 5
 
-    def test_give_card_with_shuffle(self):
-        # TODO: no se puede hacer hasta que este implementado y testeado `discard_card` 
-        pass
+    # @db_session
+    # def test_give_card_with_shuffle(self):
+    #     # TODO: no se puede hacer hasta que este implementado y testeado `discard_card` 
+    #     pass
+
+    @db_session
+    def test_discard_card_successful(self):
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position
+
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.add(card)
+
+        cards_in_hand_before = len(player.hand)
+        self.gs.discard_card(player, card)
+
+        assert card not in player.hand
+        assert card in room.discarted_cards
+        assert len(player.hand) == cards_in_hand_before - 1 
+
+    @db_session
+    def test_discard_card_invalid_turn(self):
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position + 1
+        
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.add(card)
+
+        with self.assertRaises(PlayerNotInTurn):
+            self.gs.discard_card(player, card)
+
+    @db_session
+    def test_discard_card_invalid_not_in_hand(self):
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position
+
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.remove(card)
+        
+        with self.assertRaises(CardNotInPlayerHandExeption):
+            self.gs.discard_card(player, card)
+
+    @db_session
+    def test_discard_card_invalid_room(self):
+        # room del jugador
+        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+
+        room.status = 'LOBBY'
+
+        # seleccionamos un jugador al azar
+        player = list(room.players.random(1))[0]
+
+        # asignamos el turno
+        room.turn = player.position
+
+        # conseguimos una carta
+        card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
+        player.hand.remove(card)
+        
+        with self.assertRaises(InvalidRoomException):
+            self.gs.discard_card(player, card)
+
+    # @db_session
+    # def test_give_card_with_invalid_card(self):
+    #     TODO: 
 
     @classmethod
     @db_session
