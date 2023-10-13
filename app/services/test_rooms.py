@@ -196,6 +196,44 @@ class TestRoomsService(unittest.TestCase):
                     qty_la_cosa += 1
 
         assert qty_la_cosa == 1
+
+
+    @db_session
+    def create_valid_room(self, roomname:str='newroom', qty_players:int=12) -> Room:
+        Room.select().delete()
+        Player.select().delete()
+        newroom = NewRoomSchema(
+            room_name   = roomname,
+            host_name   = "hostName",
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        room = Room.get(name=roomname)
+        for i in range(qty_players-1):
+            self.rs.join_player(f"player-{i}", room.id)
+        return room
+
+    @db_session
+    def test_list_rooms(self):
+        Room.select().delete()
+        Player.select().delete()
+
+        assert self.rs.list_rooms() == []
+
+        room = self.create_valid_room(roomname='test_list_rooms',qty_players=7)
+        response = self.rs.list_rooms()
+
+        assert len(response) == 1
+        assert response[0]['id'] == room.id
+        assert response[0]['name'] == room.name
+        assert response[0]['max_players'] == room.max_players
+        assert response[0]['min_players'] == room.min_players
+        assert response[0]['players_count'] == len(room.players)
+        assert response[0]['is_private'] == room.is_private
+
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
