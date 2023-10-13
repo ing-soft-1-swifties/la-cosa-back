@@ -58,7 +58,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_give_card_without_shuffle(self):
 
-        room = self.create_valid_room(roomname='test_give_card', qty_players=12)
+        room = self.create_valid_room(roomname='test_give_card_without_shuffle', qty_players=12)
         player = list(room.players.random(1))[0]
 
         self.gs.give_card(player, room)
@@ -67,7 +67,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_discard_card_successful(self):
         # room del jugador
-        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+        room = self.create_valid_room(roomname='test_discard_card_successful', qty_players=4)
 
         # seleccionamos un jugador al azar
         player = list(room.players.random(1))[0]
@@ -89,7 +89,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_discard_card_invalid_turn(self):
         # room del jugador
-        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+        room = self.create_valid_room(roomname='test_discard_card_invalid_turn', qty_players=4)
 
         # seleccionamos un jugador al azar
         player = list(room.players.random(1))[0]
@@ -107,7 +107,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_discard_card_invalid_not_in_hand(self):
         # room del jugador
-        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+        room = self.create_valid_room(roomname='test_discard_card_invalid_not_in_hand', qty_players=4)
 
         # seleccionamos un jugador al azar
         player = list(room.players.random(1))[0]
@@ -125,7 +125,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_discard_card_invalid_room(self):
         # room del jugador
-        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+        room = self.create_valid_room(roomname='test_discard_card_invalid_room', qty_players=4)
 
         room.status = 'LOBBY'
 
@@ -145,7 +145,7 @@ class TestRoomsService(unittest.TestCase):
     @db_session
     def test_give_card_with_invalid_card(self):
         # creamos una room con 4 jugadores
-        room = self.create_valid_room(roomname='test_give_card', qty_players=4)
+        room = self.create_valid_room(roomname='test_give_card_with_invalid_card', qty_players=4)
 
         # seleccionamos un jugador al azar
         player = list(room.players.random(1))[0]
