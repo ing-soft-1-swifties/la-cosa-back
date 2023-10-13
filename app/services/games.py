@@ -122,7 +122,7 @@ class GamesService(DBSessionMixin):
         return self.card_to_JSON(card_to_deal)
     
     @db_session
-    def is_game_finished(self, room:Room) -> str:
+    def end_game_condition(self, room:Room) -> str:
         """Chequea si se finalizo la partida.
 
         Args: room (Room): current valid room

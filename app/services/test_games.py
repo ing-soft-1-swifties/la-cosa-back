@@ -147,27 +147,27 @@ class TestRoomsService(unittest.TestCase):
     #     TODO: 
 
     @db_session 
-    def test_is_game_finished(self):
+    def test_end_game_condition(self):
         
-        room:Room = self.create_valid_room(roomname='test_is_game_finished', qty_players=4)
+        room:Room = self.create_valid_room(roomname='test_end_game_condition', qty_players=4)
         
         for player in room.players.select():
             player.rol = 'HUMANO'
             player.status = 'VIVO'
         list(room.players.select())[0].rol = 'LA_COSA'
         
-        assert self.gs.is_game_finished(room) == 'GAME_IN_PROGRESS'
+        assert self.gs.end_game_condition(room) == 'GAME_IN_PROGRESS'
         
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'MUERTO'
         
-        assert self.gs.is_game_finished(room) == 'HUMANS_WON' 
+        assert self.gs.end_game_condition(room) == 'HUMANS_WON' 
         
         for player in room.players.select():
             player.rol = 'INFECTADO'
             player.status = 'VIVO'
         list(room.players.select())[0].rol = 'LA_COSA'
         
-        assert self.gs.is_game_finished(room) == 'LA_COSA_WON' 
+        assert self.gs.end_game_condition(room) == 'LA_COSA_WON' 
                
         for player in room.players.select():
             player.rol = 'HUMANO'
@@ -175,7 +175,7 @@ class TestRoomsService(unittest.TestCase):
         list(room.players.select())[0].rol = 'LA_COSA' 
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'VIVO'
 
-        assert self.gs.is_game_finished(room) == 'LA_COSA_WON'
+        assert self.gs.end_game_condition(room) == 'LA_COSA_WON'
         
 
     @classmethod
