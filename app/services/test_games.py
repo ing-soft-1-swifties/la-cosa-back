@@ -206,9 +206,11 @@ class TestRoomsService(unittest.TestCase):
             player.status = 'MUERTO'
         list(room.players.select())[0].rol = 'LA_COSA' 
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'VIVO'
-
         assert self.gs.end_game_condition(room) == 'LA_COSA_WON'
         
+        list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'MUERTO'
+        list(room.players.select(lambda p: p.rol != 'LA_COSA'))[0].status = 'VIVO'
+        assert self.gs.end_game_condition(room) == 'HUMANS_WON'
 
     @classmethod
     @db_session
