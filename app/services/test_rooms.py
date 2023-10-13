@@ -24,6 +24,23 @@ class TestRoomsService(unittest.TestCase):
         populate()
 
     @db_session
+    def create_valid_room(self, roomname:str='newroom', qty_players:int=12) -> Room:
+        Room.select().delete()
+        Player.select().delete()
+        newroom = NewRoomSchema(
+            room_name   = roomname,
+            host_name   = "hostName",
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        room = Room.get(name=roomname)
+        for i in range(qty_players-1):
+            self.rs.join_player(f"player-{i}", room.id)
+        return room
+
+    @db_session
     def test_create_room_succesful(self):
         """
         Deberia poder crear esta Room sin errores
@@ -53,6 +70,7 @@ class TestRoomsService(unittest.TestCase):
         Deberia unir un jugador a una partida
         """
         # borramos todas las rooms y jugadores
+        
         Room.select().delete()
         Player.select().delete()
 
@@ -68,7 +86,7 @@ class TestRoomsService(unittest.TestCase):
         )
         self.rs.create_room(newroom)
 
-        room = Room.get(name=roomname)
+        room = self.create_valid_room(roomname='test_join_room')
         
         self.rs.join_player(name='player_in_room', room_id=room.id)
 
@@ -148,9 +166,6 @@ class TestRoomsService(unittest.TestCase):
 
             assert len(room.available_cards) != 0 
 
-
-        pass
-        
     @db_session
     def test_initial_deal_succesful(self):
         """
@@ -197,24 +212,6 @@ class TestRoomsService(unittest.TestCase):
 
         assert qty_la_cosa == 1
 
-
-    @db_session
-    def create_valid_room(self, roomname:str='newroom', qty_players:int=12) -> Room:
-        Room.select().delete()
-        Player.select().delete()
-        newroom = NewRoomSchema(
-            room_name   = roomname,
-            host_name   = "hostName",
-            min_players =  4,
-            max_players =  12,
-            is_private  =  False
-        )
-        self.rs.create_room(newroom)
-        room = Room.get(name=roomname)
-        for i in range(qty_players-1):
-            self.rs.join_player(f"player-{i}", room.id)
-        return room
-
     @db_session
     def test_list_rooms(self):
         Room.select().delete()
@@ -232,7 +229,6 @@ class TestRoomsService(unittest.TestCase):
         assert response[0]['min_players'] == room.min_players
         assert response[0]['players_count'] == len(room.players)
         assert response[0]['is_private'] == room.is_private
-
 
     @classmethod
     @db_session
