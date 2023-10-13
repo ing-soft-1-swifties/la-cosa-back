@@ -120,8 +120,38 @@ class GamesService(DBSessionMixin):
 
         # computamos el JSON con la info de la carta y retornamos.
         return self.card_to_JSON(card_to_deal)
+    
+    @db_session
+    def end_game_condition(self, room:Room) -> str:
+        """Chequea si se finalizo la partida.
 
+        Args: room (Room): current valid room
 
+        Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
+        """
+        
+        ret = 'GAME_IN_PROGRESS'
+        # Si queda solo un sobreviviente     
+        if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
+            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0]
+            # Chequeo si es la cosa
+            if survivor.rol == 'LA_COSA':
+                ret='LA_COSA_WON'
+            else: 
+                ret='HUMANS_WON'
+        
+        # Chequeo el estado de la cosa
+        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0]
+        if la_cosa.status == 'MUERTO':
+            ret='HUMANS_WON'
+        
+        qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
+        qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
+        if qty_alive_non_human_players == qty_alive_players: 
+            ret='LA_COSA_WON'
+                
+        return ret
+    
     @db_session
     def discard_card(self, player: Player, card: Card):
         """
