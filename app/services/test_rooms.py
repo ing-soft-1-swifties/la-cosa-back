@@ -85,9 +85,6 @@ class TestRoomsService(unittest.TestCase):
             is_private  =  False
         )
         self.rs.create_room(newroom)
-
-        room = self.create_valid_room(roomname='test_join_room')
-        
         self.rs.join_player(name='player_in_room', room_id=room.id)
 
         players_in_room = list(room.players.select())
