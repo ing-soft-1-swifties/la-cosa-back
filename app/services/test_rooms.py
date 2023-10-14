@@ -164,6 +164,7 @@ class TestRoomsService(unittest.TestCase):
 
             assert len(room.available_cards) != 0 
 
+        
     @db_session
     def test_initial_deal_succesful(self):
         """
@@ -227,6 +228,52 @@ class TestRoomsService(unittest.TestCase):
         assert response[0]['min_players'] == room.min_players
         assert response[0]['players_count'] == len(room.players)
         assert response[0]['is_private'] == room.is_private
+    def test_start_game(self):
+        """
+        Deberia popular el set available_cards con la cantidad de cartas correspondientes
+        """
+        Room.select().delete()
+        Player.select().delete()
+        for i in range(4, 12):
+            # eliminamos todas las partidas y jugadores de la db
+            # creamos una room
+            roomname = f"test_initialize_game-{i}"
+            hostname = "hostname"
+            newroom = NewRoomSchema(
+                room_name   =  roomname,
+                host_name   = hostname,
+                min_players =  4,
+                max_players =  12,
+                is_private  =  False
+            )
+            self.rs.create_room(newroom)
+            
+            # obtenemos la entidad room, como es la unica tiene id=1
+            room = Room.get(name=roomname)
+
+            # creamos y unimos los jugadores
+            for j in range(i-1):
+                self.rs.join_player(name=f'player{j}', room_id=room.id)            
+
+            # obtenemos el host de la partida y le asignamos sid = 1
+            room.get_host().sid = f"{i}"
+            #el jugador con sid = i (host) inicia la partida
+            self.rs.start_game(f"{i}")
+
+            # probamos que esten las cartas correspondientes        
+            for card in list(room.available_cards):
+                assert card.deck <= i
+
+            assert len(room.available_cards) != 0 
+            assert room.status == "IN_GAME"
+            assert len(room.players) == i
+            assigned_positions = []
+            for player in room.players:
+                assert player.position not in assigned_positions 
+                assert player.position >= 0 and player.position < i
+                assigned_positions.append(player.position)
+            assert room.turn == 0
+        pass
 
     @classmethod
     @db_session
