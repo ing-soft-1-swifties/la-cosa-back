@@ -227,3 +227,57 @@ class GamesService(DBSessionMixin):
         room.discarted_cards.add(card)
 
         return
+    
+    @db_session
+    def card_exchange(self, room: Room, sender : Player, reciever : Player, card_s : Card, card_r:Card):
+        """ Realiza el intercambio de cartas.
+        
+        Args:
+            room (Room): Room valida en la que ambos players estan jugando.
+            sender (Player): el jugador que al final de su turno comienza a intercambiar una carta
+            reciever (Player): el jugador siguiente en la orden de turno
+            card_s (Card): carta que selecciona el jugador "sender" para intercambiar
+            card_r (_type_): carta que selecciona el jugador "reciever" para intercambiar
+
+        Returns:
+            None    
+        """       
+        
+        valid_player_position = (sender.position == reciever.position -1 and room.direction) or (sender.position == reciever.position +1 and not room.direction)
+        if not valid_player_position:
+            raise InvalidExchangeParticipants()
+        
+        sender_not_in_turn = sender.position != room.turn
+        if sender_not_in_turn:
+            raise PlayerNotInTurn()
+        
+        card_not_in_hand_sender = len(sender.hand.select(name=card_s.name)) == 0
+        card_not_in_hand_reciever = len(reciever.hand.select(name=card_r.name)) == 0
+        if card_not_in_hand_reciever or card_not_in_hand_sender:
+            raise CardNotInPlayerHandExeption()
+        
+        lacosa_exchange = (card_s.name == 'La cosa') or (card_r.name == 'La cosa')
+        if lacosa_exchange:
+            raise InvalidCardException()
+        
+        infected_count_s = len(sender.hand.select(name='Infectado'))
+        infected_exchange_s = card_s.name == 'Infectado' and infected_count_s > 1 and sender.rol == 'INFECTADO' and reciever.rol != 'LA_COSA' 
+        infected_count_r = len(reciever.hand.select(name='Infectado'))
+        infected_exchange_r = card_r.name == 'Infectado' and infected_count_r > 1 and reciever.rol == 'INFECTADO' and sender.rol != 'LA_COSA' 
+        is_infection = (sender.rol == 'LA_COSA' and card_s.name == 'La cosa') or (reciever.rol=='LA_COSA' and card_r.name =='La cosa' )
+        valid_infected_exchange = infected_exchange_r or infected_exchange_s or is_infection
+        if not valid_infected_exchange:
+            raise InvalidCardException()
+        
+        if card_s.name == 'Infectado' and sender.rol == 'LA_COSA':
+            reciever.rol = 'INFECTADO'
+        
+        if card_r.name == 'Infectado' and reciever.rol == 'LA_COSA': 
+            sender.rol = 'INFECTADO'
+            
+        sender.hand.remove(card_s)
+        sender.hand.add(card_r)
+        reciever.hand.remove(card_r)
+        reciever.hand.add(card_s)
+        
+        return
