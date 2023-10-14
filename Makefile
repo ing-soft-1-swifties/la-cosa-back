@@ -1,3 +1,8 @@
+all:
+	rm -f app/models/la_cosa.sqlite
+	make populate_cards
+	python3 main.py
+	
 cleandb:
 	rm -f app/models/la_cosa.sqlite
 

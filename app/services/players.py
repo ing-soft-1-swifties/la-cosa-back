@@ -32,7 +32,7 @@ class PlayersService(DBSessionMixin):
 
     @db_session
     def has_card(self, player : Player, card : Card):
-        return Card in player.hand
+        return card in player.hand
 
     def get_name(self, sent_sid : str):
         player = Player.get(sid = sent_sid)

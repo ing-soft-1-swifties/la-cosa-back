@@ -88,16 +88,15 @@ class RoomsService(DBSessionMixin):
             raise NotEnoughPlayersException()
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
-        expected_room.status = "IN_GAME"    #in game
+        #expected_room.status = "IN_GAME"    #in game
         expected_room.turn = 0  
         expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
         expected_room.machine_state = "INITIAL"
         try:
-            #expected_room.available_cards.clear()
+            expected_room.available_cards.clear()
             self.initialize_deck(expected_room)
             self.initial_deal(expected_room)
-            print(len(expected_player.hand))
         except Exception as e:
             rootlog.exception("Error al iniciar mazo y repartir")
         #capaz falta algo
