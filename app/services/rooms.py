@@ -71,15 +71,15 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def start_game(self, actual_sid : str):
-        #si el jugador es propietario de una partida y esta no esta iniciada
-        #dadas las condiciones para que se pueda iniciar una partida, esta se inicia
+        """
+        si el jugador es propietario de una partida y esta no esta iniciada, dadas las condiciones para que se pueda iniciar una partida, esta se inicia
+        """
         expected_player = Player.get(sid = actual_sid)
         if expected_player is None:
             raise InvalidSidException()
         if expected_player.is_host == False:
             raise NotOwnerExeption()
         expected_room = expected_player.playing
-        #expected_room = Room.get(lambda room : room.players.__contains__(expected_player.id))
         if expected_room is None:
             raise InvalidRoomException()
         if expected_room.status != "LOBBY":   #not in lobby
@@ -88,18 +88,25 @@ class RoomsService(DBSessionMixin):
             raise NotEnoughPlayersException()
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
-        #expected_room.status = "IN_GAME"    #in game
-        expected_room.turn = 0  
-        expected_room.direction = True  #counterwise
         self.assign_turns(expected_room)
+        expected_room.status = "IN_GAME"    #in game
         expected_room.machine_state = "INITIAL"
         try:
-            expected_room.available_cards.clear()
             self.initialize_deck(expected_room)
+        except Exception as e:
+            rootlog.exception("Error al iniciar mazo")
+            expected_room.status = "LOBBY"    
+            expected_room.available_cards.clear()
+            raise e
+        try:
             self.initial_deal(expected_room)
         except Exception as e:
-            rootlog.exception("Error al iniciar mazo y repartir")
-        #capaz falta algo
+            rootlog.exception("Error al repartir cartas")
+            expected_room.status = "LOBBY"    
+            for player in expected_room.players:
+                player.hand.clear()
+            raise e
+
 
     @db_session
     def end_game(self, actual_sid : str):
@@ -137,7 +144,6 @@ class RoomsService(DBSessionMixin):
         """
         Se cargan las cartas que se van a usar en la partida dependiendo de la cantidad de players.
         """
-
         # cantidad de jugadores
         player_count = len(room.players)
         # query para conseguir las cartas correspondientes a la cantidad de jugadores
