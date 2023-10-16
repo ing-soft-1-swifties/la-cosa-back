@@ -196,13 +196,19 @@ class GamesService(DBSessionMixin):
         return self.card_to_JSON(card_to_deal)
     
     @db_session
-    def end_game_condition(self, room:Room) -> str:
+    def end_game_condition(self, sent_sid : str) -> str:
         """Chequea si se finalizo la partida.
 
         Args: room (Room): current valid room
 
         Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
         """
+        
+        player = Player.get(sid = sent_sid)
+        #card = Card.get(id = payload["card_id"])
+        if player is None:
+            raise InvalidSidException()
+        room = player.playing
         
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
@@ -283,5 +289,5 @@ class GamesService(DBSessionMixin):
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
-        return
+        return card.id
 

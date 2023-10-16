@@ -139,15 +139,19 @@ async def game_play_card(sid : str, data):
     try:
         print(data)
         events = gs.play_card(sid, data)
+        for player_sid in rs.get_players_sid(sid):
+            await sio_server.emit("on_game_player_play_card", {
+                "card" : data["card"],
+                "card_options" : data["card_options"],
+                "gameState": gs.get_personal_game_status_by_sid(player_sid)}, 
+                to=player_sid)
         for event in events:
             for player_sid in rs.get_players_sid(sid):
-                json = {"gameState": gs.get_personal_game_status_by_sid(sid)}
+                json = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 json.update(event[1])
                 await sio_server.emit(event[0], json, to=player_sid)
-        #events puede traer un evento que es pedir intercambio o ver si alguien se defiende...
-        #sigue en curso la partida?
-        #intercambio
-        #sigue en curso la partida?
+        
+
         await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
@@ -164,7 +168,10 @@ async def game_discard_card(sid : str, data):
     gs = GamesService(db)
     ps = PlayersService(db)
     try:
-        gs.discard_card(sid, data)
+        card_id = gs.discard_card(sid, data)
+        for player_sid in rs.get_players_sid(sid):
+            await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
         await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
