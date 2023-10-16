@@ -13,11 +13,13 @@ populate_cards:
 run:
 	python3 main.py
 
-test:
-	pytest -W ignore::DeprecationWarning
 
-test-cov:
+test:
+	pytest -W ignore::DeprecationWarning -k $(arg)
+
+test-all:
 	pytest -W ignore::DeprecationWarning --cov
+
 
 test-report:
 	pytest -W ignore::DeprecationWarning --cov --cov-report=html
