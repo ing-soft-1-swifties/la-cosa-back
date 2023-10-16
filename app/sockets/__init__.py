@@ -150,16 +150,23 @@ async def game_play_card(sid : str, data):
                 json = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 json.update(event[1])
                 await sio_server.emit(event[0], json, to=player_sid)
-        
-
-        await give_card(sid)
+        try:
+            result, json = gs.end_game_condition(sid)
+            if result != "GAME_IN_PROGRESS":
+                for player_sid in rs.get_players_sid(sid):
+                    json.update({"gameState": gs.get_personal_game_status_by_sid(player_sid)})
+                    await sio_server.emit("on_game_end", json, to=player_sid)
+            else:
+                await give_card(sid)
+        except Exception as e:
+            rootlog.exception("Fallo al verificar si algun equipo ganó")
+            #partida en posible estado inconsistente, matarla
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
         await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
     except Exception:
-        rootlog.exception("m")
+        rootlog.exception("ocurrio un error")
     return True
-
 
 @sio_server.event
 async def game_discard_card(sid : str, data): 
