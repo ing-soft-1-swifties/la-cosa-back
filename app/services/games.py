@@ -314,6 +314,7 @@ class GamesService(DBSessionMixin):
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
+        return card.id
 
     
     @db_session
