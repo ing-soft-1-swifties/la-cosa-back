@@ -63,7 +63,30 @@ class TestRoomsService(unittest.TestCase):
 
         self.gs.give_card(player)
         assert len(player.hand) == 5
+    
+    @db_session
+    def test_give_card_with_shuffle(self):
+        # creamos la room y obtenemos un jugador
+        room = self.create_valid_room(roomname='test_give_card_without_shuffle', qty_players=12)
+        player = list(room.players.random(1))[0]
         
+        # eliminamos todas las cartas de la room y de la mano del jugador
+        room.available_cards.clear()
+        room.discarted_cards.clear()
+        player.hand.clear()
+
+        # obtenemos una carta y la agregamos al mazo de descarte
+        card = list(Card.select(lambda c: c.name=='Infectado'))[0]
+        room.discarted_cards.add(card)
+        
+        # le damos una carta al jugador, como no hay cartas disponibles, deberia "mezclar" y
+        # dar la unica carta que estaba en discarted_cards
+
+        self.gs.give_card(player)
+        assert len(player.hand) == 1
+        assert card in player.hand
+
+
     @db_session
     def test_discard_card_successful(self):
         # room del jugador
