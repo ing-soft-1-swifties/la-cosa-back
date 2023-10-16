@@ -263,6 +263,11 @@ class GamesService(DBSessionMixin):
         Retorna:
             None
         """
+
+
+        # import ipdb
+        # ipdb.set_trace()
+
         # room que esta jugando el jugador
         player = Player.get(sid = sent_sid)
         #card = Card.get(id = payload["card_id"])
