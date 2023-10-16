@@ -258,29 +258,27 @@ class GamesService(DBSessionMixin):
         
         lacosa_exchange = (card_s.name == 'La cosa') or (card_r.name == 'La cosa')
         if lacosa_exchange:
-            raise InvalidCardException()
+            raise RoleCardExchange()
         
         # intercambio invalido de cartas 'Infectado': 
         # - un humano intercambia infectado
         invalid_infected_exchange = (sender.rol == 'HUMANO' and card_s.name == 'Infectado') or (reciever.rol=='HUMANO' and card_r.name=='Infectado')
         if invalid_infected_exchange:
-            raise InvalidCardException()
+            raise InvalidCardExchange()
         
         # - un infectado intercambia su ultima infeccion
         invalid_infected_exchange = False
-        qty_infected_cards_sender = len(sender.hand.select(name='Infectado'))
-        qty_infected_cards_reciever = len(reciever.hand.select(name='Infectado'))
-        invalid_infected_exchange = sender.rol=='INFECTADO' and qty_infected_cards_sender==1 and card_s.name=='Infectado'
-        invalid_infected_exchange = invalid_infected_exchange or (reciever.rol=='INFECTADO' and qty_infected_cards_reciever==1 and card_r.name=='Infectado')
+        invalid_infected_exchange = sender.rol == 'INFECTADO' and card_s.name == 'Infectado' and len(sender.hand.select(name='Infectado')) == 1
+        invalid_infected_exchange = invalid_infected_exchange or (reciever.rol == 'INFECTADO' and card_r.name == 'Infectado' and len(reciever.hand.select(name='Infectado')) == 1)
         if invalid_infected_exchange:
-            raise InvalidCardException()
+            raise RoleCardExchange()
         
         # - un infectado intercambia una carta infectado con un humano
         invalid_infected_exchange = False
         invalid_infected_exchange = sender.rol=='INFECTADO' and reciever.rol=='HUMANO' and card_s.name=='Infectado'
         invalid_infected_exchange = invalid_infected_exchange or (reciever.rol=='INFECTADO' and sender.rol=='HUMANO' and card_r.name=='Infectado')
         if invalid_infected_exchange:
-            raise InvalidCardException()
+            raise InvalidCardExchange()
         
         
         

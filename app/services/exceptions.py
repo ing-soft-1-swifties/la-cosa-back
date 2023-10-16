@@ -46,3 +46,9 @@ class PlayerNotInTurn(Exception):
 
 class InvalidExchangeParticipants(Exception):
     pass
+
+class RoleCardExchange(Exception):
+    pass
+
+class InvalidCardExchange(Exception):
+    pass
