@@ -243,7 +243,7 @@ class GamesService(DBSessionMixin):
             None    
         """       
         qty_players = len(room.players.select())
-        valid_player_position = (sender.position == (reciever.position -1)%qty_players and room.direction) or (sender.position == (reciever.position +1)%qty_players and not room.direction)
+        valid_player_position = sender.position == (reciever.position -1)%qty_players and room.direction
         if not valid_player_position:
             raise InvalidExchangeParticipants()
         

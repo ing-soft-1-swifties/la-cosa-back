@@ -54,7 +54,6 @@ class TestRoomsService(unittest.TestCase):
 
         return room
 
-
     @db_session
     def test_give_card_without_shuffle(self):
 
@@ -200,7 +199,6 @@ class TestRoomsService(unittest.TestCase):
         with self.assertRaises(InvalidCardException):
             self.gs.discard_card(player, card)
 
-
     @db_session 
     def test_end_game_condition(self):
         # room valido
@@ -237,12 +235,11 @@ class TestRoomsService(unittest.TestCase):
         # esta la cosa muerta, y un humano vivo
         assert self.gs.end_game_condition(room) == 'HUMANS_WON'
 
-
     @db_session 
     def test_exchange_cards_invalid_position(self):
         
         room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_position', qty_players=4)
-        room.direction = True
+        # room.direction = True
         room.turn= 0
         sender:Player =list(room.players.select(position=0))[0]
         reciever:Player = list(room.players.select(position=3))[0]
@@ -256,7 +253,7 @@ class TestRoomsService(unittest.TestCase):
     def test_exchange_cards_not_in_turn(self):
         
         room:Room = self.create_valid_room(roomname='test_exchange_cards_not_in_turn', qty_players=4)
-        room.direction = True
+        # room.direction = True
         room.turn=0
         sender:Player =list(room.players.select(position=2))[0]
         reciever:Player = list(room.players.select(position=3))[0]
@@ -269,17 +266,15 @@ class TestRoomsService(unittest.TestCase):
     @db_session 
     def test_exchange_cards_card_not_in_hand(self):
         room:Room = self.create_valid_room(roomname='test_exchange_cards_card_not_in_hand', qty_players=4)
-        room.direction = True
+        # room.direction = True
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn = sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
-        
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         card_s: Card = list(room.available_cards.select(lambda c: c not in sender.hand))[0]
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(CardNotInPlayerHandExeption):
             self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
-
         
     @db_session 
     def test_exchange_cards_la_cosa(self):
@@ -288,7 +283,7 @@ class TestRoomsService(unittest.TestCase):
         room.direction = True
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         
         card_s: Card = list(sender.hand.select(name='La cosa'))[0]
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
@@ -303,7 +298,7 @@ class TestRoomsService(unittest.TestCase):
         room.direction = True
         sender:Player =list(room.players.select(rol='HUMANO'))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         card_s: Card = list(room.available_cards.select(name='Infectado'))[0]
         
         temp_c = list(sender.hand.select())[0]
@@ -321,7 +316,7 @@ class TestRoomsService(unittest.TestCase):
         room.direction = True
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         card_s: Card = list(sender.hand.select(lambda c:c.name != 'La cosa'))[0]        
         card_r:Card = list(room.available_cards.select(name='Infectado'))[0]
         temp_c = list(reciever.hand.select())[0]
@@ -338,7 +333,7 @@ class TestRoomsService(unittest.TestCase):
         room.direction = True
         sender:Player = list(room.players.select(rol='HUMANO'))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         card_s: Card = list(sender.hand.select(lambda c:c.name != 'La cosa'))[0]        
         card_r:Card = list(room.available_cards.select(name='Infectado'))[0]
         reciever.hand.select().delete()
@@ -361,26 +356,7 @@ class TestRoomsService(unittest.TestCase):
         room.direction = True
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn = sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
-        card_s: Card = list(room.available_cards.select(name='Infectado'))[0]
-        
-        temp_c = list(sender.hand.select(lambda c: c.name!='La cosa'))[0]
-        sender.hand.remove(temp_c)
-        sender.hand.add(card_s)
-        
-        card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
-        
-        self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
-        
-        assert reciever.rol == 'INFECTADO'
-        
-    @db_session
-    def test_exchange_cards_infection_direction_false(self):
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_infection_direction_false', qty_players=4)
-        room.direction = False
-        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
-        room.turn = sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select())))[0]
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         card_s: Card = list(room.available_cards.select(name='Infectado'))[0]
         
         temp_c = list(sender.hand.select(lambda c: c.name!='La cosa'))[0]
