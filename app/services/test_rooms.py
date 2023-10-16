@@ -228,6 +228,8 @@ class TestRoomsService(unittest.TestCase):
         assert response[0]['min_players'] == room.min_players
         assert response[0]['players_count'] == len(room.players)
         assert response[0]['is_private'] == room.is_private
+    
+    @db_session
     def test_start_game(self):
         """
         Deberia popular el set available_cards con la cantidad de cartas correspondientes
