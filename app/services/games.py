@@ -4,6 +4,7 @@ from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
+from app.logger import rootlog
 
 class GamesService(DBSessionMixin):
 
@@ -12,9 +13,8 @@ class GamesService(DBSessionMixin):
             'id': card.id,
             'name': card.name,
             'description': card.description,
-            'deck': card.deck,
             'type': card.type,
-            'sub_type': card.sub_type
+            'subType': card.sub_type
         }
 
     @db_session
@@ -23,8 +23,10 @@ class GamesService(DBSessionMixin):
         def player_state(player):
             return{
                 "name" : player.name,
+                "id" : player.id,
                 "status" : player.status,
                 "position" : player.position,
+                "in_quarantine" : player.in_quarantine
             }
         game_state = {
             "config" : {
@@ -55,48 +57,76 @@ class GamesService(DBSessionMixin):
         player_in_game_state = self.game_state(player.playing)
         #agreguemos que cartas tiene esta persona y su estado
         player_in_game_state.update(
-            {"personalInformation": {
-                "rol" : player.rol,
+            {"playerData": {
+                "playerID": player.id,
+                "role" : player.rol,
                 "cards" : [self.card_to_JSON(card) for card in player.hand]
             }}
         )
         return player_in_game_state
 
     @db_session
-    def play_card(self, sent_sid : str, cid : int):
+    def play_card(self, sent_sid : str, payload):
         player = Player.get(sid = sent_sid)
-        card = Card.get(id = cid)
+        #card = Card.get(id = payload["card_id"])
+        card = Card.get(id = payload["card"])   #dejemos esto hasta que el front lo repare
         if player is None:
-            raise InvalidSidException
+            raise InvalidSidException()
         if card is None:
-            raise InvalidCidException
+            raise InvalidCidException()
         room = player.playing
         ps = PlayersService(self.db)
         if ps.has_card(player, card) == False:
-            raise InvalidCardException
-        
+            raise InvalidCardException()
+        if room.machine_state != "PLAYING":
+            rootlog.exception("no correspondia jugar una carta")
+            raise InvalidAccionException()
+        if room.machine_state_options["id"] != player.id:
+            rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
+            raise InvalidAccionException()
+
+        #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
+        if card.name == "Lanzallamas":
+            print("se jugo una carta de lanzallamas")
+            pass
+           
+
         #se juega una carta, notar que van a ocurrir eventos (ej:alguien muere), debemos llevar registro
         #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
         #a todos los afectados por el evento se les reenvia el game_state
-        self.next_turn(room)
+        events = []
         #el metodo anterior retorna la carta que recibio alguna la siguiente persona
         #falta implementar la muestra de eventos
-        pass
+        return events
         
     @db_session
-    def next_turn(self, room:Room):
+    def next_turn(self, sent_sid : str):    
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+        room = player.playing
         if room.turn is None:
             print("partida inicializada incorrectamente, turno no pre-seteado")
             raise Exception
-        room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status != 1)))    #cantidad de jugadores que siguen jugando
-        expected_player = Player.get(position = room.turn)
+        if room.machine_state == "INITIAL":
+            room.turn = 0
+        else:
+            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status != 1)))    #cantidad de jugadores que siguen jugando
+        expected_player = None
+        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
+        for player in room.players:
+            if player.position == room.turn:
+                expected_player = player
         if expected_player is None:
             print(f"el jugador con turno {room.turn} no esta en la partida")
             raise Exception
-        return self.give_card(expected_player, room)
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id":expected_player.id}
+        return self.give_card(expected_player), expected_player.sid
         
     @db_session
-    def give_card(self, player:Player, room:Room):
+    def give_card(self, player:Player):
+        room = player.playing
         # se entrega una carta del mazo de disponibles al usuario
         # se borra la carta de room.available, se asigna la carta al usuario y se retorna el objeto carta
 

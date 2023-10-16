@@ -1,4 +1,4 @@
-from pony.orm import (Database, PrimaryKey, Required, Set, Optional)
+from pony.orm import (Database, PrimaryKey, Required, Set, Optional, Json)
 
 db = Database()
 
@@ -15,7 +15,7 @@ class Card(db.Entity):
     description = Optional(str, default="")
     deck = Required(int)
     type = Required(str)            # {ALEJATE, PANICO}
-    sub_type = Optional(str, default="")        # {CONTAGIO, ACCION, DEFENSA, OBSTACULO}
+    sub_type = Optional(str)        # {CONTAGIO, ACCION, DEFENSA, OBSTACULO}
     roomsA = Set('Room', reverse='available_cards')
     roomsD = Set('Room', reverse='discarted_cards')
     player_hand = Set('Player', reverse='hand')
@@ -27,7 +27,8 @@ class Player(db.Entity):
     name = Required(str)
     position = Optional(int, default=0)
     rol = Optional(str, default="HUMANO")             # {HUMANO, LA_COSA, INFECTADO}
-    status = Optional(str, default="VIVO")          # {VIVO, MUERTO, CUARENTENA}
+    status = Optional(str, default="VIVO")          # {VIVO, MUERTO}
+    in_quarantine = Optional(bool, default = False)
     playing = Required('Room', reverse='players')
     is_host = Required(bool, default=False)
     sid = Optional(str, default="")             # socket id
@@ -43,12 +44,14 @@ class Room(db.Entity):
     max_players = Required(int)
     is_private = Required(bool) 
     password = Optional(str, default="")
-    status = Required(str)          # {LOBBY, IN_GAME, FINISH}
-    turn =  Optional(int, default=0)
-    direction = Optional(bool, default=True)
+    status = Required(str)          # {LOBBY, IN_GAME, FINISHED}
+    turn = Required(int, default=0)
+    direction = Required(bool, default=True)
     players = Set(Player, reverse='playing')
     available_cards = Set(Card, reverse='roomsA')
     discarted_cards = Set(Card, reverse='roomsD')
+    machine_state = Optional(str)
+    machine_state_options = Optional(Json)
 
     def get_host(self):
         for player in self.players:

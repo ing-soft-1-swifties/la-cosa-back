@@ -61,7 +61,7 @@ class TestRoomsService(unittest.TestCase):
         room = self.create_valid_room(roomname='test_give_card_without_shuffle', qty_players=12)
         player = list(room.players.random(1))[0]
 
-        self.gs.give_card(player, room)
+        self.gs.give_card(player)
         assert len(player.hand) == 5
         
     @db_session
