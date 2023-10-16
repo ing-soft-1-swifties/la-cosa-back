@@ -103,7 +103,7 @@ async def give_card(sid : str):
             await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(player_sid)}, to = player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(in_turn_player_sid)}, to=in_turn_player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception:
-        rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sid}")
+        rootlog.exception(f"error al querer repartir carta  en partida del jugador con sid: {sid}")
         #falta determinar que hacemos si falla
         pass
 
@@ -139,16 +139,38 @@ async def game_play_card(sid : str, data):
     try:
         print(data)
         events = gs.play_card(sid, data)
+        for event in events:
+            for player_sid in rs.get_players_sid(sid):
+                json = {"gameState": gs.get_personal_game_status_by_sid(sid)}
+                json.update(event[1])
+                await sio_server.emit(event[0], json, to=player_sid)
         #events puede traer un evento que es pedir intercambio o ver si alguien se defiende...
         #sigue en curso la partida?
         #intercambio
         #sigue en curso la partida?
-        give_card(sid)
+        await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
         await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+    except Exception:
+        rootlog.exception("m")
     return True
 
+
+@sio_server.event
+async def game_discard_card(sid : str, data): 
+    # Aquí puedes realizar la lógica para iniciar la partida
+    rs = RoomsService(db)
+    gs = GamesService(db)
+    ps = PlayersService(db)
+    try:
+        gs.discard_card(sid, data)
+    except InvalidAccionException as e:
+        rootlog.exception("descarte invalido")
+        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+    except Exception:
+        rootlog.exception("error al descartar carta")
+    return True
 # @sio_server.event
 # def get_game_status(sid: str):
 #     gs = GamesService(db)
