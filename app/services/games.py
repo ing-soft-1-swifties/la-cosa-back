@@ -207,10 +207,16 @@ class GamesService(DBSessionMixin):
         """
         
         player = Player.get(sid = sent_sid)
+        info = {}
+        
         #card = Card.get(id = payload["card_id"])
         if player is None:
             raise InvalidSidException()
-        room = player.playing
+        room:Room = player.playing
+        
+        roles = []
+        for player in list(room.players.select()):
+            roles.append(player.name, player.rol)
         
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
@@ -218,21 +224,33 @@ class GamesService(DBSessionMixin):
             survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0]
             # Chequeo si es la cosa
             if survivor.rol == 'LA_COSA':
-                ret='LA_COSA_WON'
+                ret = 'LA_COSA_WON'
+                info = {"winner_team":"LA_COSA",
+                        "winner":list(room.players.select(rol='LA_COSA')),
+                        "roles":roles}                
             else: 
                 ret='HUMANS_WON'
+                info = {"winner_team":"HUMANOS",
+                        "winner":list(room.players.select(rol='HUMANO')),
+                        "roles":roles}
         
         # Chequeo el estado de la cosa
         la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0]
         if la_cosa.status == 'MUERTO':
             ret='HUMANS_WON'
-        
+            info = {"winner_team":"HUMANOS",
+                    "winner":list(room.players.select(rol='HUMANO')),
+                    "roles":roles}
+    
         qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
         qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
         if qty_alive_non_human_players == qty_alive_players: 
             ret='LA_COSA_WON'
+            info = {"winner_team":"LA_COSA",
+                        "winner":list(room.players.select(rol='LA_COSA')),
+                        "roles":roles}   
                 
-        return ret
+        return ret, info 
     
     @db_session
     def discard_card(self, sent_sid : str, payload):
