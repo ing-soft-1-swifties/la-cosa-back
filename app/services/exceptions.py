@@ -45,3 +45,6 @@ class CardNotInPlayerHandExeption(Exception):
 
 class PlayerNotInTurn(Exception):
     pass
+
+class InvalidDataException(Exception):
+    pass

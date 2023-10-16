@@ -71,7 +71,11 @@ class GamesService(DBSessionMixin):
         events = []
         player = Player.get(sid = sent_sid)
         #card = Card.get(id = payload["card_id"])
-        card = Card.get(id = payload["card"])   #dejemos esto hasta que el front lo repare
+        sent_card_id = payload.get("card")
+        card_options = payload.get("card_options")
+        if sent_card_id is None or card_options is None:
+            raise InvalidDataException()
+        card = Card.get(id = sent_card_id)   #dejemos esto hasta que el front lo repare
         if player is None:
             raise InvalidSidException()
         if card is None:
@@ -91,7 +95,7 @@ class GamesService(DBSessionMixin):
         if card.name == "Lanzallamas":
             print("se jugo una carta de lanzallamas")
             #veamos si es uno del lado
-            target_id = payload.get("target")
+            target_id = card_options.get("target")
             if target_id is None:
                 #falta enriquecer con info a este excepcion
                 raise InvalidAccionException("Objetivo invalido")
@@ -111,12 +115,9 @@ class GamesService(DBSessionMixin):
             target_player.status = "MUERTO"  
             self.recalculate_positions(sent_sid)
             events.append(("on_game_player_death",{"player":target_player.name}))
-
-        #se juega una carta, notar que van a ocurrir eventos (ej:alguien muere), debemos llevar registro
-        #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
-        #a todos los afectados por el evento se les reenvia el game_state
-        #el metodo anterior retorna la carta que recibio alguna la siguiente persona
-        #falta implementar la muestra de eventos
+        
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
         return events
         
     @db_session
@@ -134,8 +135,9 @@ class GamesService(DBSessionMixin):
             raise Exception
         id_position = []
         for player in room.players:
-            id_position.append((player.position, player))
-        id_position.sort(key = lambda x : x[0])
+            if player.status == "VIVO":
+                id_position.append((player.position, player))
+        id_position.sort(key  = lambda x : x[0])
         position = 0
         for pair in id_position:
             pair[1].position = position
@@ -153,13 +155,13 @@ class GamesService(DBSessionMixin):
         if room.machine_state == "INITIAL":
             room.turn = 0
         else:
-            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status != 1)))    #cantidad de jugadores que siguen jugando
+            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
         expected_player = None
         #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
         for player in room.players:
-            if player.position == room.turn:
+            if player.position == room.turn and player.status == "VIVO":
                 expected_player = player
-        if expected_player is None:
+        if expected_player is None: 
             print(f"el jugador con turno {room.turn} no esta en la partida")
             raise Exception
         room.machine_state = "PLAYING"
@@ -225,15 +227,9 @@ class GamesService(DBSessionMixin):
         return ret
     
     @db_session
-    def discard_card(self, player: Player, card: Card):
+    def discard_card(self, sent_sid : str, payload):
         """
         Descarta una carta del jugador en la sala actual.
-
-        Parámetros:
-            player (Player): El jugador que desea descartar una carta.
-            card (Card): La carta que el jugador desea descartar.
-
-        Excepciones:
             PlayerNotInRoom: Si el jugador no se encuentra en ninguna sala.
             CardNotInPlayerHandException: Si la carta no pertenece a las cartas del jugador.
             PlayerNotInTurn: Si el jugador no se encuentra en su turno.
@@ -244,6 +240,26 @@ class GamesService(DBSessionMixin):
             None
         """
         # room que esta jugando el jugador
+        player = Player.get(sid = sent_sid)
+        #card = Card.get(id = payload["card_id"])
+        sent_card_id = payload.get("card")
+        if sent_card_id is None:
+            raise InvalidDataException()
+        card = Card.get(id = sent_card_id)   #dejemos esto hasta que el front lo repare
+        if player is None:
+            raise InvalidSidException()
+        if card is None:
+            raise InvalidCidException()
+        room = player.playing
+        ps = PlayersService(self.db)
+        if ps.has_card(player, card) == False:
+            raise InvalidCardException()
+        if room.machine_state != "PLAYING":
+            rootlog.exception("no correspondia descartar una carta")
+            raise InvalidAccionException("No corresponde descartar")
+        if room.machine_state_options["id"] != player.id:
+            rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
+            raise InvalidAccionException(msg="No es tu turno")
         room = player.playing
         
         # Jugador no esta en la sala
@@ -267,5 +283,5 @@ class GamesService(DBSessionMixin):
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
-
         return
+
