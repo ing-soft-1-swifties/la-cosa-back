@@ -19,8 +19,8 @@ class Card(db.Entity):
     roomsA = Set('Room', reverse='available_cards')
     roomsD = Set('Room', reverse='discarted_cards')
     player_hand = Set('Player', reverse='hand')
-    
-
+    need_target = Optional(bool, default=False)
+    target_adjacent_only = Optional(bool, default=False)
 
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)

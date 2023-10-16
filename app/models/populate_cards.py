@@ -14,184 +14,247 @@ cardsJSON = [
         'name': 'La cosa',
         'amounts' : [1,0,0,0,0,0,0,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'CONTAGIO'
+        'sub_type' : 'CONTAGIO',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Infectado',
         'amounts' : [8,0,2,2,1,2,2,3],
         'type' : 'ALEJATE',
-        'sub-type' : 'CONTAGIO'
+        'sub_type' : 'CONTAGIO',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Sospecha',
         'amounts' : [4,0,0,1,1,1,1,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Seducción',
         'amounts' : [2,0,1,1,1,0,1,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',  
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Más vale que corras!',
         'amounts' : [2,0,0,1,0,1,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Cambio de lugar!',
         'amounts' : [2,0,0,1,0,1,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Lanzallamas',
         'amounts' : [2,0,1,0,0,1,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Determinacion',
         'amounts' : [2,0,1,0,0,1,1,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Analisis',
         'amounts' : [0,1,1,0,0,0,0,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Whisky',
         'amounts' : [1,0,1,0,0,0,1,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Vigila tus espaldas',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Hacha',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'ACCION'
+        'sub_type' : 'ACCION',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : '¡No, gracias!',
         'amounts' : [1,0,1,0,1,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'DEFENSA'
+        'sub_type' : 'DEFENSA',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : 'Aterrador',
         'amounts' : [0,1,1,0,1,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'DEFENSA'
+        'sub_type' : 'DEFENSA',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Fallaste!',
         'amounts' : [1,0,1,0,0,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'DEFENSA'
+        'sub_type' : 'DEFENSA',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Nada de barbacoas!',
         'amounts' : [1,0,0,0,0,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'DEFENSA'
+        'sub_type' : 'DEFENSA',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : 'Aquí estoy bien',
         'amounts' : [1,0,1,0,0,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'DEFENSA'
+        'sub_type' : 'DEFENSA',
+        'need_target': True,
+        'target_adjacent_only': False
     },
     {
         'name' : 'Puerta atrancada',
         'amounts' : [1,0,0,1,0,0,0,1],
         'type' : 'ALEJATE',
-        'sub-type' : 'OBSTACULO'
+        'sub_type' : 'OBSTACULO',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Cuarentena',
         'amounts' : [0,1,0,0,0,1,0,0],
         'type' : 'ALEJATE',
-        'sub-type' : 'OBSTACULO'
+        'sub_type' : 'OBSTACULO',
+        'need_target': True,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Vuelta y vuelta',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : '¿No podemos ser amigos?',
         'amounts' : [0,0,0,1,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },    {
         'name' : 'Cita a ciegas',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
+        
     },    {
         'name' : 'Que quede entre nosotros...',
         'amounts' : [0,0,0,1,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },    {
         'name' : 'Cuerdas podridas',
         'amounts' : [0,0,1,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },    
     {
         'name' : '¿Es aqui la fiesta?',
         'amounts' : [0,1,0,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Uno, dos...',
         'amounts' : [0,1,0,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Tres, cuatro...',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : '¡Ups!',
         'amounts' : [0,0,0,0,0,0,1,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Olvidadizo',
         'amounts' : [1,0,0,0,0,0,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : 'Revelaciones',
         'amounts' : [0,0,0,0,1,0,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     },
     {
         'name' : '¡Sal de aqui!',
         'amounts' : [0,1,0,0,0,0,0,0],
         'type' : 'PANICO',
-        'sub-type' : ''
+        'sub_type' : '',
+        'need_target': False,
+        'target_adjacent_only': True
     }
 ]
 
@@ -201,7 +264,13 @@ def populate():
         for i in range(len(cardsJSON)):
             for j in range(len(cardsJSON[i]['amounts'])):
                 for k in range(cardsJSON[i]['amounts'][j]):
-                    Card(name=cardsJSON[i]['name'], deck=j+4, type=cardsJSON[i]['type'], sub_type=cardsJSON[i]['sub-type'])
+                    Card(
+                        name=cardsJSON[i]['name'], 
+                        deck=j+4, type=cardsJSON[i]['type'], 
+                        sub_type=cardsJSON[i]['sub_type'],
+                        need_target=cardsJSON[i]['need_target'],
+                        target_adjacent_only=cardsJSON[i]['target_adjacent_only']
+                    )
 
 
 if __name__ == '__main__':
