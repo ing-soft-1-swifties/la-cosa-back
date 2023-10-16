@@ -173,17 +173,30 @@ async def game_discard_card(sid : str, data):
     # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
-    ps = PlayersService(db)
+
     try:
         card_id = gs.discard_card(sid, data)
+        # on_game_player_discard_card        
         for player_sid in rs.get_players_sid(sid):
-            await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+            json_response = {
+                "card":card_id,
+                "gameState": gs.get_personal_game_status_by_sid(player_sid)
+            }
+            await sio_server.emit("on_game_player_discard_card", json_response, to=player_sid)
 
+    # error handling
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
-        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+        json_response = {
+            "title":"Jugada Invalida", 
+            "message": e.msg, 
+            "gameState": gs.get_personal_game_status_by_sid(sid)
+        }
+        await sio_server.emit("on_game_invalid_action", json_response, to=sid)
+    
     except Exception:
         rootlog.exception("error al descartar carta")
+    
     return True
 # @sio_server.event
 # def get_game_status(sid: str):
