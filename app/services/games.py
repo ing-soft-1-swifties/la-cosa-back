@@ -14,7 +14,9 @@ class GamesService(DBSessionMixin):
             'name': card.name,
             'description': card.description,
             'type': card.type,
-            'subType': card.sub_type
+            'subType': card.sub_type,
+            'needTarget' : card.need_target,
+            'targetAdjacentOnly': card.target_adjacent_only
         }
 
     @db_session
