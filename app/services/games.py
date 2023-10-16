@@ -229,7 +229,7 @@ class GamesService(DBSessionMixin):
         return
     
     @db_session
-    def exchange_cards(self, room: Room, sender : Player, reciever : Player, card_s : Card, card_r:Card):
+    def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
         """ Realiza el intercambio de cartas.
         
         Args:
@@ -243,54 +243,52 @@ class GamesService(DBSessionMixin):
             None    
         """       
         qty_players = len(room.players.select())
-        valid_player_position = sender.position == (reciever.position -1)%qty_players and room.direction
+        valid_player_position = player_A.position == (player_B.position -1)%qty_players and room.direction
         if not valid_player_position:
             raise InvalidExchangeParticipants()
         
-        sender_not_in_turn = sender.position != room.turn
+        sender_not_in_turn = player_A.position != room.turn
         if sender_not_in_turn:
             raise PlayerNotInTurn()
         
-        card_not_in_hand_sender = len(sender.hand.select(name=card_s.name)) == 0
-        card_not_in_hand_reciever = len(reciever.hand.select(name=card_r.name)) == 0
+        card_not_in_hand_sender = len(player_A.hand.select(name=card_A.name)) == 0
+        card_not_in_hand_reciever = len(player_B.hand.select(name=card_B.name)) == 0
         if card_not_in_hand_reciever or card_not_in_hand_sender:
             raise CardNotInPlayerHandExeption()
         
-        lacosa_exchange = (card_s.name == 'La cosa') or (card_r.name == 'La cosa')
+        lacosa_exchange = (card_A.name == 'La cosa') or (card_B.name == 'La cosa')
         if lacosa_exchange:
             raise RoleCardExchange()
         
         # intercambio invalido de cartas 'Infectado': 
         # - un humano intercambia infectado
-        invalid_infected_exchange = (sender.rol == 'HUMANO' and card_s.name == 'Infectado') or (reciever.rol=='HUMANO' and card_r.name=='Infectado')
+        invalid_infected_exchange = (player_A.rol == 'HUMANO' and card_A.name == 'Infectado') or (player_B.rol=='HUMANO' and card_B.name=='Infectado')
         if invalid_infected_exchange:
             raise InvalidCardExchange()
         
         # - un infectado intercambia su ultima infeccion
-        invalid_infected_exchange = False
-        invalid_infected_exchange = sender.rol == 'INFECTADO' and card_s.name == 'Infectado' and len(sender.hand.select(name='Infectado')) == 1
-        invalid_infected_exchange = invalid_infected_exchange or (reciever.rol == 'INFECTADO' and card_r.name == 'Infectado' and len(reciever.hand.select(name='Infectado')) == 1)
+        invalid_infected_exchange = player_A.rol == 'INFECTADO' and card_A.name == 'Infectado' and len(player_A.hand.select(name='Infectado')) == 1
+        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol == 'INFECTADO' and card_B.name == 'Infectado' and len(player_B.hand.select(name='Infectado')) == 1)
         if invalid_infected_exchange:
             raise RoleCardExchange()
         
         # - un infectado intercambia una carta infectado con un humano
-        invalid_infected_exchange = False
-        invalid_infected_exchange = sender.rol=='INFECTADO' and reciever.rol=='HUMANO' and card_s.name=='Infectado'
-        invalid_infected_exchange = invalid_infected_exchange or (reciever.rol=='INFECTADO' and sender.rol=='HUMANO' and card_r.name=='Infectado')
+        invalid_infected_exchange = player_A.rol=='INFECTADO' and player_B.rol=='HUMANO' and card_A.name=='Infectado'
+        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol=='INFECTADO' and player_A.rol=='HUMANO' and card_B.name=='Infectado')
         if invalid_infected_exchange:
             raise InvalidCardExchange()
         
         
         
-        if card_s.name == 'Infectado' and sender.rol == 'LA_COSA':
-            reciever.rol = 'INFECTADO'
+        if card_A.name == 'Infectado' and player_A.rol == 'LA_COSA':
+            player_B.rol = 'INFECTADO'
         
-        if card_r.name == 'Infectado' and reciever.rol == 'LA_COSA': 
-            sender.rol = 'INFECTADO'
+        if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
+            player_A.rol = 'INFECTADO'
             
-        sender.hand.remove(card_s)
-        sender.hand.add(card_r)
-        reciever.hand.remove(card_r)
-        reciever.hand.add(card_s)
+        player_A.hand.remove(card_A)
+        player_A.hand.add(card_B)
+        player_B.hand.remove(card_B)
+        player_B.hand.add(card_A)
         
         return
