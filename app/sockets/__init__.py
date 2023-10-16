@@ -1,6 +1,6 @@
 from app.models import Player
 from pony.orm import db_session
-from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException, InvalidSidException
+from app.services.exceptions import DuplicatePlayerNameException, InvalidAccionException, InvalidRoomException, InvalidSidException
 from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.games import GamesService
@@ -32,7 +32,7 @@ async def connect(sid, environ, auth):
     except Exception as e:
         return False
     for player_sid in players_sid:
-        await sio_server.emit("on_room_new_player", {"gameState": gs.get_personal_game_status_by_sid(sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_room_new_player", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
     return True
 
 @sio_server.event
@@ -100,8 +100,8 @@ async def give_card(sid : str):
         card_json, in_turn_player_sid = gs.next_turn(sid)   #entrega carta a quien le toca
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
-            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(player_sid)}, to = player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(in_turn_player_sid)}, to=in_turn_player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception:
         rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sid}")
         #falta determinar que hacemos si falla
@@ -117,7 +117,7 @@ async def room_start_game(sid : str):
         rs.start_game(sid)  #prepara lo mazos y reparte
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
-            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         
     except Exception as e:
         rootlog.exception(f"error al querer iniciar la partida del jugador con sid: {sid}")
@@ -144,8 +144,9 @@ async def game_play_card(sid : str, data):
         #intercambio
         #sigue en curso la partida?
         give_card(sid)
-    except Exception as e:
+    except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
+        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
     return True
 
 # @sio_server.event
