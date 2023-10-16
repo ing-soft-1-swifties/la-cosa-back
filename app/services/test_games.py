@@ -92,17 +92,24 @@ class TestRoomsService(unittest.TestCase):
         room = self.create_valid_room(roomname='test_discard_card_successful', qty_players=4)
 
         # seleccionamos un jugador al azar
-        player = list(room.players.random(1))[0]
+        player = room.get_host()
 
         # asignamos el turno
         room.turn = player.position
 
         # conseguimos una carta
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
-        player.hand.add(card)
-
         cards_in_hand_before = len(player.hand)
-        self.gs.discard_card(player, card)
+        player.hand.add(card)
+        
+        # seteamos la room
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {
+            'id': player.id
+        }
+        player.sid = "27016"
+        json = {"card": card.id}
+        self.gs.discard_card("27016", json)
 
         assert card not in player.hand
         assert card in room.discarted_cards
@@ -114,7 +121,7 @@ class TestRoomsService(unittest.TestCase):
         room = self.create_valid_room(roomname='test_discard_card_invalid_turn', qty_players=4)
 
         # seleccionamos un jugador al azar
-        player = list(room.players.random(1))[0]
+        player = room.get_host()
 
         # asignamos el turno
         room.turn = player.position + 1
@@ -123,8 +130,17 @@ class TestRoomsService(unittest.TestCase):
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
         player.hand.add(card)
 
+        # seteamos la room
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {
+            'id': player.id
+        }
+        player.sid = "27016"
+        json = {"card": card.id}
+
+
         with self.assertRaises(PlayerNotInTurn):
-            self.gs.discard_card(player, card)
+            self.gs.discard_card("27016", json)
 
     @db_session
     def test_discard_card_invalid_not_in_hand(self):
@@ -132,7 +148,7 @@ class TestRoomsService(unittest.TestCase):
         room = self.create_valid_room(roomname='test_discard_card_invalid_not_in_hand', qty_players=4)
 
         # seleccionamos un jugador al azar
-        player = list(room.players.random(1))[0]
+        player = room.get_host()
 
         # asignamos el turno
         room.turn = player.position
@@ -141,8 +157,16 @@ class TestRoomsService(unittest.TestCase):
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
         player.hand.remove(card)
         
-        with self.assertRaises(CardNotInPlayerHandExeption):
-            self.gs.discard_card(player, card)
+        # seteamos la room
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {
+            'id': player.id
+        }
+        player.sid = "27016"
+        json = {"card": card.id}
+
+        with self.assertRaises(InvalidCardException):
+            self.gs.discard_card("27016", json)
 
     @db_session
     def test_discard_card_invalid_room(self):
@@ -152,7 +176,7 @@ class TestRoomsService(unittest.TestCase):
         room.status = 'LOBBY'
 
         # seleccionamos un jugador al azar
-        player = list(room.players.random(1))[0]
+        player = room.get_host()
 
         # asignamos el turno
         room.turn = player.position
@@ -161,8 +185,16 @@ class TestRoomsService(unittest.TestCase):
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
         player.hand.remove(card)
         
+        # seteamos la room
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {
+            'id': player.id
+        }
+        player.sid = "27016"
+        json = {"card": card.id}
+        
         with self.assertRaises(InvalidRoomException):
-            self.gs.discard_card(player, card)
+            self.gs.discard_card("27016", json)
 
     @db_session
     def test_give_card_with_invalid_card(self):
@@ -170,7 +202,7 @@ class TestRoomsService(unittest.TestCase):
         room = self.create_valid_room(roomname='test_give_card_with_invalid_card', qty_players=4)
 
         # seleccionamos un jugador al azar
-        player = list(room.players.random(1))[0]
+        player = room.get_host()
 
         # asignamos el turno
         room.turn = player.position
@@ -186,18 +218,27 @@ class TestRoomsService(unittest.TestCase):
         # cambiamos el rol del jugador
         player.rol = 'INFECTADO'
 
+        # seteamos la room
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {
+            'id': player.id
+        }
+        player.sid = "27016"
+        json = {"card": card.id}
+        
         # intentamos descartar la carta de infeccion
         with self.assertRaises(InvalidCardException):
-            self.gs.discard_card(player, card)
+            self.gs.discard_card("27016", json)
 
         # Test: el jugador con rol "la cosa" intenta descartar la cosa
         
         # conseguimos la carta y se la damos al jugador
         card = list(Card.select(lambda c: c.name == 'La cosa').random(1))[0]
         player.hand.add(card)
+        json = {"card": card.id}
         #intentamos descartar la carta "la cosa" (no se puede descartar en ningun caso)
         with self.assertRaises(InvalidCardException):
-            self.gs.discard_card(player, card)
+            self.gs.discard_card("27016", json)
 
     @db_session 
     def test_end_game_condition(self):
