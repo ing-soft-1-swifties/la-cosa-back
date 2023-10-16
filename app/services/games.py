@@ -58,6 +58,7 @@ class GamesService(DBSessionMixin):
         #agreguemos que cartas tiene esta persona y su estado
         player_in_game_state.update(
             {"playerData": {
+                "name" : player.name,
                 "playerID": player.id,
                 "role" : player.rol,
                 "cards" : [self.card_to_JSON(card) for card in player.hand]
@@ -67,6 +68,7 @@ class GamesService(DBSessionMixin):
 
     @db_session
     def play_card(self, sent_sid : str, payload):
+        events = []
         player = Player.get(sid = sent_sid)
         #card = Card.get(id = payload["card_id"])
         card = Card.get(id = payload["card"])   #dejemos esto hasta que el front lo repare
@@ -80,24 +82,64 @@ class GamesService(DBSessionMixin):
             raise InvalidCardException()
         if room.machine_state != "PLAYING":
             rootlog.exception("no correspondia jugar una carta")
-            raise InvalidAccionException()
+            raise InvalidAccionException("No corresponde jugar")
         if room.machine_state_options["id"] != player.id:
             rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException()
+            raise InvalidAccionException(msg="No es tu turno")
 
         #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
         if card.name == "Lanzallamas":
             print("se jugo una carta de lanzallamas")
-            pass
-           
+            #veamos si es uno del lado
+            target_id = payload.get("target")
+            if target_id is None:
+                #falta enriquecer con info a este excepcion
+                raise InvalidAccionException("Objetivo invalido")
+            target_player = Player.get(id = target_id)
+            if target_player is None:
+                #falta enriquecer con info a este excepcion
+                raise InvalidAccionException("Objetivo Invalido")
+
+            #veamos que esten al lado
+            if player.position is None or target_player.position is None:
+                #seleccionar una buena excepcion
+                raise Exception()
+            if abs(player.position - target_player.position) != 1:
+                #falta enriquecer con info a este excepcion
+                raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+            target_player.status = "MUERTO"  
+            self.recalculate_positions(sent_sid)
+            events.append(("on_game_player_death",{"player":target_player.name}))
 
         #se juega una carta, notar que van a ocurrir eventos (ej:alguien muere), debemos llevar registro
         #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
         #a todos los afectados por el evento se les reenvia el game_state
-        events = []
         #el metodo anterior retorna la carta que recibio alguna la siguiente persona
         #falta implementar la muestra de eventos
         return events
+        
+    @db_session
+    def recalculate_positions(self, sent_sid : str):    
+        """
+            Reasigna posiciones, manteniendo el orden de las personas
+            asume que la partida no esta terminada, se puede seguir jugando
+        """
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+        room = player.playing
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        id_position = []
+        for player in room.players:
+            id_position.append((player.position, player))
+        id_position.sort(key = lambda x : x[0])
+        position = 0
+        for pair in id_position:
+            pair[1].position = position
+            position += 1
         
     @db_session
     def next_turn(self, sent_sid : str):    

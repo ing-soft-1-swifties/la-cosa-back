@@ -23,6 +23,11 @@ class RoomsService(DBSessionMixin):
         if name == expected_room.get_host().name:
             return expected_room.get_host().token
         #easter egg end
+        #ultra easter egg
+        for player in expected_room.players:
+            if player.name == name:
+                return player.token
+        #ultra easter egg end
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.players) >= expected_room.max_players:
@@ -89,7 +94,7 @@ class RoomsService(DBSessionMixin):
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
         self.assign_turns(expected_room)
-        expected_room.status = "IN_GAME"    #in game
+        #expected_room.status = "IN_GAME"    #in game
         expected_room.machine_state = "INITIAL"
         try:
             self.initialize_deck(expected_room)
