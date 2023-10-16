@@ -43,3 +43,12 @@ class CardNotInPlayerHandExeption(Exception):
 
 class PlayerNotInTurn(Exception):
     pass
+
+class InvalidExchangeParticipants(Exception):
+    pass
+
+class RoleCardExchange(Exception):
+    pass
+
+class InvalidCardExchange(Exception):
+    pass

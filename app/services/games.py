@@ -227,3 +227,68 @@ class GamesService(DBSessionMixin):
         room.discarted_cards.add(card)
 
         return
+    
+    @db_session
+    def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
+        """ Realiza el intercambio de cartas.
+        
+        Args:
+            room (Room): Room valida en la que ambos players estan jugando.
+            sender (Player): el jugador que al final de su turno comienza a intercambiar una carta
+            reciever (Player): el jugador siguiente en la orden de turno
+            card_s (Card): carta que selecciona el jugador "sender" para intercambiar
+            card_r (_type_): carta que selecciona el jugador "reciever" para intercambiar
+
+        Returns:
+            None    
+        """       
+        qty_players = len(room.players.select())
+        valid_player_position = player_A.position == (player_B.position -1)%qty_players and room.direction
+        if not valid_player_position:
+            raise InvalidExchangeParticipants()
+        
+        sender_not_in_turn = player_A.position != room.turn
+        if sender_not_in_turn:
+            raise PlayerNotInTurn()
+        
+        card_not_in_hand_sender = len(player_A.hand.select(name=card_A.name)) == 0
+        card_not_in_hand_reciever = len(player_B.hand.select(name=card_B.name)) == 0
+        if card_not_in_hand_reciever or card_not_in_hand_sender:
+            raise CardNotInPlayerHandExeption()
+        
+        lacosa_exchange = (card_A.name == 'La cosa') or (card_B.name == 'La cosa')
+        if lacosa_exchange:
+            raise RoleCardExchange()
+        
+        # intercambio invalido de cartas 'Infectado': 
+        # - un humano intercambia infectado
+        invalid_infected_exchange = (player_A.rol == 'HUMANO' and card_A.name == 'Infectado') or (player_B.rol=='HUMANO' and card_B.name=='Infectado')
+        if invalid_infected_exchange:
+            raise InvalidCardExchange()
+        
+        # - un infectado intercambia su ultima infeccion
+        invalid_infected_exchange = player_A.rol == 'INFECTADO' and card_A.name == 'Infectado' and len(player_A.hand.select(name='Infectado')) == 1
+        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol == 'INFECTADO' and card_B.name == 'Infectado' and len(player_B.hand.select(name='Infectado')) == 1)
+        if invalid_infected_exchange:
+            raise RoleCardExchange()
+        
+        # - un infectado intercambia una carta infectado con un humano
+        invalid_infected_exchange = player_A.rol=='INFECTADO' and player_B.rol=='HUMANO' and card_A.name=='Infectado'
+        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol=='INFECTADO' and player_A.rol=='HUMANO' and card_B.name=='Infectado')
+        if invalid_infected_exchange:
+            raise InvalidCardExchange()
+        
+        
+        
+        if card_A.name == 'Infectado' and player_A.rol == 'LA_COSA':
+            player_B.rol = 'INFECTADO'
+        
+        if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
+            player_A.rol = 'INFECTADO'
+            
+        player_A.hand.remove(card_A)
+        player_A.hand.add(card_B)
+        player_B.hand.remove(card_B)
+        player_B.hand.add(card_A)
+        
+        return
