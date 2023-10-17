@@ -143,7 +143,12 @@ class GamesService(DBSessionMixin):
                 id_position.append((player.position, player))
         id_position.sort(key  = lambda x : x[0])
         position = 0
+        should_update_turn = True
         for pair in id_position:
+            if pair[1].position != position and position <= room.turn and should_update_turn:
+                room.turn -= 1
+                should_update_turn = False
+                pass
             pair[1].position = position
             position += 1
         

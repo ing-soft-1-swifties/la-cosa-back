@@ -119,8 +119,8 @@ class RoomsService(DBSessionMixin):
         expected_player = Player.get(sid = actual_sid)
         if expected_player is None:
             raise InvalidSidException()
-        if expected_player.is_host == False:
-            raise NotOwnerExeption()
+        # if expected_player.is_host == False:
+        #     raise NotOwnerExeption()
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
@@ -142,7 +142,7 @@ class RoomsService(DBSessionMixin):
                 'is_private' : room.is_private
             }
 
-        return [get_json(room) for room in Room.select()]
+        return [get_json(room) for room in Room.select(lambda x: x.status == "LOBBY")]
     
     @db_session
     def initialize_deck(self, room : Room):

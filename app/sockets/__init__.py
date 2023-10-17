@@ -156,6 +156,7 @@ async def game_play_card(sid : str, data):
                 for player_sid in rs.get_players_sid(sid):
                     json.update({"gameState": gs.get_personal_game_status_by_sid(player_sid)})
                     await sio_server.emit("on_game_end", json, to=player_sid)
+                rs.end_game(sid)
             else:
                 await give_card(sid)
         except Exception as e:
