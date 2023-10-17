@@ -216,7 +216,7 @@ class GamesService(DBSessionMixin):
         
         roles = []
         for player in list(room.players.select()):
-            roles.append(player.name, player.rol)
+            roles.append((player.name, player.rol))
         
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
