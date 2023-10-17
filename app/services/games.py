@@ -1,5 +1,4 @@
-from ast import List
-from pony.orm import count, db_session, Set
+from pony.orm import db_session
 from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
@@ -224,7 +223,7 @@ class GamesService(DBSessionMixin):
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
         if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
-            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0]
+            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0] # type: ignore
             # Chequeo si es la cosa
             if survivor.rol == 'LA_COSA':
                 ret = 'LA_COSA_WON'
@@ -242,7 +241,7 @@ class GamesService(DBSessionMixin):
                         "roles":roles}
         
         # Chequeo el estado de la cosa
-        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0]
+        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0] # type: ignore
         if la_cosa.status == 'MUERTO':
             ret='HUMANS_WON'
             info = {"winner_team":"HUMANOS",
@@ -257,60 +256,47 @@ class GamesService(DBSessionMixin):
                         "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
                         "roles":roles}   
                 
-        return ret, info 
+        return ret, info
     
     @db_session
     def discard_card(self, sent_sid : str, payload):
-        """
-        Descarta una carta del jugador en la sala actual.
-            PlayerNotInRoom: Si el jugador no se encuentra en ninguna sala.
-            CardNotInPlayerHandException: Si la carta no pertenece a las cartas del jugador.
-            PlayerNotInTurn: Si el jugador no se encuentra en su turno.
-            InvalidCardException: Si se intenta descartar una carta inválida, como "Infectado" cuando el jugador es un "INFECTADO"
-                y solo tiene una carta "Infectado" en su mano, o una carta "La cosa".
-
-        Retorna:
-            None
-        """
-
-
         # import ipdb
         # ipdb.set_trace()
 
         # room que esta jugando el jugador
         player = Player.get(sid = sent_sid)
-        #card = Card.get(id = payload["card_id"])
+        # carta enviada
         sent_card_id = payload.get("card")
+        
+        # invalid inputs
         if sent_card_id is None:
             raise InvalidDataException()
-        card = Card.get(id = sent_card_id)   #dejemos esto hasta que el front lo repare
         if player is None:
             raise InvalidSidException()
+        card = Card.get(id = sent_card_id)  
         if card is None:
             raise InvalidCidException()
+
+        # room actual
         room = player.playing
-        ps = PlayersService(self.db)
-        if ps.has_card(player, card) == False:
+        
+        # La carta no pertenece a las cartas del jugador
+        if card not in player.hand:
             raise InvalidCardException()
+        
+        # Estado incorrecto
         if room.machine_state != "PLAYING":
-            rootlog.exception("no correspondia descartar una carta")
+            rootlog.exception("No correspondia descartar una carta")
             raise InvalidAccionException("No corresponde descartar")
+
+        # esta el turno incorrecto
         if room.machine_state_options["id"] != player.id:
             rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
             raise InvalidAccionException(msg="No es tu turno")
-        room = player.playing
         
         # Jugador no esta en la sala
         if room is None or room.status != 'IN_GAME':
             raise InvalidRoomException()
-
-        # La carta no pertenece a las cartas del jugador
-        if card not in player.hand:
-            raise CardNotInPlayerHandExeption()        
-
-        # Jugador no esta en su turno
-        if player.position != room.turn:
-            raise PlayerNotInTurn()
 
         # Carta invalida
         infected_count = len(player.hand.select(name='Infectado'))
