@@ -211,42 +211,46 @@ class GamesService(DBSessionMixin):
         player = Player.get(sid = sent_sid)
         info = {}
         
-        #card = Card.get(id = payload["card_id"])
+        # inputs validos
         if player is None:
             raise InvalidSidException()
-        room:Room = player.playing
+        room: Room = player.playing
         
         roles = []
-        for player in list(room.players.select()):
+        for player in room.players:
             roles.append((player.name, player.rol))
         
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
-        if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
-            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0] # type: ignore
+        if len(room.players.select(lambda p: p.status != 'MUERTO')) == 1:
+            survivor: Player = list(room.players.select(lambda p: p.status != 'MUERTO'))[0] # type: ignore
             # Chequeo si es la cosa
             if survivor.rol == 'LA_COSA':
                 ret = 'LA_COSA_WON'
-                info = {"winner_team":"LA_COSA",
-                        "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA'))
-                        
-                    )),
-                        "roles":roles}                
+                info = {
+                    "winner_team": "LA_COSA",
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
+                    "roles":roles
+                }                
             else: 
-                ret='HUMANS_WON'
-                info = {"winner_team":"HUMANOS",
-                        "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO'))
-                        
-                    )),
-                        "roles":roles}
+                ret = 'HUMANS_WON'
+                info = {
+                    "winner_team": "HUMANOS",
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                    "roles":roles
+                }
         
         # Chequeo el estado de la cosa
-        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0] # type: ignore
+        la_cosa: Player = list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0] # type: ignore
+        # la_cosa: Player = room.players.get(rol = 'LA_COSA') # type: ignore
+        
         if la_cosa.status == 'MUERTO':
-            ret='HUMANS_WON'
-            info = {"winner_team":"HUMANOS",
-                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
-                    "roles":roles}
+            ret = 'HUMANS_WON'
+            info = {
+                "winner_team": "HUMANOS",
+                "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                "roles": roles
+            }
     
         qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
         qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
