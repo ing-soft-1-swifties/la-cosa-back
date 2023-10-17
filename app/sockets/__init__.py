@@ -100,7 +100,7 @@ async def room_quit_game(sid : str):
                     json_response = {
                         "gameState": gs.get_personal_game_status_by_sid(player_sid)
                     }
-                    await sio_server.emit("on_room_left_player", json_response, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+                    await sio_server.emit("on_room_left_player", json_response, to=player_sid)   
             # desconectamos el socket
             await sio_server.disconnect(sid)
 
