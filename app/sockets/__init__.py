@@ -92,20 +92,35 @@ async def end_game(sid : str):
         await sio_server.disconnect(player_sid)
     return False    #se cierra la conexion
 
-async def give_card(sid : str):
+async def give_card(sid: str):
+
+    # instanciamos los servicios
     rs = RoomsService(db)
     gs = GamesService(db)
     ps = PlayersService(db)
+
     try:
         card_json, in_turn_player_sid = gs.next_turn(sid)   #entrega carta a quien le toca
         players_sid = rs.get_players_sid(sid)
+        # event on_game_player_turn
         for player_sid in players_sid:
-            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(player_sid)}, to = player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(in_turn_player_sid)}, to=in_turn_player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            json_response = {
+                "player": ps.get_name(in_turn_player_sid), 
+                "gameState": gs.get_personal_game_status_by_sid(player_sid)
+            }
+            await sio_server.emit("on_game_player_turn", json_response, to = player_sid)  
+
+        # event on_game_player_steal_card
+        json_response = {
+            "cards": [card_json], 
+            "gameState": gs.get_personal_game_status_by_sid(in_turn_player_sid)
+        }
+        await sio_server.emit("on_game_player_steal_card", json_response, to=in_turn_player_sid)   
+    
+    # error handling
     except Exception:
         rootlog.exception(f"error al querer repartir carta  en partida del jugador con sid: {sid}")
         #falta determinar que hacemos si falla
-        pass
 
 @sio_server.event
 async def room_start_game(sid : str): 
@@ -196,7 +211,6 @@ async def game_play_card(sid : str, data):
         rootlog.exception("ocurrio un error")
 
     return True
-
 
 
 @sio_server.event
