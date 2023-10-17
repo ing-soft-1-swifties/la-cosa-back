@@ -37,21 +37,22 @@ async def connect(sid, environ, auth):
 
 @sio_server.event
 async def disconnect(sid : str):
-    return True #para debugear
     # por ahora no vamos a hacer nada ya que no lo especifica el cliente
     # si la persona intenta volver a conectarse con su token, el sistema 
     # lo vuelve a reconectar.
     try:
-        try:
-            await room_quit_game(sid)
-        except InvalidSidException:
-            pass
-        
+        await room_quit_game(sid)
         #si este es el host, se mata la partida
         #abria que definir bien que pasa si la partida ya inicio
+    
+    # error handling
+    except InvalidSidException as e:
+        raise e
+    
     except Exception as e:
         rootlog.exception("Error eliminado la partida al desconectarse un jugador.")
         return False
+
     return True
 
 async def end_game(sid : str):
