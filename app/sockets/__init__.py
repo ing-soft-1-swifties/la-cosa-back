@@ -109,30 +109,35 @@ async def give_card(sid : str):
 
 @sio_server.event
 async def room_start_game(sid : str): 
-    # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
-    ps = PlayersService(db)
     try:
-        rs.start_game(sid)  #prepara lo mazos y reparte
-        players_sid = rs.get_players_sid(sid)
-        for player_sid in players_sid:
-            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        
+        # prepara lo mazos y reparte
+        rs.start_game(sid) 
+        # evento on_room_start_game
+        for player_sid in rs.get_players_sid(sid):
+            json_response = {
+                "gameState": gs.get_personal_game_status_by_sid(player_sid)
+            }
+            await sio_server.emit("on_room_start_game", json_response, to=player_sid)   
+            # notar que hay que tener cuidado con si falla alguna conexion
+
+    # error handling
     except Exception as e:
         rootlog.exception(f"error al querer iniciar la partida del jugador con sid: {sid}")
         #hay que determinar si eliminamos la partida si ocurre un error
         return True
-    print(f"Partida iniciada por el jugador con socket_id = {sid}")
+    
     try:
-        await give_card(sid) #le entrego carta a la primera persona en jugar
+        # le entrego carta a la primera persona en jugar
+        await give_card(sid) 
+    # error handling
     except Exception:
         rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sid}")
 
     
 @sio_server.event
 async def game_play_card(sid : str, data): 
-    # Aquí puedes realizar la lógica para iniciar la partida
     rs = RoomsService(db)
     gs = GamesService(db)
     
@@ -179,6 +184,7 @@ async def game_play_card(sid : str, data):
     # error handlings
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
+        # evento on_game_invalid_action
         json_response = {
             "title":"Jugada Invalida", 
             "message": e.msg, 
@@ -212,6 +218,8 @@ async def game_discard_card(sid : str, data):
     # error handling
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
+
+        # evento on_game_invalid_action
         json_response = {
             "title":"Jugada Invalida", 
             "message": e.msg, 
