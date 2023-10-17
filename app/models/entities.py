@@ -52,6 +52,13 @@ class Room(db.Entity):
     discarted_cards = Set(Card, reverse='roomsD')
     machine_state = Optional(str)
     machine_state_options = Optional(Json)
+    
+    def qty_alive_players(self)->int:
+        return len(list(self.players.select(lambda player:player.status=='VIVO')))
+    
+    def qty_players(self)->int:
+        return len(list(self.players.select()))
+    
 
     def get_host(self):
         for player in self.players:
