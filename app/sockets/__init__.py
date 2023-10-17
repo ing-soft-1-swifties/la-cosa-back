@@ -25,14 +25,22 @@ async def connect(sid, environ, auth):
     ps = PlayersService(db)
     gs = GamesService(db)
     rs = RoomsService(db)
+
     try:
         token = auth["token"]
         ps.connect_player(token, sid)
         players_sid = rs.get_players_sid(sid)
+
+    # error handling
     except Exception as e:
         return False
+    # event on_room_new_player
     for player_sid in players_sid:
-        await sio_server.emit("on_room_new_player", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+        json_response = {
+            "gameState": gs.get_personal_game_status_by_sid(player_sid)
+        }
+        await sio_server.emit("on_room_new_player", json_response, to=player_sid)
+        
     return True
 
 @sio_server.event
