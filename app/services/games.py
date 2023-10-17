@@ -62,7 +62,7 @@ class GamesService(DBSessionMixin):
                 "name" : player.name,
                 "playerID": player.id,
                 "role" : player.rol,
-                "cards" : [self.card_to_JSON(card) for card in player.hand]
+                "cards" : [card.json() for card in player.hand]
             }}
         )
         return player_in_game_state
