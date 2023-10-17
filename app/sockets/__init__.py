@@ -137,7 +137,6 @@ async def game_play_card(sid : str, data):
     gs = GamesService(db)
     ps = PlayersService(db)
     try:
-        print(data)
         events = gs.play_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
             await sio_server.emit("on_game_player_play_card", {

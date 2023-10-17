@@ -81,6 +81,9 @@ class GamesService(DBSessionMixin):
             raise InvalidSidException()
         if card is None:
             raise InvalidCidException()
+        unplayable_cards = ["La cosa", "Infectado"]
+        if card.name in unplayable_cards:
+            raise InvalidAccionException(f"No se puede jugar {card.name}")
         room = player.playing
         ps = PlayersService(self.db)
         if ps.has_card(player, card) == False:
@@ -90,7 +93,7 @@ class GamesService(DBSessionMixin):
             raise InvalidAccionException("No corresponde jugar")
         if room.machine_state_options["id"] != player.id:
             rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException(msg="No es tu turno")
+            raise InvalidAccionException("No es tu turno")
 
         #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
         if card.name == "Lanzallamas":
@@ -101,7 +104,7 @@ class GamesService(DBSessionMixin):
                 #falta enriquecer con info a este excepcion
                 raise InvalidAccionException("Objetivo invalido")
             target_player = Player.get(id = target_id)
-            if target_player is None:
+            if target_player is None or target_player.status != "VIVO":
                 #falta enriquecer con info a este excepcion
                 raise InvalidAccionException("Objetivo Invalido")
 
