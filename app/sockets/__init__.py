@@ -54,6 +54,23 @@ async def disconnect(sid : str):
         return False
     return True
 
+async def end_game(sid : str):
+    rs = RoomsService(db)
+    try:
+        rs.end_game(sid)
+        # event on_room_cancelled_game
+        for player_sid in rs.get_players_sid(sid):
+            await sio_server.emit("on_room_cancelled_game", to=player_sid)   
+            #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.disconnect(player_sid)
+
+    except Exception as e:
+        print(f"Fallo al querer terminar la partida del jugador con sid: {sid}")
+        return True
+
+    # se cierra la conexion
+    return False    
+
 @sio_server.event
 async def room_quit_game(sid : str):
     ps = PlayersService(db)
@@ -77,20 +94,7 @@ async def room_quit_game(sid : str):
         return True
     return False    #se cierra la conexion
 
-# @sio_server.event
-# TODO! Check (room_quit_game)
-async def end_game(sid : str):
-    rs = RoomsService(db)
-    try:
-        players_sid = rs.get_players_sid(sid)
-        rs.end_game(sid)
-    except Exception as e:
-        print(f"fallo al querer terminar la partida del jugador con sid:{sid}")
-        return True
-    for player_sid in players_sid:
-        await sio_server.emit("on_room_cancelled_game", to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        await sio_server.disconnect(player_sid)
-    return False    #se cierra la conexion
+
 
 async def give_card(sid: str):
 
