@@ -47,6 +47,7 @@ class TestRoomsService(unittest.TestCase):
         for i in range(qty_players-1):
             rs.join_player(f"player-{i}", room.id)
 
+
         room.status = 'IN_GAME' 
         rs.initialize_deck(room)
         rs.initial_deal(room)
@@ -96,11 +97,13 @@ class TestRoomsService(unittest.TestCase):
 
         # asignamos el turno
         room.turn = player.position
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id":player.id}
 
         # conseguimos una carta
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
-        cards_in_hand_before = len(player.hand)
         player.hand.add(card)
+        cards_in_hand_before = len(player.hand)
         
         # seteamos la room
         room.machine_state = 'PLAYING'
@@ -133,13 +136,13 @@ class TestRoomsService(unittest.TestCase):
         # seteamos la room
         room.machine_state = 'PLAYING'
         room.machine_state_options = {
-            'id': player.id
+            'id': player.id+1
         }
         player.sid = "27016"
         json = {"card": card.id}
 
 
-        with self.assertRaises(PlayerNotInTurn):
+        with self.assertRaises(InvalidAccionException):
             self.gs.discard_card("27016", json)
 
     @db_session
@@ -173,7 +176,6 @@ class TestRoomsService(unittest.TestCase):
         # room del jugador
         room = self.create_valid_room(roomname='test_discard_card_invalid_room', qty_players=4)
 
-        room.status = 'LOBBY'
 
         # seleccionamos un jugador al azar
         player = room.get_host()
@@ -183,16 +185,17 @@ class TestRoomsService(unittest.TestCase):
 
         # conseguimos una carta
         card = list(Card.select(lambda c: c.name == 'Sospecha').random(1))[0]
-        player.hand.remove(card)
+        player.hand.add(card)
         
         # seteamos la room
+        room.status = 'LOBBY'
         room.machine_state = 'PLAYING'
         room.machine_state_options = {
             'id': player.id
         }
         player.sid = "27016"
         json = {"card": card.id}
-        
+
         with self.assertRaises(InvalidRoomException):
             self.gs.discard_card("27016", json)
 
@@ -249,19 +252,23 @@ class TestRoomsService(unittest.TestCase):
             player.rol = 'HUMANO'
             player.status = 'VIVO'
         list(room.players.select())[0].rol = 'LA_COSA'
+
+        #seteamos el sid del host para poder enviarlo a la funcion
+        room.get_host().sid = "1234"
+
         # tan todos los players vivos 
-        assert self.gs.end_game_condition(room) == 'GAME_IN_PROGRESS'
-        
+        assert self.gs.end_game_condition("1234")[0] == 'GAME_IN_PROGRESS'
+
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'MUERTO'
         # esta la cosa muerta
-        assert self.gs.end_game_condition(room) == 'HUMANS_WON' 
+        assert self.gs.end_game_condition("1234")[0] == 'HUMANS_WON' 
         
         for player in room.players.select():
             player.rol = 'INFECTADO'
             player.status = 'VIVO'
         list(room.players.select())[0].rol = 'LA_COSA'
         # todos lod players estan infectados
-        assert self.gs.end_game_condition(room) == 'LA_COSA_WON' 
+        assert self.gs.end_game_condition("1234")[0] == 'LA_COSA_WON' 
                
         for player in room.players.select():
             player.rol = 'HUMANO'
@@ -269,12 +276,12 @@ class TestRoomsService(unittest.TestCase):
         list(room.players.select())[0].rol = 'LA_COSA' 
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'VIVO'
         # solo queda la cosa viva
-        assert self.gs.end_game_condition(room) == 'LA_COSA_WON'
+        assert self.gs.end_game_condition("1234")[0] == 'LA_COSA_WON'
         
         list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0].status = 'MUERTO'
         list(room.players.select(lambda p: p.rol != 'LA_COSA'))[0].status = 'VIVO'
         # esta la cosa muerta, y un humano vivo
-        assert self.gs.end_game_condition(room) == 'HUMANS_WON'
+        assert self.gs.end_game_condition("1234")[0] == 'HUMANS_WON'
 
     @db_session 
     def test_exchange_cards_invalid_position(self):
@@ -287,6 +294,9 @@ class TestRoomsService(unittest.TestCase):
         card_s : Card= list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
+        #seteamos el sid del host para poder enviarlo a la funcion
+        # room.get_host().sid = "1234"
+
         with self.assertRaises(InvalidExchangeParticipants):
             self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
 
@@ -410,6 +420,72 @@ class TestRoomsService(unittest.TestCase):
         
         assert reciever.rol == 'INFECTADO'
         
+
+    @db_session
+    def test_exchange_cards_infection_direction_true(self):
+        room:Room = self.create_valid_room(roomname='test_exchange_cards_infection_direction_true', qty_players=4)
+        room.direction = True
+        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
+        room.turn = sender.position
+        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
+        card_s: Card = list(room.available_cards.select(name='Infectado'))[0]
+        
+        temp_c = list(sender.hand.select(lambda c: c.name!='La cosa'))[0]
+        sender.hand.remove(temp_c)
+        sender.hand.add(card_s)
+        
+        card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+        
+        self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+        assert reciever.rol == 'INFECTADO'
+
+
+    @db_session
+    def test_play_card(self):
+        room:Room = self.create_valid_room(roomname='test_play_card', qty_players=4)
+        
+        card = list(Card.select(lambda x : x.name == "Sospecha"))[0]
+
+        host = room.get_host()
+        host.hand.add(card)
+        host.sid = "1234"
+
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+
+        room.turn = host.position
+        last_hand_size = len(host.hand)
+        self.gs.play_card("1234", {"card": card.id, "card_options": {"target": None}})
+        assert last_hand_size == len(host.hand)+1
+
+    @db_session
+    def test_play_card_lanzallamas(self):
+        room:Room = self.create_valid_room(roomname='test_play_card_lanzallamas', qty_players=4)
+        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
+        
+        card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
+
+        host = room.get_host()
+        host.hand.add(card)
+        host.sid = "1234"
+
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+        position = 1
+        next_player = None
+        for player in room.players:
+            if player.id != host.id:
+                if position  == 1:
+                    next_player = player
+                player.position = position
+                position += 1
+        
+        room.turn = host.position
+        last_hand_size = len(host.hand)
+        self.gs.play_card("1234", {"card": card.id, "card_options": {"target": player.id}})
+        assert player.status == "MUERTO"
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:

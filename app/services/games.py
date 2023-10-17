@@ -291,6 +291,9 @@ class GamesService(DBSessionMixin):
 
         # room actual
         room = player.playing
+        # Jugador no esta en la sala
+        if room is None or room.status != 'IN_GAME':
+            raise InvalidRoomException()
         
         # La carta no pertenece a las cartas del jugador
         if card not in player.hand:
@@ -306,9 +309,6 @@ class GamesService(DBSessionMixin):
             rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
             raise InvalidAccionException(msg="No es tu turno")
         
-        # Jugador no esta en la sala
-        if room is None or room.status != 'IN_GAME':
-            raise InvalidRoomException()
 
         # Carta invalida
         infected_count = len(player.hand.select(name='Infectado'))
