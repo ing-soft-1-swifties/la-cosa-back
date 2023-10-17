@@ -178,7 +178,7 @@ async def game_discard_card(sid : str, data):
         card_id = gs.discard_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
             await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
-
+        await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
         await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)

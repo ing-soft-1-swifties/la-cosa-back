@@ -94,7 +94,7 @@ class RoomsService(DBSessionMixin):
         if len(expected_room.players) > expected_room.max_players:
             raise TooManyPlayersException()
         self.assign_turns(expected_room)
-        #expected_room.status = "IN_GAME"    #in game
+        expected_room.status = "IN_GAME"    #in game
         expected_room.machine_state = "INITIAL"
         try:
             self.initialize_deck(expected_room)
