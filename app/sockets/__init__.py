@@ -142,6 +142,7 @@ async def game_play_card(sid : str, data):
         events = gs.play_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
             await sio_server.emit("on_game_player_play_card", {
+                "player": ps.get_name(sid),
                 "card" : cs.get_card_json(data["card"]),
                 "card_options" : data["card_options"],
                 "gameState": gs.get_personal_game_status_by_sid(player_sid)}, 
