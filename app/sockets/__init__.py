@@ -77,24 +77,33 @@ async def room_quit_game(sid : str):
     gs = GamesService(db)
     rs = RoomsService(db)
     try:
+        # si el host sale de la lobby, eliminamos toda la partida
         if ps.is_host(sid):
             await end_game(sid)
+       
         else:
-            players_sid = rs.get_players_sid(sid)
+            # desconectamos el jugador
             ps.disconnect_player(sid)
-            for player_sid in players_sid:
+
+            # event on_room_left_player
+            for player_sid in rs.get_players_sid(sid):
                 if player_sid != sid:
-                    await sio_server.emit("on_room_left_player", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+                    json_response = {
+                        "gameState": gs.get_personal_game_status_by_sid(player_sid)
+                    }
+                    await sio_server.emit("on_room_left_player", json_response, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            # desconectamos el socket
             await sio_server.disconnect(sid)
+
+    # error handling 
     except InvalidSidException as e:
         raise e
+    
     except Exception:
-        rootlog.exception(f"fallo al intentar sacar de la partida al jugador con sid{sid}")
-        #falta ver como le comunicamos el incoveniente al cliente
+        rootlog.exception(f"Fallo al intentar sacar de la partida al jugador con sid{sid}")
         return True
-    return False    #se cierra la conexion
-
-
+    
+    return False
 
 async def give_card(sid: str):
 
