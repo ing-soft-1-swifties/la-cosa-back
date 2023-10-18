@@ -78,8 +78,6 @@ async def room_quit_game(sid : str):
         return True
     return False    #se cierra la conexion
 
-# @sio_server.event
-# TODO! Check (room_quit_game)
 async def end_game(sid : str):
     rs = RoomsService(db)
     try:
@@ -184,10 +182,29 @@ async def game_discard_card(sid : str, data):
         await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
-        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+        await sio_server.emit("on_game_invalid_action", {"title":"Intercambio Invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
     except Exception:
         rootlog.exception("error al descartar carta")
     return True
+
+@sio_server.event
+async def game_exchange_card(sid : str, data):
+    rs = RoomsService(db)
+    gs = GamesService(db)
+    ps = PlayersService(db)
+    try:
+        pass
+        for player_sid in rs.get_players_sid(sid):
+            pass
+            # await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+        await give_card(sid)
+    except InvalidAccionException as e:
+        rootlog.exception("intercambio invalido")
+        await sio_server.emit("on_game_invalid_action", {"title":"Intercambio invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+    except Exception:
+        rootlog.exception("error al descartar carta")
+    return True
+
 # @sio_server.event
 # def get_game_status(sid: str):
 #     gs = GamesService(db)

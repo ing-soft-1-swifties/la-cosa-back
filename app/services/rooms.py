@@ -119,8 +119,6 @@ class RoomsService(DBSessionMixin):
         expected_player = Player.get(sid = actual_sid)
         if expected_player is None:
             raise InvalidSidException()
-        # if expected_player.is_host == False:
-        #     raise NotOwnerExeption()
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
