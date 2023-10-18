@@ -467,25 +467,45 @@ class TestRoomsService(unittest.TestCase):
         card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
 
         host = room.get_host()
+        #agregamos lazallamas a la mano de host
         host.hand.add(card)
+        #setemos el sid del host para poder invacar play_card desde host
         host.sid = "1234"
 
-        room.status = "IN_GAME"
-        room.machine_state = "PLAYING"
-        room.machine_state_options = {"id" : host.id}
+        #host en la posicion 0
+        host.position = 0
+
+        #asignamos desde la posicion 1 en adelante a los demas jugadores
         position = 1
-        next_player = None
         for player in room.players:
-            if player.id != host.id:
-                if position  == 1:
-                    next_player = player
+            if player.id != host.id:    
                 player.position = position
                 position += 1
         
+        #next_player sera el jugador que sigue de host
+        next_player = list(room.players.select(lambda player: player.position == 1))[0]
+
+        #seetamos el room para que le toque a host
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
         room.turn = host.position
+        
+        #far_player sera un jugador que no esta al lado de host
+        far_player = list(room.players.select(lambda player: player.position == 2))[0]
+
+        #jugemos a un jugador que no este al lado de host
+        with self.assertRaises(InvalidAccionException):
+            self.gs.play_card("1234", {"card": card.id, "card_options": {"target": far_player.id}})
+
+        #veamos que si la jugamos correctamente se muere el objetivo
         last_hand_size = len(host.hand)
-        self.gs.play_card("1234", {"card": card.id, "card_options": {"target": player.id}})
-        assert player.status == "MUERTO"
+        self.gs.play_card("1234", {"card": card.id, "card_options": {"target": next_player.id}})
+        assert next_player.status == "MUERTO"
+        assert len(host.hand) == last_hand_size-1
+
+
+
 
     @db_session
     def test_play_card_invalid_turn(self):
