@@ -3,20 +3,11 @@ from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
+from app.services.cards import CardsService
 from app.logger import rootlog
 
 class GamesService(DBSessionMixin):
 
-    def card_to_JSON(self, card: Card):
-        return {
-            'id': card.id,
-            'name': card.name,
-            'description': card.description,
-            'type': card.type,
-            'subType': card.sub_type,
-            'needTarget' : card.need_target,
-            'targetAdjacentOnly': card.target_adjacent_only
-        }
 
     @db_session
     def game_state(self, room : Room):
@@ -69,6 +60,7 @@ class GamesService(DBSessionMixin):
 
     @db_session
     def play_card(self, sent_sid : str, payload):
+        cs = CardsService(self.db)
         events = []
         player = Player.get(sid = sent_sid)
         #card = Card.get(id = payload["card_id"])
@@ -96,33 +88,13 @@ class GamesService(DBSessionMixin):
             raise InvalidAccionException("No es tu turno")
 
         #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
+        events = []
         if card.name == "Lanzallamas":
             print("se jugo una carta de lanzallamas")
+            events.extend(cs.play_lanzallamas(player, room, card, card_options))
             #veamos si es uno del lado
-            target_id = card_options.get("target")
-            if target_id is None:
-                #falta enriquecer con info a este excepcion
-                raise InvalidAccionException("Objetivo invalido")
-            target_player = Player.get(id = target_id)
-            if target_player is None or target_player.status != "VIVO":
-                #falta enriquecer con info a este excepcion
-                raise InvalidAccionException("Objetivo Invalido")
-
-            #veamos que esten al lado
-            if player.position is None or target_player.position is None:
-                #seleccionar una buena excepcion
-                raise Exception()
-            
-            # Vemos que los jugadores esten adyacentes:
-            if abs(player.position - target_player.position) != 1 and \
-                abs(player.position - target_player.position) !=  len(room.players.select(status = "VIVO"))-1:
-                #falta enriquecer con info a este excepcion
-                raise InvalidAccionException("El objetivo no esta al lado tuyo")
-
-            target_player.status = "MUERTO"  
-            self.recalculate_positions(sent_sid)
-            events.append(("on_game_player_death",{"player":target_player.name}))
         
+        self.recalculate_positions(sent_sid)
         player.hand.remove(card)
         room.discarted_cards.add(card)
         return events
@@ -205,7 +177,8 @@ class GamesService(DBSessionMixin):
         player.hand.add(card_to_deal)
 
         # computamos el JSON con la info de la carta y retornamos.
-        return self.card_to_JSON(card_to_deal)
+        return card_to_deal.json()
+        
     
     @db_session
     def end_game_condition(self, sent_sid : str) -> str:
@@ -321,7 +294,6 @@ class GamesService(DBSessionMixin):
         room.discarted_cards.add(card)
         return card.id
 
-    
     @db_session
     def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
         """ Realiza el intercambio de cartas.

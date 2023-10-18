@@ -143,7 +143,7 @@ async def game_play_card(sid : str, data):
         for player_sid in rs.get_players_sid(sid):
             await sio_server.emit("on_game_player_play_card", {
                 "player": ps.get_name(sid),
-                "card" : cs.get_card_json(data["card"]),
+                "card" : cs.card_to_JSON_from_cid(data["card"]),
                 "card_options" : data["card_options"],
                 "gameState": gs.get_personal_game_status_by_sid(player_sid)}, 
                 to=player_sid)
@@ -163,7 +163,7 @@ async def game_play_card(sid : str, data):
                 await give_card(sid)
         except Exception as e:
             rootlog.exception("Fallo al verificar si algun equipo ganó")
-            #partida en posible estado inconsistente, matarla
+            #TODO! partida en posible estado inconsistente, matarla
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
         await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
