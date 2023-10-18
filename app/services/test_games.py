@@ -486,6 +486,40 @@ class TestRoomsService(unittest.TestCase):
         last_hand_size = len(host.hand)
         self.gs.play_card("1234", {"card": card.id, "card_options": {"target": player.id}})
         assert player.status == "MUERTO"
+
+    @db_session
+    def test_play_card_invalid_turn(self):
+        room:Room = self.create_valid_room(roomname='test_play_card_invalid_turn', qty_players=4)
+        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
+        
+        card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
+
+        host = room.get_host()
+        host.hand.add(card)
+        host.sid = "1234"
+
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+        position = 1
+        next_player = None
+        for player in room.players:
+            if player.id != host.id:
+                if position  == 1:
+                    next_player = player
+                player.position = position
+                position += 1
+
+        card2 = list(Card.select(lambda x : x.name == "Lanzallamas"))[1]
+        next_player.hand.add(card2)
+        next_player.sid = "999"
+        
+        room.turn = host.position
+       
+        with self.assertRaises(InvalidAccionException):
+            self.gs.play_card("999", {"card": card2.id, "card_options": {"target": host.id}})
+
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
