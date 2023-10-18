@@ -1,9 +1,10 @@
 from app.models import Player
 from pony.orm import db_session
-from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException, InvalidSidException
+from app.services.exceptions import DuplicatePlayerNameException, InvalidAccionException, InvalidRoomException, InvalidSidException
 from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.games import GamesService
+from app.services.cards import CardsService
 from app.models import db
 from app.logger import rootlog
 import socketio
@@ -32,7 +33,7 @@ async def connect(sid, environ, auth):
     except Exception as e:
         return False
     for player_sid in players_sid:
-        await sio_server.emit("on_room_new_player", {"gameState": gs.get_personal_game_status_by_sid(sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_room_new_player", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
     return True
 
 @sio_server.event
@@ -100,10 +101,10 @@ async def give_card(sid : str):
         card_json, in_turn_player_sid = gs.next_turn(sid)   #entrega carta a quien le toca
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
-            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
-        await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.emit("on_game_player_turn", {"player":ps.get_name(in_turn_player_sid), "gameState": gs.get_personal_game_status_by_sid(player_sid)}, to = player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+        await sio_server.emit("on_game_player_steal_card", {"cards":[card_json], "gameState": gs.get_personal_game_status_by_sid(in_turn_player_sid)}, to=in_turn_player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
     except Exception:
-        rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sid}")
+        rootlog.exception(f"error al querer repartir carta  en partida del jugador con sid: {sid}")
         #falta determinar que hacemos si falla
         pass
 
@@ -117,7 +118,7 @@ async def room_start_game(sid : str):
         rs.start_game(sid)  #prepara lo mazos y reparte
         players_sid = rs.get_players_sid(sid)
         for player_sid in players_sid:
-            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
+            await sio_server.emit("on_room_start_game", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         
     except Exception as e:
         rootlog.exception(f"error al querer iniciar la partida del jugador con sid: {sid}")
@@ -136,18 +137,57 @@ async def game_play_card(sid : str, data):
     rs = RoomsService(db)
     gs = GamesService(db)
     ps = PlayersService(db)
+    cs = CardsService(db)
     try:
-        print(data)
         events = gs.play_card(sid, data)
-        #events puede traer un evento que es pedir intercambio o ver si alguien se defiende...
-        #sigue en curso la partida?
-        #intercambio
-        #sigue en curso la partida?
-        give_card(sid)
-    except Exception as e:
+        for player_sid in rs.get_players_sid(sid):
+            await sio_server.emit("on_game_player_play_card", {
+                "player": ps.get_name(sid),
+                "card" : cs.card_to_JSON_from_cid(data["card"]),
+                "card_options" : data["card_options"],
+                "gameState": gs.get_personal_game_status_by_sid(player_sid)}, 
+                to=player_sid)
+        for event in events:
+            for player_sid in rs.get_players_sid(sid):
+                json = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
+                json.update(event[1])
+                await sio_server.emit(event[0], json, to=player_sid)
+        try:
+            result, json = gs.end_game_condition(sid)
+            if result != "GAME_IN_PROGRESS":
+                for player_sid in rs.get_players_sid(sid):
+                    json.update({"gameState": gs.get_personal_game_status_by_sid(player_sid)})
+                    await sio_server.emit("on_game_end", json, to=player_sid)
+                rs.end_game(sid)
+            else:
+                await give_card(sid)
+        except Exception as e:
+            rootlog.exception("Fallo al verificar si algun equipo ganó")
+            #TODO! partida en posible estado inconsistente, matarla
+    except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
+        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+    except Exception:
+        rootlog.exception("ocurrio un error")
     return True
 
+@sio_server.event
+async def game_discard_card(sid : str, data): 
+    # Aquí puedes realizar la lógica para iniciar la partida
+    rs = RoomsService(db)
+    gs = GamesService(db)
+    ps = PlayersService(db)
+    try:
+        card_id = gs.discard_card(sid, data)
+        for player_sid in rs.get_players_sid(sid):
+            await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+        await give_card(sid)
+    except InvalidAccionException as e:
+        rootlog.exception("descarte invalido")
+        await sio_server.emit("on_game_invalid_action", {"title":"Jugada Invalida", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
+    except Exception:
+        rootlog.exception("error al descartar carta")
+    return True
 # @sio_server.event
 # def get_game_status(sid: str):
 #     gs = GamesService(db)

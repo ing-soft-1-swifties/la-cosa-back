@@ -162,100 +162,100 @@ cardsJSON = [
         'need_target': True,
         'target_adjacent_only': True
     },
-    {
-        'name' : 'Vuelta y vuelta',
-        'amounts' : [1,0,0,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : '¿No podemos ser amigos?',
-        'amounts' : [0,0,0,1,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },    {
-        'name' : 'Cita a ciegas',
-        'amounts' : [1,0,0,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
+    # {
+    #     'name' : 'Vuelta y vuelta',
+    #     'amounts' : [1,0,0,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : '¿No podemos ser amigos?',
+    #     'amounts' : [0,0,0,1,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },    {
+    #     'name' : 'Cita a ciegas',
+    #     'amounts' : [1,0,0,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
         
-    },    {
-        'name' : 'Que quede entre nosotros...',
-        'amounts' : [0,0,0,1,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },    {
-        'name' : 'Cuerdas podridas',
-        'amounts' : [0,0,1,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },    
-    {
-        'name' : '¿Es aqui la fiesta?',
-        'amounts' : [0,1,0,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : 'Uno, dos...',
-        'amounts' : [0,1,0,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : 'Tres, cuatro...',
-        'amounts' : [1,0,0,0,0,1,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : '¡Ups!',
-        'amounts' : [0,0,0,0,0,0,1,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : 'Olvidadizo',
-        'amounts' : [1,0,0,0,0,0,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : 'Revelaciones',
-        'amounts' : [0,0,0,0,1,0,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    },
-    {
-        'name' : '¡Sal de aqui!',
-        'amounts' : [0,1,0,0,0,0,0,0],
-        'type' : 'PANICO',
-        'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': True
-    }
+    # },    {
+    #     'name' : 'Que quede entre nosotros...',
+    #     'amounts' : [0,0,0,1,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },    {
+    #     'name' : 'Cuerdas podridas',
+    #     'amounts' : [0,0,1,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },    
+    # {
+    #     'name' : '¿Es aqui la fiesta?',
+    #     'amounts' : [0,1,0,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : 'Uno, dos...',
+    #     'amounts' : [0,1,0,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : 'Tres, cuatro...',
+    #     'amounts' : [1,0,0,0,0,1,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : '¡Ups!',
+    #     'amounts' : [0,0,0,0,0,0,1,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : 'Olvidadizo',
+    #     'amounts' : [1,0,0,0,0,0,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : 'Revelaciones',
+    #     'amounts' : [0,0,0,0,1,0,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # },
+    # {
+    #     'name' : '¡Sal de aqui!',
+    #     'amounts' : [0,1,0,0,0,0,0,0],
+    #     'type' : 'PANICO',
+    #     'sub_type' : '',
+    #     'need_target': False,
+    #     'target_adjacent_only': True
+    # }
 ]
 
 

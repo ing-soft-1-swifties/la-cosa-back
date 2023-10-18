@@ -1,23 +1,13 @@
-from ast import List
-from pony.orm import count, db_session, Set
+from pony.orm import db_session
 from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
+from app.services.cards import CardsService
 from app.logger import rootlog
 
 class GamesService(DBSessionMixin):
 
-    def card_to_JSON(self, card: Card):
-        return {
-            'id': card.id,
-            'name': card.name,
-            'description': card.description,
-            'type': card.type,
-            'subType': card.sub_type,
-            'needTarget' : card.need_target,
-            'targetAdjacentOnly': card.target_adjacent_only
-        }
 
     @db_session
     def game_state(self, room : Room):
@@ -60,46 +50,82 @@ class GamesService(DBSessionMixin):
         #agreguemos que cartas tiene esta persona y su estado
         player_in_game_state.update(
             {"playerData": {
+                "name" : player.name,
                 "playerID": player.id,
                 "role" : player.rol,
-                "cards" : [self.card_to_JSON(card) for card in player.hand]
+                "cards" : [card.json() for card in player.hand]
             }}
         )
         return player_in_game_state
 
     @db_session
     def play_card(self, sent_sid : str, payload):
+        cs = CardsService(self.db)
+        events = []
         player = Player.get(sid = sent_sid)
         #card = Card.get(id = payload["card_id"])
-        card = Card.get(id = payload["card"])   #dejemos esto hasta que el front lo repare
+        sent_card_id = payload.get("card")
+        card_options = payload.get("card_options")
+        if sent_card_id is None or card_options is None:
+            raise InvalidDataException()
+        card = Card.get(id = sent_card_id)   #dejemos esto hasta que el front lo repare
         if player is None:
             raise InvalidSidException()
         if card is None:
             raise InvalidCidException()
+        unplayable_cards = ["La cosa", "Infectado"]
+        if card.name in unplayable_cards:
+            raise InvalidAccionException(f"No se puede jugar {card.name}")
         room = player.playing
         ps = PlayersService(self.db)
         if ps.has_card(player, card) == False:
             raise InvalidCardException()
         if room.machine_state != "PLAYING":
             rootlog.exception("no correspondia jugar una carta")
-            raise InvalidAccionException()
+            raise InvalidAccionException("No corresponde jugar")
         if room.machine_state_options["id"] != player.id:
             rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException()
+            raise InvalidAccionException("No es tu turno")
 
         #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
+        events = []
         if card.name == "Lanzallamas":
             print("se jugo una carta de lanzallamas")
-            pass
-           
-
-        #se juega una carta, notar que van a ocurrir eventos (ej:alguien muere), debemos llevar registro
-        #para luego notificar al frontend (una propuesta es devolve una lista de eventos con sus especificaciones)
-        #a todos los afectados por el evento se les reenvia el game_state
-        events = []
-        #el metodo anterior retorna la carta que recibio alguna la siguiente persona
-        #falta implementar la muestra de eventos
+            events.extend(cs.play_lanzallamas(player, room, card, card_options))
+            #veamos si es uno del lado
+        
+        self.recalculate_positions(sent_sid)
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
         return events
+        
+    @db_session
+    def recalculate_positions(self, sent_sid : str):    
+        """
+            Reasigna posiciones, manteniendo el orden de las personas
+            asume que la partida no esta terminada, se puede seguir jugando
+        """
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+        room = player.playing
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        id_position = []
+        for player in room.players:
+            if player.status == "VIVO":
+                id_position.append((player.position, player))
+        id_position.sort(key  = lambda x : x[0])
+        position = 0
+        should_update_turn = True
+        for pair in id_position:
+            if pair[1].position != position and position <= room.turn and should_update_turn:
+                room.turn -= 1
+                should_update_turn = False
+                pass
+            pair[1].position = position
+            position += 1
         
     @db_session
     def next_turn(self, sent_sid : str):    
@@ -113,13 +139,13 @@ class GamesService(DBSessionMixin):
         if room.machine_state == "INITIAL":
             room.turn = 0
         else:
-            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status != 1)))    #cantidad de jugadores que siguen jugando
+            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
         expected_player = None
         #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
         for player in room.players:
-            if player.position == room.turn:
+            if player.position == room.turn and player.status == "VIVO":
                 expected_player = player
-        if expected_player is None:
+        if expected_player is None: 
             print(f"el jugador con turno {room.turn} no esta en la partida")
             raise Exception
         room.machine_state = "PLAYING"
@@ -151,10 +177,11 @@ class GamesService(DBSessionMixin):
         player.hand.add(card_to_deal)
 
         # computamos el JSON con la info de la carta y retornamos.
-        return self.card_to_JSON(card_to_deal)
+        return card_to_deal.json()
+        
     
     @db_session
-    def end_game_condition(self, room:Room) -> str:
+    def end_game_condition(self, sent_sid : str) -> str:
         """Chequea si se finalizo la partida.
 
         Args: room (Room): current valid room
@@ -162,61 +189,99 @@ class GamesService(DBSessionMixin):
         Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
         """
         
+        player = Player.get(sid = sent_sid)
+        info = {}
+        
+        # inputs validos
+        if player is None:
+            raise InvalidSidException()
+        room: Room = player.playing
+        
+        roles = []
+        for player in room.players:
+            roles.append((player.name, player.rol))
+        
         ret = 'GAME_IN_PROGRESS'
         # Si queda solo un sobreviviente     
-        if len(room.players.select(lambda p : p.status != 'MUERTO')) == 1:
-            survivor : Player = list(room.players.select(lambda p : p.status != 'MUERTO'))[0]
+        if len(room.players.select(lambda p: p.status != 'MUERTO')) == 1:
+            survivor: Player = list(room.players.select(lambda p: p.status != 'MUERTO'))[0] # type: ignore
             # Chequeo si es la cosa
             if survivor.rol == 'LA_COSA':
-                ret='LA_COSA_WON'
+                ret = 'LA_COSA_WON'
+                info = {
+                    "winner_team": "LA_COSA",
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
+                    "roles":roles
+                }                
             else: 
-                ret='HUMANS_WON'
+                ret = 'HUMANS_WON'
+                info = {
+                    "winner_team": "HUMANOS",
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                    "roles":roles
+                }
         
         # Chequeo el estado de la cosa
-        la_cosa : Player = list(room.players.select(lambda p : p.rol == 'LA_COSA'))[0]
-        if la_cosa.status == 'MUERTO':
-            ret='HUMANS_WON'
+        la_cosa: Player = list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0] # type: ignore
+        # la_cosa: Player = room.players.get(rol = 'LA_COSA') # type: ignore
         
+        if la_cosa.status == 'MUERTO':
+            ret = 'HUMANS_WON'
+            info = {
+                "winner_team": "HUMANOS",
+                "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                "roles": roles
+            }
+    
         qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
         qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
         if qty_alive_non_human_players == qty_alive_players: 
             ret='LA_COSA_WON'
+            info = {"winner_team":"LA_COSA",
+                        "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
+                        "roles":roles}   
                 
-        return ret
+        return ret, info
     
     @db_session
-    def discard_card(self, player: Player, card: Card):
-        """
-        Descarta una carta del jugador en la sala actual.
+    def discard_card(self, sent_sid : str, payload):
+        # import ipdb
+        # ipdb.set_trace()
 
-        Parámetros:
-            player (Player): El jugador que desea descartar una carta.
-            card (Card): La carta que el jugador desea descartar.
-
-        Excepciones:
-            PlayerNotInRoom: Si el jugador no se encuentra en ninguna sala.
-            CardNotInPlayerHandException: Si la carta no pertenece a las cartas del jugador.
-            PlayerNotInTurn: Si el jugador no se encuentra en su turno.
-            InvalidCardException: Si se intenta descartar una carta inválida, como "Infectado" cuando el jugador es un "INFECTADO"
-                y solo tiene una carta "Infectado" en su mano, o una carta "La cosa".
-
-        Retorna:
-            None
-        """
         # room que esta jugando el jugador
-        room = player.playing
+        player = Player.get(sid = sent_sid)
+        # carta enviada
+        sent_card_id = payload.get("card")
         
+        # invalid inputs
+        if sent_card_id is None:
+            raise InvalidDataException()
+        if player is None:
+            raise InvalidSidException()
+        card = Card.get(id = sent_card_id)  
+        if card is None:
+            raise InvalidCidException()
+
+        # room actual
+        room = player.playing
         # Jugador no esta en la sala
         if room is None or room.status != 'IN_GAME':
             raise InvalidRoomException()
-
+        
         # La carta no pertenece a las cartas del jugador
         if card not in player.hand:
-            raise CardNotInPlayerHandExeption()        
+            raise InvalidCardException()
+        
+        # Estado incorrecto
+        if room.machine_state != "PLAYING":
+            rootlog.exception("No correspondia descartar una carta")
+            raise InvalidAccionException("No corresponde descartar")
 
-        # Jugador no esta en su turno
-        if player.position != room.turn:
-            raise PlayerNotInTurn()
+        # esta el turno incorrecto
+        if room.machine_state_options["id"] != player.id:
+            rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
+            raise InvalidAccionException(msg="No es tu turno")
+        
 
         # Carta invalida
         infected_count = len(player.hand.select(name='Infectado'))
@@ -227,9 +292,8 @@ class GamesService(DBSessionMixin):
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
+        return card.id
 
-        return
-    
     @db_session
     def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
         """ Realiza el intercambio de cartas.

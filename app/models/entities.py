@@ -22,6 +22,17 @@ class Card(db.Entity):
     need_target = Optional(bool, default=False)
     target_adjacent_only = Optional(bool, default=False)
 
+    def json(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'type': self.type,
+            'subType': self.sub_type,
+            'needTarget' : self.need_target,
+            'targetAdjacentOnly': self.target_adjacent_only
+        }
+
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str)
