@@ -286,9 +286,10 @@ class GamesService(DBSessionMixin):
 
         rs = RoomsService(self.db)
         room.machine_state =  "EXCHANGING"
-        room.machine_state_options = {"ids":[player, rs.next_player(room)],
+        room.machine_state_options = {"ids":[player.id, rs.next_player(room).id],
                                       "stage":"STARTING",
                                       }
+        print(f"comienza intercambio entre {player.name} y {rs.next_player(room).name}")
         return card.id
 
     @db_session
@@ -400,7 +401,7 @@ class GamesService(DBSessionMixin):
                                          "player_id":player.id,
                                          "on_defense": on_defense if not first_player else False}
             return False    #temporal, indicamos que no vaya al siguiente turno
-        if room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
+        elif room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
             first_player_id = exchanging_players[0]
             first_player = Player.get(id = first_player_id)
             second_player_id = exchanging_players[1]
