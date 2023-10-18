@@ -298,7 +298,7 @@ class TestRoomsService(unittest.TestCase):
         # room.get_host().sid = "1234"
 
         with self.assertRaises(InvalidExchangeParticipants):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session 
     def test_exchange_cards_not_in_turn(self):
@@ -312,7 +312,7 @@ class TestRoomsService(unittest.TestCase):
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(PlayerNotInTurn):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session 
     def test_exchange_cards_card_not_in_hand(self):
@@ -325,7 +325,7 @@ class TestRoomsService(unittest.TestCase):
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(CardNotInPlayerHandExeption):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
         
     @db_session 
     def test_exchange_cards_la_cosa(self):
@@ -340,7 +340,7 @@ class TestRoomsService(unittest.TestCase):
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(RoleCardExchange):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
     
     @db_session 
     def test_exchange_cards_invalid_ifection_human_to_anything(self):
@@ -359,7 +359,7 @@ class TestRoomsService(unittest.TestCase):
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(InvalidCardExchange):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
     
     @db_session
     def test_exchange_cards_invalid_ifection_last_infection(self):
@@ -376,7 +376,7 @@ class TestRoomsService(unittest.TestCase):
         reciever.rol = 'INFECTADO'
         
         with self.assertRaises(RoleCardExchange):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
             
     @db_session
     def test_exchange_cards_invalid_ifection_infected_to_human(self):
@@ -399,7 +399,7 @@ class TestRoomsService(unittest.TestCase):
         reciever.rol = 'INFECTADO'
         
         with self.assertRaises(InvalidCardExchange):
-            self.gs.exchange_cards(room=room,sender=sender,reciever=reciever,card_s=card_s, card_r=card_r)
+            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session
     def test_exchange_cards_infection_direction_true(self):
