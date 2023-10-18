@@ -367,8 +367,7 @@ class GamesService(DBSessionMixin):
             raise InvalidSidException()
         sent_card_id = payload.get("card")
         on_defense = payload.get("on_defense")
-        #target = payload.get("target")
-        if sent_card_id is None or on_defense is None or target is None:
+        if sent_card_id is None or on_defense is None:
             raise InvalidDataException()
         card = Card.get(id = sent_card_id)
         if card is None:
@@ -393,8 +392,8 @@ class GamesService(DBSessionMixin):
         if room.machine_state_options["id"] not in room.machine_state_options["ids"]:
             rootlog.exception(f"no corresponde que la persona intercambie{room.machine_state_options['id']} {player.id}")
             raise InvalidAccionException("No corresponde iniciar un intercambio")
-        if room.machine_state_options["state"] == "STARTING":
             first_player = exchanging_players[0] == player.id
+        if room.machine_state_options["state"] == "STARTING":
             room.machine_state = "EXCHANGING"
             room.machine_state_options = {"id":player.id, 
                                          "stage":"FINISHING",
@@ -402,9 +401,21 @@ class GamesService(DBSessionMixin):
                                          "player_id":player.id,
                                          "on_defense": on_defense if not first_player else None}
         if room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
-            first_player = exchanging_players[0] == player.id
-            #ejecuto el intercambio
-            return 
-        
+            first_player_id = exchanging_players[0]
+            first_player = Player.get(id = first_player_id)
+            second_player_id = exchanging_players[1]
+            second_player = Player.get(id = second_player_id)
+            if first_player is None or second_player is None:
+                InvalidDataException()
+            if first_player.playing != second_player.playing:
+                rootlog.exception("los jugadores no corresponden a una misma partida")
+                InvalidDataException()
+            is_first_player = exchanging_players[0] == player.id
+            first_card = card if is_first_player else Card.get(id = room.machine_state_options["card_id"])
+            second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
+            self.exchange_cards(room, first_player, second_player, first_card, second_card)
+            print(f"intercambio entre {first_player.name} y {second_player.name} finalizado exitosamente")
+        else:
+            raise InvalidAccionException("No corresponde iniciar un intercambio") 
         
         
