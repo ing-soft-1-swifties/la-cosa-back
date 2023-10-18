@@ -152,6 +152,7 @@ class GamesService(DBSessionMixin):
         room.machine_state_options = {"id":expected_player.id}
         return self.give_card(expected_player), expected_player.sid
         
+
     @db_session
     def give_card(self, player:Player):
         room = player.playing
@@ -358,3 +359,52 @@ class GamesService(DBSessionMixin):
         player_B.hand.add(card_A)
         
         return
+
+    @db_session
+    def exchange_card_manager(self, sent_sid : str, payload):
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+        sent_card_id = payload.get("card")
+        on_defense = payload.get("on_defense")
+        #target = payload.get("target")
+        if sent_card_id is None or on_defense is None or target is None:
+            raise InvalidDataException()
+        card = Card.get(id = sent_card_id)
+        if card is None:
+            raise InvalidCidException()
+        unchangable_cards = ["La cosa"]
+        if card.name in unchangable_cards:
+            raise InvalidAccionException(f"No se puede intercambiar {card.name}")
+        room = player.playing
+        ps = PlayersService(self.db)
+        if ps.has_card(player, card) == False:
+            raise InvalidCardException()
+        #maquina de estados
+        if room.machine_state != "EXCHANGING":
+            rootlog.exception("no correspondia intercambiar una carta")
+            raise InvalidAccionException("No corresponde intercambiar")
+
+        print(room.machine_state_options["ids"])
+        exchanging_players = room.machine_state_options.get("ids")
+        if exchanging_players is None:
+            rootlog.exception("deberia existir campo ids en estado intercambio")
+            raise Exception()
+        if room.machine_state_options["id"] not in room.machine_state_options["ids"]:
+            rootlog.exception(f"no corresponde que la persona intercambie{room.machine_state_options['id']} {player.id}")
+            raise InvalidAccionException("No corresponde iniciar un intercambio")
+        if room.machine_state_options["state"] == "STARTING":
+            first_player = exchanging_players[0] == player.id
+            room.machine_state = "EXCHANGING"
+            room.machine_state_options = {"id":player.id, 
+                                         "stage":"FINISHING",
+                                         "card_id" : card.id,
+                                         "player_id":player.id,
+                                         "on_defense": on_defense if not first_player else None}
+        if room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
+            first_player = exchanging_players[0] == player.id
+            #ejecuto el intercambio
+            return 
+        
+        
+        
