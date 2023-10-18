@@ -193,3 +193,21 @@ class RoomsService(DBSessionMixin):
                     player.rol = 'LA_COSA'
         return
     
+    @db_session
+    def next_player(self, room):
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        if room.machine_state == "INITIAL":
+            room.turn = 0
+        else:
+            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+        expected_player = None
+        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
+        for player in room.players:
+            if player.position == room.turn and player.status == "VIVO":
+                expected_player = player
+        if expected_player is None: 
+            print(f"el jugador con turno {room.turn} no esta en la partida")
+            raise Exception
+        return expected_player

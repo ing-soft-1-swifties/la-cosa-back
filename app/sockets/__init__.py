@@ -159,6 +159,7 @@ async def game_play_card(sid : str, data):
                 rs.end_game(sid)
             else:
                 await give_card(sid)
+                pass
         except Exception as e:
             rootlog.exception("Fallo al verificar si algun equipo ganó")
             #TODO! partida en posible estado inconsistente, matarla
@@ -178,8 +179,8 @@ async def game_discard_card(sid : str, data):
     try:
         card_id = gs.discard_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
-            await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
-        await give_card(sid)
+            await sio_server.emit("on_game_player_discard_card", {"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
+        #await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("descarte invalido")
         await sio_server.emit("on_game_invalid_action", {"title":"Intercambio Invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
@@ -194,10 +195,13 @@ async def game_exchange_card(sid : str, data):
     ps = PlayersService(db)
     try:
         pass
+        print(f"jugador {rs.get_name(sid)}, quiere intercambiar ", data)
+        ret = gs.exchange_card_manager(sid, data)
         for player_sid in rs.get_players_sid(sid):
             pass
             # await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
-        await give_card(sid)
+        if ret:
+            await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("intercambio invalido")
         await sio_server.emit("on_game_invalid_action", {"title":"Intercambio invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)

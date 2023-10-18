@@ -3,6 +3,7 @@ from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.players import PlayersService
+from app.services.rooms import RoomsService
 from app.services.cards import CardsService
 from app.logger import rootlog
 
@@ -127,28 +128,17 @@ class GamesService(DBSessionMixin):
             pair[1].position = position
             position += 1
         
+
+
     @db_session
     def next_turn(self, sent_sid : str):    
+        rs = RoomsService(self.db)
         player = Player.get(sid = sent_sid)
         if player is None:
             raise InvalidSidException()
         room = player.playing
-        if room.turn is None:
-            print("partida inicializada incorrectamente, turno no pre-seteado")
-            raise Exception
-        if room.machine_state == "INITIAL":
-            room.turn = 0
-        else:
-            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
-        expected_player = None
-        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
-        for player in room.players:
-            if player.position == room.turn and player.status == "VIVO":
-                expected_player = player
-        if expected_player is None: 
-            print(f"el jugador con turno {room.turn} no esta en la partida")
-            raise Exception
         room.machine_state = "PLAYING"
+        expected_player = rs.next_player(room)
         room.machine_state_options = {"id":expected_player.id}
         return self.give_card(expected_player), expected_player.sid
         
@@ -293,6 +283,12 @@ class GamesService(DBSessionMixin):
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
+
+        rs = RoomsService(self.db)
+        room.machine_state =  "EXCHANGING"
+        room.machine_state_options = {"ids":[player, rs.next_player(room)],
+                                      "stage":"STARTING",
+                                      }
         return card.id
 
     @db_session
@@ -392,14 +388,18 @@ class GamesService(DBSessionMixin):
         if room.machine_state_options["id"] not in room.machine_state_options["ids"]:
             rootlog.exception(f"no corresponde que la persona intercambie{room.machine_state_options['id']} {player.id}")
             raise InvalidAccionException("No corresponde iniciar un intercambio")
-            first_player = exchanging_players[0] == player.id
+        first_player = exchanging_players[0] == player.id
+        if first_player:
+            if on_defense:
+                raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
         if room.machine_state_options["state"] == "STARTING":
             room.machine_state = "EXCHANGING"
             room.machine_state_options = {"id":player.id, 
                                          "stage":"FINISHING",
                                          "card_id" : card.id,
                                          "player_id":player.id,
-                                         "on_defense": on_defense if not first_player else None}
+                                         "on_defense": on_defense if not first_player else False}
+            return False    #temporal, indicamos que no vaya al siguiente turno
         if room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
             first_player_id = exchanging_players[0]
             first_player = Player.get(id = first_player_id)
@@ -415,6 +415,8 @@ class GamesService(DBSessionMixin):
             second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
             self.exchange_cards(room, first_player, second_player, first_card, second_card)
             print(f"intercambio entre {first_player.name} y {second_player.name} finalizado exitosamente")
+            #esto es temporal luego movemos la secuencialidad de la partida todo a los servicios
+            return True
         else:
             raise InvalidAccionException("No corresponde iniciar un intercambio") 
         
