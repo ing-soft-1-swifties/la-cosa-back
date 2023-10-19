@@ -87,6 +87,7 @@ class GamesService(DBSessionMixin):
         
         rs = RoomsService(self.db)
         rs.recalculate_positions(sent_sid)
+        #deberiamos ver si termino el juego
         #aca deberiamos llamar al servicio de cartas descartar cuando este listo
         #cs.discard_card(player, card)
         player.hand.remove(card)
@@ -106,10 +107,8 @@ class GamesService(DBSessionMixin):
 
         Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
         """
-        
         player = Player.get(sid = sent_sid)
         info = {}
-        
         # inputs validos
         if player is None:
             raise InvalidSidException()
@@ -218,10 +217,11 @@ class GamesService(DBSessionMixin):
             is_first_player = exchanging_players[0] == player.id
             first_card = card if is_first_player else Card.get(id = room.machine_state_options["card_id"])
             second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
-            self.exchange_cards(room, first_player, second_player, first_card, second_card)
+            from .cards import CardsService
+            cs = CardsService(self.db)
+            events = cs.exchange_cards(room, first_player, second_player, first_card, second_card)
             print(f"intercambio entre {first_player.name} y {second_player.name} finalizado exitosamente")
-            #esto es temporal luego movemos la secuencialidad de la partida todo a los servicios
-            return True
+            return events
         else:
             raise InvalidAccionException("No corresponde iniciar un intercambio") 
         
