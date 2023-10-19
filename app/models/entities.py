@@ -48,10 +48,10 @@ class Player(db.Entity):
 
     def json(self):
         return {
-                "name" : player.name,
-                "playerID": player.id,
-                "role" : player.rol,
-                "cards" : [card.json() for card in player.hand]
+                "name" : self.name,
+                "playerID": self.id,
+                "role" : self.rol,
+                "cards" : [card.json() for card in self.hand]
                 }
 
 class Room(db.Entity):
@@ -84,7 +84,7 @@ class Room(db.Entity):
                 return player
         raise Exception()   #muerte
 
-    def get_json(self):
+    def json(self):
         return { 
             'id': self.id,
             'name': self.name,
