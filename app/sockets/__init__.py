@@ -91,26 +91,26 @@ async def end_game(sid : str):
         await sio_server.disconnect(player_sid)
     return False    #se cierra la conexion
 
-async def give_card(sid : str):
-    try:
-        card_json, in_turn_player_sid = rs.next_turn(sid)   #entrega carta a quien le toca
-        await notify_events([
-        {
-            "name":"on_game_player_turn",
-            "body":{"player":ps.get_name(in_turn_player_sid)},
-            "broadcast":True
-        },
-        {
-            "name":"on_game_player_steal_card",
-            "body":{"cards":[card_json]},
-            "broadcast":False,
-            "receiver_sid":in_turn_player_sid
-        }
-        ], sid)
-    except Exception:
-        rootlog.exception(f"error al querer repartir carta  en partida del jugador con sid: {sid}")
-        #falta determinar que hacemos si falla
-        pass
+# async def give_card(sid : str):
+#     try:
+#         card_json, in_turn_player_sid = rs.next_turn(sid)   #entrega carta a quien le toca
+#         await notify_events([
+#         {
+#             "name":"on_game_player_turn",
+#             "body":{"player":ps.get_name(in_turn_player_sid)},
+#             "broadcast":True
+#         },
+#         {
+#             "name":"on_game_player_steal_card",
+#             "body":{"cards":[card_json]},
+#             "broadcast":False,
+#             "receiver_sid":in_turn_player_sid
+#         }
+#         ], sid)
+#     except Exception:
+#         rootlog.exception(f"error al querer repartir carta  en partida del jugador con sid: {sid}")
+#         #falta determinar que hacemos si falla
+#         pass
 
 @sio_server.event
 async def room_start_game(sid : str): 
@@ -129,7 +129,7 @@ async def room_start_game(sid : str):
 async def game_play_card(sid : str, data): 
     try:
         events = gs.play_card(sid, data)
-        notify_events(events, sid)
+        await notify_events(events, sid)
     except InvalidAccionException as e:
         rootlog.exception("jugada invalida")
         await notify_events([{
@@ -138,7 +138,7 @@ async def game_play_card(sid : str, data):
                     "message":e.msg},
             "broadcast":False,
             "receiver_sid":sid
-            }])
+            }], sid)
     except Exception:
         rootlog.exception("ocurrio un error inesperado al jugar una carta")
     return True
@@ -156,7 +156,7 @@ async def game_discard_card(sid : str, data):
                     "message":e.msg},
             "broadcast":False,
             "receiver_sid":sid
-            }])
+            }], sid)
     except Exception:
         rootlog.exception("error al descartar carta")
     return True
@@ -189,11 +189,11 @@ async def game_exchange_card(sid : str, data):
 
 async def notify_events(events, sid):
     """
-    recive una lista de eventos
-    event = {name:
-             body:
-             broadcast:
-             receiver_sid:
+    recibe una lista de eventos
+    event = {name: <Str>
+             body: <Json>
+             broadcast: <Bool>
+             receiver_sid: <Str>
              }
     """
     for event in events:
