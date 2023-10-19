@@ -19,13 +19,16 @@ sio_app = socketio.ASGIApp(
     socketio_path="/"
 )
 
+rs = RoomsService(db)
+gs = GamesService(db)
+ps = PlayersService(db)
+cs = CardsService(db)
+
 @sio_server.event
 async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
-    ps = PlayersService(db)
-    gs = GamesService(db)
-    rs = RoomsService(db)
+
     try:
         token = auth["token"]
         ps.connect_player(token, sid)
@@ -57,9 +60,7 @@ async def disconnect(sid : str):
 
 @sio_server.event
 async def room_quit_game(sid : str):
-    ps = PlayersService(db)
-    gs = GamesService(db)
-    rs = RoomsService(db)
+
     try:
         if ps.is_host(sid):
             await end_game(sid)
@@ -79,7 +80,6 @@ async def room_quit_game(sid : str):
     return False    #se cierra la conexion
 
 async def end_game(sid : str):
-    rs = RoomsService(db)
     try:
         players_sid = rs.get_players_sid(sid)
         rs.end_game(sid)
@@ -92,9 +92,6 @@ async def end_game(sid : str):
     return False    #se cierra la conexion
 
 async def give_card(sid : str):
-    rs = RoomsService(db)
-    gs = GamesService(db)
-    ps = PlayersService(db)
     try:
         card_json, in_turn_player_sid = rs.next_turn(sid)   #entrega carta a quien le toca
         await notify_events([
@@ -117,10 +114,6 @@ async def give_card(sid : str):
 
 @sio_server.event
 async def room_start_game(sid : str): 
-    # Aquí puedes realizar la lógica para iniciar la partida
-    rs = RoomsService(db)
-    gs = GamesService(db)
-    ps = PlayersService(db)
     try:
         events = rs.start_game(sid)  #prepara lo mazos y reparte
         #await notify_events(events)
@@ -143,11 +136,6 @@ async def room_start_game(sid : str):
     
 @sio_server.event
 async def game_play_card(sid : str, data): 
-    # Aquí puedes realizar la lógica para iniciar la partida
-    rs = RoomsService(db)
-    gs = GamesService(db)
-    ps = PlayersService(db)
-    cs = CardsService(db)
     try:
         events = gs.play_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
@@ -184,10 +172,6 @@ async def game_play_card(sid : str, data):
 
 @sio_server.event
 async def game_discard_card(sid : str, data): 
-    # Aquí puedes realizar la lógica para iniciar la partida
-    rs = RoomsService(db)
-    gs = GamesService(db)
-    ps = PlayersService(db)
     try:
         card_id = gs.discard_card(sid, data)
         for player_sid in rs.get_players_sid(sid):
@@ -202,9 +186,6 @@ async def game_discard_card(sid : str, data):
 
 @sio_server.event
 async def game_exchange_card(sid : str, data):
-    rs = RoomsService(db)
-    gs = GamesService(db)
-    ps = PlayersService(db)
     try:
         pass
         print(f"jugador {rs.get_name(sid)}, quiere intercambiar ", data)
@@ -240,8 +221,6 @@ async def notify_events(events, sid):
              single_sid:
              }
     """
-    rs = RoomsService(db)
-    gs = GamesService(db)
     for event in events:
         if event["broadcast"]:
             for player_sid in rs.get_players_sid(sid):
