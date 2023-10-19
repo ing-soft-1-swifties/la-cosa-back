@@ -54,65 +54,74 @@ class GamesService(DBSessionMixin):
 
     @db_session
     def play_card(self, sent_sid : str, payload):
-        cs = CardsService(self.db)
-        events = []     #lista de eventos a informar a los jugadores
-        player = Player.get(sid = sent_sid)
-        if player is None:
-            raise InvalidSidException()
-        sent_card_id = payload.get("card")
-        card_options = payload.get("card_options")
-        if sent_card_id is None or card_options is None:
-            raise InvalidDataException()
-        card = Card.get(id = sent_card_id) 
-        if card is None:
-            raise InvalidCidException()
-        unplayable_cards = ["La cosa", "Infectado"]
-        if card.name in unplayable_cards:
-            raise InvalidAccionException(f"No se puede jugar {card.name}")
-        room = player.playing
-        ps = PlayersService(self.db)
-        if ps.has_card(player, card) == False:
-            raise InvalidCardException()
-        if room.machine_state != "PLAYING":
-            rootlog.exception("no correspondia jugar una carta")
-            raise InvalidAccionException("No corresponde jugar")
-        if room.machine_state_options["id"] != player.id:
-            rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException("No es tu turno")
+        try:
+            cs = CardsService(self.db)
+            events = []     #lista de eventos a informar a los jugadores
+            player = Player.get(sid = sent_sid)
+            if player is None:
+                raise InvalidSidException()
+            sent_card_id = payload.get("card")
+            card_options = payload.get("card_options")
+            if sent_card_id is None or card_options is None:
+                raise InvalidDataException()
+            card = Card.get(id = sent_card_id) 
+            if card is None:
+                raise InvalidCidException()
+            unplayable_cards = ["La cosa", "Infectado"]
+            if card.name in unplayable_cards:
+                raise InvalidAccionException(f"No se puede jugar {card.name}")
+            room = player.playing
+            ps = PlayersService(self.db)
+            if ps.has_card(player, card) == False:
+                raise InvalidCardException()
+            if room.machine_state != "PLAYING":
+                rootlog.exception("no correspondia jugar una carta")
+                raise InvalidAccionException("No corresponde jugar")
+            if room.machine_state_options["id"] != player.id:
+                rootlog.exception(f"no era el turno de la persona que intento jugar {room.machine_state_options['id']} {player.id}")
+                raise InvalidAccionException("No es tu turno")
 
-        #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
-        events = []
-        if card.name == "Lanzallamas":
-            events.extend(cs.play_lanzallamas(player, room, card, card_options))
+            #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
+            events = []
+            if card.name == "Lanzallamas":
+                events.extend(cs.play_lanzallamas(player, room, card, card_options))
 
-        events.append({
-            "name":"on_game_player_play_card",
-            "body":{
-                "player": player.name,
-                "card" : card.json(),
-                "card_options" : payload["card_options"],
-            },
-            "broadcast":True
-        }) 
-        rs = RoomsService(self.db)
-        rs.recalculate_positions(sent_sid)
-        #deberiamos ver si termino el juego
-        #aca deberiamos llamar al servicio de cartas descartar cuando este listo
-        #cs.discard_card(player, card)
-        player.hand.remove(card)
-        room.discarted_cards.add(card)
-        result, json = self.end_game_condition(sent_sid)
-        if result != "GAME_IN_PROGRESS":
             events.append({
-                "name":"on_game_end",
-                "body":json,
+                "name":"on_game_player_play_card",
+                "body":{
+                    "player": player.name,
+                    "card" : card.json(),
+                    "card_options" : payload["card_options"],
+                },
                 "broadcast":True
-            })
-            rs.end_game(sent_sid)
-        else:
-            #await give_card(sid)
-            events.extend(rs.next_turn(sent_sid))
-        return events
+            }) 
+            rs = RoomsService(self.db)
+            rs.recalculate_positions(sent_sid)
+            #deberiamos ver si termino el juego
+            #aca deberiamos llamar al servicio de cartas descartar cuando este listo
+            #cs.discard_card(player, card)
+            player.hand.remove(card)
+            room.discarted_cards.add(card)
+            result, json = self.end_game_condition(sent_sid)
+            if result != "GAME_IN_PROGRESS":
+                events.append({
+                    "name":"on_game_end",
+                    "body":json,
+                    "broadcast":True
+                })
+                rs.end_game(sent_sid)
+            else:
+                #await give_card(sid)
+                events.extend(rs.next_turn(sent_sid))
+            return events
+        except InvalidAccionException as e:
+            return ([{
+                "name":"on_game_invalid_action",
+                "body":{"title":"Jugada invalida",
+                        "message":e.msg},
+                "broadcast":False,
+                "receiver_sid":sent_sid
+                }])
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
