@@ -38,7 +38,7 @@ class CardsService(DBSessionMixin):
         player.hand.add(card_to_deal)
 
         # computamos el JSON con la info de la carta y retornamos.
-        return card_to_deal.json()
+        return card_to_deal
 
     @db_session
     def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
