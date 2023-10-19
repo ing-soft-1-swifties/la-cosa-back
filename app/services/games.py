@@ -84,7 +84,16 @@ class GamesService(DBSessionMixin):
         events = []
         if card.name == "Lanzallamas":
             events.extend(cs.play_lanzallamas(player, room, card, card_options))
-        
+
+        events.append({
+            "name":"on_game_player_play_card",
+            "body":{
+                "player": player.name,
+                "card" : card.json(),
+                "card_options" : payload["card_options"],
+            },
+            "broadcast":True
+        }) 
         rs = RoomsService(self.db)
         rs.recalculate_positions(sent_sid)
         #deberiamos ver si termino el juego
@@ -92,12 +101,26 @@ class GamesService(DBSessionMixin):
         #cs.discard_card(player, card)
         player.hand.remove(card)
         room.discarted_cards.add(card)
+        result, json = self.end_game_condition(sent_sid)
+        if result != "GAME_IN_PROGRESS":
+            events.append({
+                "name":"on_game_end",
+                "body":json,
+                "broadcast":True
+            })
+            rs.end_game(sent_sid)
+        else:
+            #await give_card(sid)
+            events.extend(rs.next_turn(sent_sid))
         return events
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
+        rs = RoomsService(self.db)
         cs = CardsService(self.db)
-        return cs.discard_card(sent_sid, payload)
+        events = cs.discard_card(sent_sid, payload)
+        events.extend(rs.next_turn(sent_sid))
+        return events
 
     @db_session
     def end_game_condition(self, sent_sid : str) -> str:

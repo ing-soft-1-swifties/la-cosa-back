@@ -74,11 +74,12 @@ class RoomsService(DBSessionMixin):
             turn += 1 
 
     @db_session
-    def start_game(self, actual_sid : str):
+    def start_game(self, sent_sid : str):
         """
         si el jugador es propietario de una partida y esta no esta iniciada, dadas las condiciones para que se pueda iniciar una partida, esta se inicia
         """
-        expected_player = Player.get(sid = actual_sid)
+        events = []
+        expected_player = Player.get(sid = sent_sid)
         if expected_player is None:
             raise InvalidSidException()
         if expected_player.is_host == False:
@@ -110,6 +111,14 @@ class RoomsService(DBSessionMixin):
             for player in expected_room.players:
                 player.hand.clear()
             raise e
+        events.append(
+        {
+            "name":"on_room_start_game",
+            "body":{},
+            "broadcast":True
+        })
+        events.extend(self.next_turn(sent_sid))
+        return events
 
     @db_session
     def end_game(self, actual_sid : str):
@@ -200,16 +209,32 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def next_turn(self, sent_sid : str):    
-        player = Player.get(sid = sent_sid)
-        if player is None:
-            raise InvalidSidException()
-        room = player.playing
-        room.machine_state = "PLAYING"
-        expected_player = self.next_player(room)
-        room.machine_state_options = {"id":expected_player.id}
-        from app.services.cards import CardsService
-        cs = CardsService(self.db)
-        return cs.give_card(expected_player), expected_player.sid
+        try:
+            player = Player.get(sid = sent_sid)
+            if player is None:
+                raise InvalidSidException()
+            room = player.playing
+            room.machine_state = "PLAYING"
+            in_turn_player = self.next_player(room)
+            room.machine_state_options = {"id":in_turn_player.id}
+            from app.services.cards import CardsService
+            cs = CardsService(self.db)
+            new_card = cs.give_card(in_turn_player), in_turn_player.sid
+            return([
+            {
+                "name":"on_game_player_turn",
+                "body":{"player":in_turn_player.name},
+                "broadcast":True
+            },
+            {
+                "name":"on_game_player_steal_card",
+                "body":{"cards":[new_card.json()]},
+                "broadcast":False,
+                "receiver_sid":in_turn_player.sid
+            }])
+        except:
+            rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sent_sid}")
+            #cleanup pendiente
         
     @db_session
     def recalculate_positions(self, sent_sid : str):    
