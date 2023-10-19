@@ -34,6 +34,7 @@ class PlayersService(DBSessionMixin):
     def has_card(self, player : Player, card : Card):
         return card in player.hand
 
+    @db_session
     def get_name(self, sent_sid : str):
         player = Player.get(sid = sent_sid)
         if player is None:

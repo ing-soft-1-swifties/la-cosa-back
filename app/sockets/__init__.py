@@ -196,12 +196,11 @@ async def game_exchange_card(sid : str, data):
     try:
         pass
         print(f"jugador {rs.get_name(sid)}, quiere intercambiar ", data)
-        ret = gs.exchange_card_manager(sid, data)
+        events = gs.exchange_card_manager(sid, data)
+        notify_events(events)
         for player_sid in rs.get_players_sid(sid):
             pass
             # await sio_server.emit("on_game_player_discard_card", {"card":card_id,"gameState": gs.get_personal_game_status_by_sid(player_sid)}, to=player_sid)
-        if ret:
-            await give_card(sid)
     except InvalidAccionException as e:
         rootlog.exception("intercambio invalido")
         await sio_server.emit("on_game_invalid_action", {"title":"Intercambio invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
@@ -220,3 +219,24 @@ async def game_exchange_card(sid : str, data):
 #     for player_sid in players_sid:
 #         aux = sio_server.emit("room/status",{"gameState": gs.get_personal_game_status_by_sid(sid)}, player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
 #     return True 
+
+def notify_events(events, sid):
+    """
+    recive una lista de eventos
+    event = {name:
+             body:
+             broadcast:
+             single_sid:
+             }
+    """
+    rs = RoomsService(db)
+    gs = GamesService(db)
+    for event in events:
+        if event["broadcast"]:
+            for player in rs.get_players_sid(sid):
+                gameState = {"gameState": gs.get_personal_game_status_by_sid(player.sid)}
+                sio_server.emit(event["name"], event["body"].update(gameState), to = player.sid)
+        else:
+            gameState = {"gameState": gs.get_personal_game_status_by_sid(sid)}
+            sio_server.emit(event["name"], event["body"].update(gameState), to = event["single_sid"])
+
