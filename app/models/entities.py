@@ -46,6 +46,13 @@ class Player(db.Entity):
     token = Required(str)
     hand = Set('Card', reverse='player_hand')
 
+    def json(self):
+        return {
+                "name" : player.name,
+                "playerID": player.id,
+                "role" : player.rol,
+                "cards" : [card.json() for card in player.hand]
+                }
 
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -76,3 +83,14 @@ class Room(db.Entity):
             if player.is_host:
                 return player
         raise Exception()   #muerte
+
+    def get_json(self):
+        return { 
+            'id': self.id,
+            'name': self.name,
+            'max_players' : self.max_players,
+            'min_players' : self.min_players,
+            'players_count' : len(self.players),
+            'is_private' : self.is_private
+        }
+

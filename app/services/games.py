@@ -49,29 +49,21 @@ class GamesService(DBSessionMixin):
         #devuelve un diccionario que representa el estado del juego desde la vision de un jugador
         player_in_game_state = self.game_state(player.playing)
         #agreguemos que cartas tiene esta persona y su estado
-        player_in_game_state.update(
-            {"playerData": {
-                "name" : player.name,
-                "playerID": player.id,
-                "role" : player.rol,
-                "cards" : [card.json() for card in player.hand]
-            }}
-        )
+        player_in_game_state.update({"playerData": player.json()})
         return player_in_game_state
 
     @db_session
     def play_card(self, sent_sid : str, payload):
         cs = CardsService(self.db)
-        events = []
+        events = []     #lista de eventos a informar a los jugadores
         player = Player.get(sid = sent_sid)
-        #card = Card.get(id = payload["card_id"])
+        if player is None:
+            raise InvalidSidException()
         sent_card_id = payload.get("card")
         card_options = payload.get("card_options")
         if sent_card_id is None or card_options is None:
             raise InvalidDataException()
-        card = Card.get(id = sent_card_id)   #dejemos esto hasta que el front lo repare
-        if player is None:
-            raise InvalidSidException()
+        card = Card.get(id = sent_card_id) 
         if card is None:
             raise InvalidCidException()
         unplayable_cards = ["La cosa", "Infectado"]
@@ -91,86 +83,21 @@ class GamesService(DBSessionMixin):
         #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
         events = []
         if card.name == "Lanzallamas":
-            print("se jugo una carta de lanzallamas")
             events.extend(cs.play_lanzallamas(player, room, card, card_options))
-            #veamos si es uno del lado
         
-        self.recalculate_positions(sent_sid)
+        rs = RoomsService(self.db)
+        rs.recalculate_positions(sent_sid)
+        #aca deberiamos llamar al servicio de cartas descartar cuando este listo
+        #cs.discard_card(player, card)
         player.hand.remove(card)
         room.discarted_cards.add(card)
         return events
-        
-    @db_session
-    def recalculate_positions(self, sent_sid : str):    
-        """
-            Reasigna posiciones, manteniendo el orden de las personas
-            asume que la partida no esta terminada, se puede seguir jugando
-        """
-        player = Player.get(sid = sent_sid)
-        if player is None:
-            raise InvalidSidException()
-        room = player.playing
-        if room.turn is None:
-            print("partida inicializada incorrectamente, turno no pre-seteado")
-            raise Exception
-        id_position = []
-        for player in room.players:
-            if player.status == "VIVO":
-                id_position.append((player.position, player))
-        id_position.sort(key  = lambda x : x[0])
-        position = 0
-        should_update_turn = True
-        for pair in id_position:
-            if pair[1].position != position and position <= room.turn and should_update_turn:
-                room.turn -= 1
-                should_update_turn = False
-                pass
-            pair[1].position = position
-            position += 1
-        
-
 
     @db_session
-    def next_turn(self, sent_sid : str):    
-        rs = RoomsService(self.db)
-        player = Player.get(sid = sent_sid)
-        if player is None:
-            raise InvalidSidException()
-        room = player.playing
-        room.machine_state = "PLAYING"
-        expected_player = rs.next_player(room)
-        room.machine_state_options = {"id":expected_player.id}
-        return self.give_card(expected_player), expected_player.sid
-        
+    def discard_card(self, sent_sid : str, payload):
+        cs = CardsService(self.db)
+        return cs.discard_card(sent_sid, payload)
 
-    @db_session
-    def give_card(self, player:Player):
-        room = player.playing
-        # se entrega una carta del mazo de disponibles al usuario
-        # se borra la carta de room.available, se asigna la carta al usuario y se retorna el objeto carta
-
-        shuffle = len(room.available_cards) == 0
-            
-        if shuffle:
-            # deck temporal que contiene las cartas descartadas
-            temp_deck = list(room.discarted_cards)
-            # eliminamos todas las cartas descartadas
-            room.discarted_cards.clear()
-            room.available_cards.clear()
-            # asignamos el deck temporal a las cartas disponibles 
-            room.available_cards.add(temp_deck)
-        
-        # obtenemos una carta y la eliminamos
-        card_to_deal = list(room.available_cards.random(1))[0]
-        room.available_cards.remove(card_to_deal)
-        
-        # agregamos la carta al jugador
-        player.hand.add(card_to_deal)
-
-        # computamos el JSON con la info de la carta y retornamos.
-        return card_to_deal.json()
-        
-    
     @db_session
     def end_game_condition(self, sent_sid : str) -> str:
         """Chequea si se finalizo la partida.
@@ -234,129 +161,6 @@ class GamesService(DBSessionMixin):
                 
         return ret, info
     
-    @db_session
-    def discard_card(self, sent_sid : str, payload):
-        # import ipdb
-        # ipdb.set_trace()
-
-        # room que esta jugando el jugador
-        player = Player.get(sid = sent_sid)
-        # carta enviada
-        sent_card_id = payload.get("card")
-        
-        # invalid inputs
-        if sent_card_id is None:
-            raise InvalidDataException()
-        if player is None:
-            raise InvalidSidException()
-        card = Card.get(id = sent_card_id)  
-        if card is None:
-            raise InvalidCidException()
-
-        # room actual
-        room = player.playing
-        # Jugador no esta en la sala
-        if room is None or room.status != 'IN_GAME':
-            raise InvalidRoomException()
-        
-        # La carta no pertenece a las cartas del jugador
-        if card not in player.hand:
-            raise InvalidCardException()
-        
-        # Estado incorrecto
-        if room.machine_state != "PLAYING":
-            rootlog.exception("No correspondia descartar una carta")
-            raise InvalidAccionException("No corresponde descartar")
-
-        # esta el turno incorrecto
-        if room.machine_state_options["id"] != player.id:
-            rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException(msg="No es tu turno")
-        
-
-        # Carta invalida
-        infected_count = len(player.hand.select(name='Infectado'))
-        invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
-        invalid_discard_la_cosa = card.name == 'La cosa'
-        if invalid_discard_infected or invalid_discard_la_cosa:
-            raise InvalidCardException() 
-
-        player.hand.remove(card)
-        room.discarted_cards.add(card)
-
-        rs = RoomsService(self.db)
-        room.machine_state =  "EXCHANGING"
-        room.machine_state_options = {"ids":[player.id, rs.next_player(room).id],
-                                      "stage":"STARTING",
-                                      }
-        print(f"comienza intercambio entre {player.name} y {rs.next_player(room).name}")
-        return card.id
-
-    @db_session
-    def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
-        """ Realiza el intercambio de cartas.
-        
-        Args:
-            room (Room): Room valida en la que ambos players estan jugando.
-            sender (Player): el jugador que al final de su turno comienza a intercambiar una carta
-            reciever (Player): el jugador siguiente en la orden de turno
-            card_s (Card): carta que selecciona el jugador "sender" para intercambiar
-            card_r (_type_): carta que selecciona el jugador "reciever" para intercambiar
-
-        Returns:
-            None    
-        """       
-        qty_players = len(room.players.select())
-        valid_player_position = player_A.position == (player_B.position -1)%qty_players and room.direction
-        if not valid_player_position:
-            raise InvalidExchangeParticipants()
-        
-        sender_not_in_turn = player_A.position != room.turn
-        if sender_not_in_turn:
-            raise PlayerNotInTurn()
-        
-        card_not_in_hand_sender = len(player_A.hand.select(name=card_A.name)) == 0
-        card_not_in_hand_reciever = len(player_B.hand.select(name=card_B.name)) == 0
-        if card_not_in_hand_reciever or card_not_in_hand_sender:
-            raise CardNotInPlayerHandExeption()
-        
-        lacosa_exchange = (card_A.name == 'La cosa') or (card_B.name == 'La cosa')
-        if lacosa_exchange:
-            raise RoleCardExchange()
-        
-        # intercambio invalido de cartas 'Infectado': 
-        # - un humano intercambia infectado
-        invalid_infected_exchange = (player_A.rol == 'HUMANO' and card_A.name == 'Infectado') or (player_B.rol=='HUMANO' and card_B.name=='Infectado')
-        if invalid_infected_exchange:
-            raise InvalidCardExchange()
-        
-        # - un infectado intercambia su ultima infeccion
-        invalid_infected_exchange = player_A.rol == 'INFECTADO' and card_A.name == 'Infectado' and len(player_A.hand.select(name='Infectado')) == 1
-        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol == 'INFECTADO' and card_B.name == 'Infectado' and len(player_B.hand.select(name='Infectado')) == 1)
-        if invalid_infected_exchange:
-            raise RoleCardExchange()
-        
-        # - un infectado intercambia una carta infectado con un humano
-        invalid_infected_exchange = player_A.rol=='INFECTADO' and player_B.rol=='HUMANO' and card_A.name=='Infectado'
-        invalid_infected_exchange = invalid_infected_exchange or (player_B.rol=='INFECTADO' and player_A.rol=='HUMANO' and card_B.name=='Infectado')
-        if invalid_infected_exchange:
-            raise InvalidCardExchange()
-        
-        
-        
-        if card_A.name == 'Infectado' and player_A.rol == 'LA_COSA':
-            player_B.rol = 'INFECTADO'
-        
-        if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
-            player_A.rol = 'INFECTADO'
-            
-        player_A.hand.remove(card_A)
-        player_A.hand.add(card_B)
-        player_B.hand.remove(card_B)
-        player_B.hand.add(card_A)
-        
-        return
-
     @db_session
     def exchange_card_manager(self, sent_sid : str, payload):
         player = Player.get(sid = sent_sid)
