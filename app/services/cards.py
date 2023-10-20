@@ -105,59 +105,68 @@ class CardsService(DBSessionMixin):
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
-        #eventos que vamos a retornar para ser enviados a los jugdores
-        events = []
-        # room que esta jugando el jugador
-        player = Player.get(sid = sent_sid)
-        # carta enviada
-        sent_card_id = payload.get("card")
-        # invalid inputs
-        if sent_card_id is None:
-            raise InvalidDataException()
-        if player is None:
-            raise InvalidSidException()
-        card = Card.get(id = sent_card_id)  
-        if card is None:
-            raise InvalidCidException()
-        # room actual
-        room = player.playing
-        # Jugador no esta en la sala
-        if room is None or room.status != 'IN_GAME':
-            raise InvalidRoomException()
-        # La carta no pertenece a las cartas del jugador
-        if card not in player.hand:
-            raise InvalidCardException()
-        # Estado incorrecto
-        if room.machine_state != "PLAYING":
-            rootlog.exception("No correspondia descartar una carta")
-            raise InvalidAccionException("No corresponde descartar")
-        # esta el turno incorrecto
-        if room.machine_state_options["id"] != player.id:
-            rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException(msg="No es tu turno")
+        try:
+            #eventos que vamos a retornar para ser enviados a los jugdores
+            events = []
+            # room que esta jugando el jugador
+            player = Player.get(sid = sent_sid)
+            # carta enviada
+            sent_card_id = payload.get("card")
+            # invalid inputs
+            if sent_card_id is None:
+                raise InvalidDataException()
+            if player is None:
+                raise InvalidSidException()
+            card = Card.get(id = sent_card_id)  
+            if card is None:
+                raise InvalidCidException()
+            # room actual
+            room = player.playing
+            # Jugador no esta en la sala
+            if room is None or room.status != 'IN_GAME':
+                raise InvalidRoomException()
+            # La carta no pertenece a las cartas del jugador
+            if card not in player.hand:
+                raise InvalidCardException()
+            # Estado incorrecto
+            if room.machine_state != "PLAYING":
+                rootlog.exception("No correspondia descartar una carta")
+                raise InvalidAccionException("No corresponde descartar")
+            # esta el turno incorrecto
+            if room.machine_state_options["id"] != player.id:
+                rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
+                raise InvalidAccionException(msg="No es tu turno")
 
-        # Carta invalida
-        infected_count = len(player.hand.select(name='Infectado'))
-        invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
-        invalid_discard_la_cosa = card.name == 'La cosa'
-        if invalid_discard_infected or invalid_discard_la_cosa:
-            raise InvalidCardException() 
+            # Carta invalida
+            infected_count = len(player.hand.select(name='Infectado'))
+            invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
+            invalid_discard_la_cosa = card.name == 'La cosa'
+            if invalid_discard_infected or invalid_discard_la_cosa:
+                raise InvalidCardException() 
 
-        player.hand.remove(card)
-        room.discarted_cards.add(card)
+            player.hand.remove(card)
+            room.discarted_cards.add(card)
+            #TODO!  Falta agregar un evento de que un jugdor descarto una carta
+            from .rooms import RoomsService
+            rs = RoomsService(self.db)
 
-        from .rooms import RoomsService
-        rs = RoomsService(self.db)
-        room.machine_state =  "EXCHANGING"
-        room.machine_state_options = {"ids":[player.id, rs.next_player(room).id],
-                                      "stage":"STARTING",
-                                      }
-        print(f"comienza intercambio entre {player.name} y {rs.next_player(room).name}")
-        events.append({"name":"on_game_player_discard_card",
-                       "body":{"player":player.name},
-                       "broadcast":True
-                      })
-        return events
+            events.extend([{
+                "name":"on_game_player_discard_card",
+                "body":{"player":player.name},
+                "broadcast":True
+            }])
+            # events.extend(rs.next_turn(sent_sid))
+            # return events
+
+            room.machine_state =  "EXCHANGING"
+            room.machine_state_options = {"ids":[player.id, rs.next_player(room).id],
+                                        "stage":"STARTING",
+                                        }
+            print(f"comienza intercambio entre {player.name} y {rs.next_player(room).name}")
+            print(room.machine_state_options)
+            return events
+        except InvalidAccionException as e:
+            return e.create_event(sent_sid)
 
     def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options):
         """Juega una carta lanzallamas.
