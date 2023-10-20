@@ -165,14 +165,9 @@ async def game_discard_card(sid : str, data):
 async def game_exchange_card(sid : str, data):
     try:
         pass
-        print(f"jugador {rs.get_name(sid)}, quiere intercambiar ", data)
         events = gs.exchange_card_manager(sid, data)
-        notify_events(events)
-        for player_sid in rs.get_players_sid(sid):
-            pass
+        await notify_events(events)
     except InvalidAccionException as e:
-        rootlog.exception("intercambio invalido")
-        await sio_server.emit("on_game_invalid_action", {"title":"Intercambio invalido", "message": e.msg, "gameState": gs.get_personal_game_status_by_sid(sid)}, to=sid)
     except Exception:
         rootlog.exception("error al descartar carta")
     return True
