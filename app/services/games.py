@@ -115,13 +115,7 @@ class GamesService(DBSessionMixin):
                 events.extend(rs.next_turn(sent_sid))
             return events
         except InvalidAccionException as e:
-            return ([{
-                "name":"on_game_invalid_action",
-                "body":{"title":"Jugada invalida",
-                        "message":e.msg},
-                "broadcast":False,
-                "receiver_sid":sent_sid
-                }])
+            return e.create_event(sent_sid)
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
@@ -194,67 +188,70 @@ class GamesService(DBSessionMixin):
     
     @db_session
     def exchange_card_manager(self, sent_sid : str, payload):
-        player = Player.get(sid = sent_sid)
-        if player is None:
-            raise InvalidSidException()
-        sent_card_id = payload.get("card")
-        on_defense = payload.get("on_defense")
-        if sent_card_id is None or on_defense is None:
-            raise InvalidDataException()
-        card = Card.get(id = sent_card_id)
-        if card is None:
-            raise InvalidCidException()
-        unchangable_cards = ["La cosa"]
-        if card.name in unchangable_cards:
-            raise InvalidAccionException(f"No se puede intercambiar {card.name}")
-        room = player.playing
-        ps = PlayersService(self.db)
-        if ps.has_card(player, card) == False:
-            raise InvalidCardException()
-        #maquina de estados
-        if room.machine_state != "EXCHANGING":
-            rootlog.exception("no correspondia intercambiar una carta")
-            raise InvalidAccionException("No corresponde intercambiar")
+        try:
+            player = Player.get(sid = sent_sid)
+            if player is None:
+                raise InvalidSidException()
+            sent_card_id = payload.get("card")
+            on_defense = payload.get("on_defense")
+            if sent_card_id is None or on_defense is None:
+                raise InvalidDataException()
+            card = Card.get(id = sent_card_id)
+            if card is None:
+                raise InvalidCidException()
+            unchangable_cards = ["La cosa"]
+            if card.name in unchangable_cards:
+                raise InvalidAccionException(f"No se puede intercambiar {card.name}")
+            room = player.playing
+            ps = PlayersService(self.db)
+            if ps.has_card(player, card) == False:
+                raise InvalidCardException()
+            #maquina de estados
+            if room.machine_state != "EXCHANGING":
+                rootlog.exception("no correspondia intercambiar una carta")
+                raise InvalidAccionException("No corresponde intercambiar")
 
-        print(room.machine_state_options["ids"])
-        exchanging_players = room.machine_state_options.get("ids")
-        if exchanging_players is None:
-            rootlog.exception("deberia existir campo ids en estado intercambio")
-            raise Exception()
-        if room.machine_state_options["id"] not in room.machine_state_options["ids"]:
-            rootlog.exception(f"no corresponde que la persona intercambie{room.machine_state_options['id']} {player.id}")
-            raise InvalidAccionException("No corresponde iniciar un intercambio")
-        first_player = exchanging_players[0] == player.id
-        if first_player:
-            if on_defense:
-                raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
-        if room.machine_state_options["state"] == "STARTING":
-            room.machine_state = "EXCHANGING"
-            room.machine_state_options = {"id":player.id, 
-                                         "stage":"FINISHING",
-                                         "card_id" : card.id,
-                                         "player_id":player.id,
-                                         "on_defense": on_defense if not first_player else False}
-            return False    #temporal, indicamos que no vaya al siguiente turno
-        elif room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
-            first_player_id = exchanging_players[0]
-            first_player = Player.get(id = first_player_id)
-            second_player_id = exchanging_players[1]
-            second_player = Player.get(id = second_player_id)
-            if first_player is None or second_player is None:
-                InvalidDataException()
-            if first_player.playing != second_player.playing:
-                rootlog.exception("los jugadores no corresponden a una misma partida")
-                InvalidDataException()
-            is_first_player = exchanging_players[0] == player.id
-            first_card = card if is_first_player else Card.get(id = room.machine_state_options["card_id"])
-            second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
-            from .cards import CardsService
-            cs = CardsService(self.db)
-            events = cs.exchange_cards(room, first_player, second_player, first_card, second_card)
-            print(f"intercambio entre {first_player.name} y {second_player.name} finalizado exitosamente")
-            return events
-        else:
-            raise InvalidAccionException("No corresponde iniciar un intercambio") 
+            print(room.machine_state_options["ids"])
+            exchanging_players = room.machine_state_options.get("ids")
+            if exchanging_players is None:
+                rootlog.exception("deberia existir campo ids en estado intercambio")
+                raise Exception()
+            if room.machine_state_options["id"] not in room.machine_state_options["ids"]:
+                rootlog.exception(f"no corresponde que la persona intercambie{room.machine_state_options['id']} {player.id}")
+                raise InvalidAccionException("No corresponde iniciar un intercambio")
+            first_player = exchanging_players[0] == player.id
+            if first_player:
+                if on_defense:
+                    raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
+            if room.machine_state_options["state"] == "STARTING":
+                room.machine_state = "EXCHANGING"
+                room.machine_state_options = {"id":player.id, 
+                                            "stage":"FINISHING",
+                                            "card_id" : card.id,
+                                            "player_id":player.id,
+                                            "on_defense": on_defense if not first_player else False}
+                return False    #temporal, indicamos que no vaya al siguiente turno
+            elif room.machine_state_options["state"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
+                first_player_id = exchanging_players[0]
+                first_player = Player.get(id = first_player_id)
+                second_player_id = exchanging_players[1]
+                second_player = Player.get(id = second_player_id)
+                if first_player is None or second_player is None:
+                    InvalidDataException()
+                if first_player.playing != second_player.playing:
+                    rootlog.exception("los jugadores no corresponden a una misma partida")
+                    InvalidDataException()
+                is_first_player = exchanging_players[0] == player.id
+                first_card = card if is_first_player else Card.get(id = room.machine_state_options["card_id"])
+                second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
+                from .cards import CardsService
+                cs = CardsService(self.db)
+                events = cs.exchange_cards(room, first_player, second_player, first_card, second_card)
+                print(f"intercambio entre {first_player.name} y {second_player.name} finalizado exitosamente")
+                return events
+            else:
+                raise InvalidAccionException("No corresponde iniciar un intercambio") 
+        except InvalidAccionException as e:
+            return e.create_event(sent_sid)
         
         
