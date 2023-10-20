@@ -83,9 +83,6 @@ class GamesService(DBSessionMixin):
 
             #caso: la carta jugada es lanzallamas ¡ruido de asadoo!
             events = []
-            if card.name == "Lanzallamas":
-                events.extend(cs.play_lanzallamas(player, room, card, card_options))
-
             events.append({
                 "name":"on_game_player_play_card",
                 "body":{
@@ -95,11 +92,11 @@ class GamesService(DBSessionMixin):
                 },
                 "broadcast":True
             }) 
+            if card.name == "Lanzallamas":
+                events.extend(cs.play_lanzallamas(player, room, card, card_options))
+
             rs = RoomsService(self.db)
             rs.recalculate_positions(sent_sid)
-            #deberiamos ver si termino el juego
-            #aca deberiamos llamar al servicio de cartas descartar cuando este listo
-            #cs.discard_card(player, card)
             player.hand.remove(card)
             room.discarted_cards.add(card)
             result, json = self.end_game_condition(sent_sid)
@@ -109,9 +106,10 @@ class GamesService(DBSessionMixin):
                     "body":json,
                     "broadcast":True
                 })
-                rs.end_game(sent_sid)
+                #si hago esto cuando quireo notificar no existen mass los jugadores
+                #TODO! ver como eliminar la partida
+                #rs.end_game(sent_sid)
             else:
-                #await give_card(sid)
                 events.extend(rs.next_turn(sent_sid))
             return events
         except InvalidAccionException as e:
@@ -119,10 +117,8 @@ class GamesService(DBSessionMixin):
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
-        rs = RoomsService(self.db)
         cs = CardsService(self.db)
         events = cs.discard_card(sent_sid, payload)
-        events.extend(rs.next_turn(sent_sid))
         return events
 
     @db_session

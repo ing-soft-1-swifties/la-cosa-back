@@ -13,6 +13,11 @@ class PlayersService(DBSessionMixin):
         # if expected_player.sid is not None:
         # raise UsedTokenException()
         expected_player.sid = actual_sid
+        return ([{
+            "name": "on_room_new_player",
+            "body": {},
+            "broadcast":True
+        }])
     
     @db_session
     def disconnect_player(self, actual_sid : str):
@@ -21,6 +26,11 @@ class PlayersService(DBSessionMixin):
             raise InvalidSidException()
         (expected_player.playing).players.remove(expected_player)
         expected_player.delete()
+        return ([{
+            "name": "on_room_left_player",
+            "body": {},
+            "broadcast":True
+        }])
         #falta borrar el player de la base de datos
 
     @db_session

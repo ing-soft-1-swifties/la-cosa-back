@@ -22,11 +22,6 @@ class RoomsService(DBSessionMixin):
         # if name == expected_room.get_host().name:
         #     return expected_room.get_host().token
         # #easter egg end
-        # #ultra easter egg
-        # for player in expected_room.players:
-        #     if player.name == name:
-        #         return player.token
-        # #ultra easter egg end
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.players) >= expected_room.max_players:
@@ -61,6 +56,8 @@ class RoomsService(DBSessionMixin):
     @db_session
     def get_players_sid(self, actual_sid):
         expected_player = Player.get(sid = actual_sid)
+        if expected_player is None:
+            raise InvalidSidException()
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
@@ -219,7 +216,7 @@ class RoomsService(DBSessionMixin):
             room.machine_state_options = {"id":in_turn_player.id}
             from app.services.cards import CardsService
             cs = CardsService(self.db)
-            new_card = cs.give_card(in_turn_player), in_turn_player.sid
+            new_card = cs.give_card(in_turn_player)
             return([
             {
                 "name":"on_game_player_turn",
