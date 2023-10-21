@@ -166,7 +166,7 @@ class CardsService(DBSessionMixin):
             print(room.machine_state_options)
             return events
         except InvalidAccionException as e:
-            return e.create_event(sent_sid)
+            return e.generate_event(sent_sid)
 
     def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options):
         """Juega una carta lanzallamas.
