@@ -28,7 +28,7 @@ cs = CardsService(db)
 async def connect(sid, environ, auth):
     # autenticar jugador con token
     # guardar en jugador el socket id
-
+    print(auth["token"])
     try:
         token = auth["token"]
         events = ps.connect_player(token, sid)
@@ -79,6 +79,7 @@ async def end_game(sid : str):
     except Exception as e:
         print(f"fallo al querer terminar la partida del jugador con sid:{sid}")
         return True
+    #no puedo usar notify_events por que consumen los sid de playes que fueron borrados
     for player_sid in players_sid:
         await sio_server.emit("on_room_cancelled_game", to=player_sid)   #notar que hay que tener cuidado con si falla alguna conexion
         await sio_server.disconnect(player_sid)
@@ -88,7 +89,6 @@ async def end_game(sid : str):
 async def room_start_game(sid : str): 
     try:
         events = rs.start_game(sid)  #prepara lo mazos y reparte
-        #await notify_events(events)
         await notify_events(events, sid)
     except Exception as e:
         rootlog.exception(f"error al querer iniciar la partida del jugador con sid: {sid}")
@@ -102,17 +102,8 @@ async def game_play_card(sid : str, data):
     try:
         events = gs.play_card(sid, data)
         await notify_events(events, sid)
-    except InvalidAccionException as e:
-        rootlog.exception("jugada invalida")
-        await notify_events([{
-            "name":"on_game_invalid_action",
-            "body":{"title":"Jugada invalida",
-                    "message":e.msg},
-            "broadcast":False,
-            "receiver_sid":sid
-            }], sid)
     except Exception:
-        rootlog.exception("ocurrio un error inesperado al jugar una carta")
+        rootlog.exception("ocurrio un error inesperado al jugar una carta, posible estado inconsistente")
     return True
 
 @sio_server.event
@@ -120,15 +111,6 @@ async def game_discard_card(sid : str, data):
     try:
         events = gs.discard_card(sid, data)
         await notify_events(events, sid)
-    # except InvalidAccionException as e:
-    #     rootlog.exception("descarte invalido")
-    #     await notify_events([{
-    #         "name":"on_game_invalid_action",
-    #         "body":{"title":"Descarte Invalido",
-    #                 "message":e.msg},
-    #         "broadcast":False,
-    #         "receiver_sid":sid
-    #         }], sid)
     except Exception:
         rootlog.exception("error al descartar carta")
     return True
