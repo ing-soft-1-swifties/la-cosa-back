@@ -113,7 +113,7 @@ class GamesService(DBSessionMixin):
                 events.extend(rs.next_turn(sent_sid))
             return events
         except InvalidAccionException as e:
-            return e.create_event(sent_sid)
+            return e.generate_event(sent_sid)
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
@@ -122,12 +122,12 @@ class GamesService(DBSessionMixin):
         return events
 
     @db_session
-    def end_game_condition(self, sent_sid : str) -> str:
+    def end_game_condition(self, sent_sid : str):
         """Chequea si se finalizo la partida.
 
         Args: room (Room): current valid room
 
-        Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}
+        Returns: str: {'GAME_IN_PROGRESS', 'LA_COSA_WON', 'HUMANS_WON'}, json
         """
         player = Player.get(sid = sent_sid)
         info = {}
@@ -248,6 +248,6 @@ class GamesService(DBSessionMixin):
             else:
                 raise InvalidAccionException("No corresponde iniciar un intercambio") 
         except InvalidAccionException as e:
-            return e.create_event(sent_sid)
+            return e.generate_event(sent_sid)
         
         

@@ -39,7 +39,7 @@ class TooManyPlayersException(Exception):
 class InvalidAccionException(Exception):
     def __init__(self, msg):
         self.msg = msg
-    def create_event(self, sent_sid : str):
+    def generate_event(self, sent_sid : str):
             return ([{
                 "name":"on_game_invalid_action",
                 "body":{"title":"Acción inválida",
