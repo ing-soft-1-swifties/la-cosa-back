@@ -59,9 +59,9 @@ class CardsService(DBSessionMixin):
         if not valid_player_position:
             raise InvalidExchangeParticipants()
         
-        sender_not_in_turn = player_A.position != room.turn
-        if sender_not_in_turn:
-            raise PlayerNotInTurn()
+        # sender_not_in_turn = player_A.position != room.turn
+        # if sender_not_in_turn:
+        #     raise PlayerNotInTurn()
         
         card_not_in_hand_sender = len(player_A.hand.select(name=card_A.name)) == 0
         card_not_in_hand_reciever = len(player_B.hand.select(name=card_B.name)) == 0
@@ -101,7 +101,7 @@ class CardsService(DBSessionMixin):
         player_B.hand.remove(card_B)
         player_B.hand.add(card_A)
         
-        return
+        return []
 
     @db_session
     def discard_card(self, sent_sid : str, payload):

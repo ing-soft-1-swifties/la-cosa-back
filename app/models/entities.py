@@ -51,7 +51,8 @@ class Player(db.Entity):
                 "name" : self.name,
                 "playerID": self.id,
                 "role" : self.rol,
-                "cards" : [card.json() for card in self.hand]
+                "cards" : [card.json() for card in self.hand],
+                "position":self.position
                 }
 
 class Room(db.Entity):
