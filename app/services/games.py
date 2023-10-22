@@ -13,6 +13,7 @@ class GamesService(DBSessionMixin):
     @db_session
     def game_state(self, room : Room):
         # TODO: exporta en json el estado de la partida, para enviar al frontend
+        rs = RoomsService(self.db)
         def player_state(player):
             return{
                 "name" : player.name,
@@ -31,6 +32,7 @@ class GamesService(DBSessionMixin):
             },
             "status" : room.status,
             "turn" : room.turn,
+            "player_in_turn" : rs.in_turn_player(room).name,
             "players" : [player_state(player) for player in room.players]
         }
         return game_state
