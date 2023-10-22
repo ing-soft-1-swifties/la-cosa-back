@@ -244,7 +244,6 @@ class TestCardsService(unittest.TestCase):
         self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
         
         assert reciever.rol == 'INFECTADO'
-<<<<<<< HEAD
         
     # @db_session
     # def test_exchange_cards_infection_direction_true(self):
@@ -264,7 +263,6 @@ class TestCardsService(unittest.TestCase):
     #     self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
     #     assert reciever.rol == 'INFECTADO'
 
-    
     
       
     @db_session
@@ -424,9 +422,102 @@ class TestCardsService(unittest.TestCase):
         with self.assertRaises(InvalidCardException):
             self.cs.discard_card("27016", json)
 
-=======
-           
->>>>>>> 1f429b1 (test_exchange_cards_invalid_ifection_human_to_anything)
+
+    @db_session
+    def test_play_card(self):
+        room:Room = self.create_valid_room(roomname='test_play_card', qty_players=4)
+        
+        card = list(Card.select(lambda x : x.name == "Sospecha"))[0]
+
+        host = room.get_host()
+        host.hand.add(card)
+        host.sid = "1234"
+
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+
+        room.turn = host.position
+        last_hand_size = len(host.hand)
+        self.cs.play_card("1234", {"card": card.id, "card_options": {"target": None}})
+        assert last_hand_size == len(host.hand)+1
+
+    @db_session
+    def test_play_card_lanzallamas(self):
+        room:Room = self.create_valid_room(roomname='test_play_card_lanzallamas', qty_players=4)
+        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
+        
+        card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
+
+        host = room.get_host()
+        #agregamos lazallamas a la mano de host
+        host.hand.add(card)
+        #setemos el sid del host para poder invacar play_card desde host
+        host.sid = "1234"
+
+        #host en la posicion 0
+        host.position = 0
+
+        #asignamos desde la posicion 1 en adelante a los demas jugadores
+        position = 1
+        for player in room.players:
+            if player.id != host.id:    
+                player.position = position
+                position += 1
+        
+        #next_player sera el jugador que sigue de host
+        next_player = list(room.players.select(lambda player: player.position == 1))[0]
+
+        #seetamos el room para que le toque a host
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+        room.turn = host.position
+        
+        #far_player sera un jugador que no esta al lado de host
+        far_player = list(room.players.select(lambda player: player.position == 2))[0]
+
+        #jugemos a un jugador que no este al lado de host
+        with self.assertRaises(InvalidAccionException):
+            self.gs.play_card("1234", {"card": card.id, "card_options": {"target": far_player.id}})
+
+        #veamos que si la jugamos correctamente se muere el objetivo
+        last_hand_size = len(host.hand)
+        self.cs.play_card("1234", {"card": card.id, "card_options": {"target": next_player.id}})
+        assert next_player.status == "MUERTO"
+        assert len(host.hand) == last_hand_size-1
+
+    @db_session
+    def test_play_card_invalid_turn(self):
+        room:Room = self.create_valid_room(roomname='test_play_card_invalid_turn', qty_players=4)
+        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
+        
+        card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
+
+        host = room.get_host()
+        host.hand.add(card)
+        host.sid = "1234"
+
+        room.status = "IN_GAME"
+        room.machine_state = "PLAYING"
+        room.machine_state_options = {"id" : host.id}
+        position = 1
+        next_player = None
+        for player in room.players:
+            if player.id != host.id:
+                if position  == 1:
+                    next_player = player
+                player.position = position
+                position += 1
+
+        card2 = list(Card.select(lambda x : x.name == "Lanzallamas"))[1]
+        next_player.hand.add(card2)
+        next_player.sid = "999"
+        
+        room.turn = host.position
+        
+        with self.assertRaises(InvalidAccionException):
+            self.cs.play_card("999", {"card": card2.id, "card_options": {"target": host.id}})
 
     @classmethod
     @db_session
