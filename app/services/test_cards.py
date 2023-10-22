@@ -197,26 +197,26 @@ class TestCardsService(unittest.TestCase):
             
     @db_session
     def test_exchange_cards_invalid_ifection_infected_to_human(self):
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_infected_to_human', qty_players=4)
-        room.direction = True
-        sender:Player = list(room.players.select(rol='HUMANO'))[0]
+
+        # creamos una room
+        room  = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_infected_to_human', qty_players=4)
+        
+        # obtenemos los jugadores
+        sender  = list(room.players.select(rol='HUMANO'))[0]
+        reciever  = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
-        card_s: Card = list(sender.hand.select(lambda c:c.name != 'La cosa'))[0]        
-        card_r:Card = list(room.available_cards.select(name='Infectado'))[0]
+
+        # obtenemos las cartas
+        card_s = list(sender.hand.select(lambda c:c.name != 'La cosa'))[0]        
+        card_r = list(room.available_cards.select(name='Infectado'))[0]
         reciever.hand.select().delete()
-        reciever.hand.add( list(room.available_cards.select(name='Infectado'))[1])
+        reciever.hand.add(list(room.available_cards.select(name='Infectado'))[1])
         reciever.hand.add(card_r)
         reciever.hand.add(card_r)
-        # inf_count = 0
-        # for inf in list(reciever.hand.select(name='Infectado')):
-        #     inf_count += 1
-        # print(inf_count)
-        # print(len(reciever.hand.select(name='Infectado')))
         reciever.rol = 'INFECTADO'
         
         with self.assertRaises(InvalidCardExchange):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session
     def test_exchange_cards_infection_direction_true(self):
