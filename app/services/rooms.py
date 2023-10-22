@@ -190,10 +190,26 @@ class RoomsService(DBSessionMixin):
         if room.turn is None:
             print("partida inicializada incorrectamente, turno no pre-seteado")
             raise Exception
+        turn = 0
         if room.machine_state == "INITIAL":
-            room.turn = 0
+            turn = 0
         else:
-            room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+            turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+        expected_player = None
+        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
+        for player in room.players:
+            if player.position == turn and player.status == "VIVO":
+                expected_player = player
+        if expected_player is None: 
+            print(f"el jugador con turno {turn} no esta en la partida")
+            raise Exception
+        return expected_player
+
+    @db_session
+    def in_turn_player(self, room):
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
         expected_player = None
         #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
         for player in room.players:
@@ -211,8 +227,13 @@ class RoomsService(DBSessionMixin):
             if player is None:
                 raise InvalidSidException()
             room = player.playing
+            if room.machine_state == "INITIAL":
+                room.turn = 0
+            else:
+                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+            in_turn_player = self.in_turn_player(room)
+            #seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"
-            in_turn_player = self.next_player(room)
             room.machine_state_options = {"id":in_turn_player.id}
             from app.services.cards import CardsService
             cs = CardsService(self.db)
