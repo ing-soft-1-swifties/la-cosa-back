@@ -118,7 +118,7 @@ async def game_discard_card(sid : str, data):
 @sio_server.event
 async def game_exchange_card(sid : str, data):
     try:
-        pass
+        print(data)
         events = gs.exchange_card_manager(sid, data)
         await notify_events(events, sid)
     except Exception:
