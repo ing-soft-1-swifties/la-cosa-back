@@ -50,7 +50,7 @@ class TestCardsService(unittest.TestCase):
         for i in range(qty_players-1):
             rs.join_player(f"player-{i}", room.id)
 
-
+        room.direction = True
         room.status = 'IN_GAME' 
         rs.initialize_deck(room)
         rs.initial_deal(room)
@@ -160,21 +160,23 @@ class TestCardsService(unittest.TestCase):
     @db_session 
     def test_exchange_cards_invalid_ifection_human_to_anything(self):
         
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_human_to_anything', qty_players=4)
-        room.direction = True
-        sender:Player =list(room.players.select(rol='HUMANO'))[0]
+        # creamos una room valida
+        room = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_human_to_anything', qty_players=4)
+        
+        # obtenemos dos jugadores
+        sender = list(room.players.select(rol='HUMANO'))[0]
+        reciever = list(room.players.select(position=(sender.position+1)% room.qty_alive_players()))[0]
         room.turn=sender.position
-        reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
-        card_s: Card = list(room.available_cards.select(name='Infectado'))[0]
-        
-        temp_c = list(sender.hand.select())[0]
-        sender.hand.remove(temp_c)
+
+        # obtenemos las cartas a intercambiar
+        card_s = list(room.available_cards.select(name='Infectado'))[0]
+        temp_card = list(sender.hand.select())[0]
+        sender.hand.remove(temp_card)
         sender.hand.add(card_s)
-        
-        card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+        card_r = list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(InvalidCardExchange):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room,sender, reciever, card_s, card_r)
     
     @db_session
     def test_exchange_cards_invalid_ifection_last_infection(self):
@@ -240,6 +242,7 @@ class TestCardsService(unittest.TestCase):
         self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
         
         assert reciever.rol == 'INFECTADO'
+<<<<<<< HEAD
         
     # @db_session
     # def test_exchange_cards_infection_direction_true(self):
@@ -419,6 +422,9 @@ class TestCardsService(unittest.TestCase):
         with self.assertRaises(InvalidCardException):
             self.cs.discard_card("27016", json)
 
+=======
+           
+>>>>>>> 1f429b1 (test_exchange_cards_invalid_ifection_human_to_anything)
 
     @classmethod
     @db_session
