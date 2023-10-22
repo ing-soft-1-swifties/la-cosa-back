@@ -125,9 +125,7 @@ class CardsService(DBSessionMixin):
         try:
             #eventos que vamos a retornar para ser enviados a los jugdores
             events = []
-            # room que esta jugando el jugador
             player = Player.get(sid = sent_sid)
-            # carta enviada
             sent_card_id = payload.get("card")
             # invalid inputs
             if sent_card_id is None:
