@@ -118,7 +118,6 @@ class CardsService(DBSessionMixin):
                 "broadcast":False,
                 "receiver_sid":player_B.sid
         }]
-        
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
