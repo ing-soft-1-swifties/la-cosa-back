@@ -53,7 +53,7 @@ class GamesService(DBSessionMixin):
         return player_in_game_state
 
     @db_session
-    def play_card(self, sent_sid : str, payload):
+    def play_card_manager(self, sent_sid : str, payload):
         try:
             cs = CardsService(self.db)
             events = []     #lista de eventos a informar a los jugadores
@@ -116,7 +116,7 @@ class GamesService(DBSessionMixin):
             return e.generate_event(sent_sid)
 
     @db_session
-    def discard_card(self, sent_sid : str, payload):
+    def discard_card_manager(self, sent_sid : str, payload):
         cs = CardsService(self.db)
         events = cs.discard_card(sent_sid, payload)
         return events

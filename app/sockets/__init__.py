@@ -100,7 +100,7 @@ async def room_start_game(sid : str):
 @sio_server.event
 async def game_play_card(sid : str, data): 
     try:
-        events = gs.play_card(sid, data)
+        events = gs.play_card_manager(sid, data)
         await notify_events(events, sid)
     except Exception:
         rootlog.exception("ocurrio un error inesperado al jugar una carta, posible estado inconsistente")
@@ -109,7 +109,7 @@ async def game_play_card(sid : str, data):
 @sio_server.event
 async def game_discard_card(sid : str, data): 
     try:
-        events = gs.discard_card(sid, data)
+        events = gs.discard_card_manager(sid, data)
         await notify_events(events, sid)
     except Exception:
         rootlog.exception("error al descartar carta")
