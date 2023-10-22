@@ -217,9 +217,14 @@ class GamesService(DBSessionMixin):
                 rootlog.exception(f"no corresponde que la persona intercambie. Estos ids intercambiaban {room.machine_state_options['ids']} y la persona tiene id={player.id}")
                 raise InvalidAccionException("No corresponde iniciar un intercambio")
             first_player = exchanging_players[0] == player.id   #El primer id es el del que inica el intercambio
-            if first_player:
-                if on_defense:
+            if on_defense:
+                if first_player:
                     raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
+                else:
+                    #verifiquemos si se puede defender con la carta que esta planteando
+                    defense_cards = ["¡No, gracias!"]
+                    if card.name not in defense_cards:
+                        raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
             if room.machine_state_options["stage"] == "STARTING":
                 room.machine_state = "EXCHANGING"
                 room.machine_state_options = {"ids":room.machine_state_options["ids"], 
