@@ -52,8 +52,10 @@ class CardsService(DBSessionMixin):
             card_r (_type_): carta que selecciona el jugador "reciever" para intercambiar
 
         Returns:
-            None    
+            Events   
         """       
+        #lista de eventos a retornar
+        events = []
         qty_players = len(room.players.select())
         valid_player_position = player_A.position == (player_B.position -1)%qty_players and room.direction
         if not valid_player_position:
@@ -101,7 +103,11 @@ class CardsService(DBSessionMixin):
         player_B.hand.remove(card_B)
         player_B.hand.add(card_A)
         
-        return []
+        return[{
+                    "name":"on_game_finish_exchange",
+                    "body":{"players":[player_A.name, player_B.name]},
+                    "broadcast":True
+        }]
 
     @db_session
     def discard_card(self, sent_sid : str, payload):
@@ -157,13 +163,9 @@ class CardsService(DBSessionMixin):
             }])
             # events.extend(rs.next_turn(sent_sid))
             # return events
-
-            room.machine_state =  "EXCHANGING"
-            room.machine_state_options = {"ids":[player.id, rs.next_player(room).id],
-                                        "stage":"STARTING",
-                                        }
-            print(f"comienza intercambio entre {player.name} y {rs.next_player(room).name}")
-            print(room.machine_state_options)
+            from .games import GamesService
+            gs = GamesService(self.db)
+            events.extend(gs.begin_end_of_turn_exchange(room))
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
