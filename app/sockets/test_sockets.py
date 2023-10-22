@@ -111,14 +111,14 @@ class host(player):
             # print(f"jugador {self.name} tiene estas cartas: ", data["gameState"]["playerData"]["cards"])
 
 class game():
-    def __init__(self):
+    def __init__(self, people_amount):
         self.players = []
         self.hoster = host("111", f"test")
         print("Partida creada con exito")
         print("Jugador 1 se unio correctamente")
         self.room_id = self.last_room_id()
         self.players.append(self.hoster)
-        for i in range(2,5):
+        for i in range(2,people_amount+1):
             self.players.append(player(f"{i}{i}{i}", self.room_id))
             print(f"Jugador {i} se unio correctamente")
         # self.start()
@@ -168,12 +168,12 @@ class game():
         
     
 
-current_game = game()
-current_game.start()
+current_game = game(4)  #creamos una partida con 4 personas
+current_game.start()    #lanzamos la partida
 print("se inició la partida")
 time.sleep(1)
-current_game.discard_card()
+current_game.discard_card() #descarta una carta aleatoria la persona que esta en turno
 print("se descarto una carta")
 time.sleep(1)
-current_game.exchange_card()
+current_game.exchange_card()    #realizan intercambios los que deben hacerlo
 print("se intercambiaron las cartas")

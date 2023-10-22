@@ -110,7 +110,7 @@ class GamesService(DBSessionMixin):
                 #TODO! ver como eliminar la partida
                 #rs.end_game(sent_sid)
             else:
-                events.extend(rs.next_turn(sent_sid))
+                events.extend(self.begin_end_of_turn_exchange(room))
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
