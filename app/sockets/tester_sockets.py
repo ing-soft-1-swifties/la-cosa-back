@@ -119,7 +119,8 @@ class game():
         self.room_id = self.last_room_id()
         self.players.append(self.hoster)
         for i in range(2,people_amount+1):
-            self.players.append(player(f"{i}{i}{i}", self.room_id))
+            self.players.append(player(f"111", self.room_id))
+
             print(f"Jugador {i} se unio correctamente")
         # self.start()
         # print("Partida iniciada con exito")
