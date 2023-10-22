@@ -259,6 +259,7 @@ class GamesService(DBSessionMixin):
                 raise InvalidAccionException("No corresponde iniciar un intercambio") 
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
+    
     def begin_exchange(self, room : Room, player_A : Player, player_B : Player):
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
@@ -275,6 +276,7 @@ class GamesService(DBSessionMixin):
                     "broadcast":True
         }]
         return events
+    
     def begin_end_of_turn_exchange(self, room : Room):
         in_turn_player = list(room.players.select(lambda player : player.position == room.turn and player.status == "VIVO"))[0]
         if in_turn_player is None:
