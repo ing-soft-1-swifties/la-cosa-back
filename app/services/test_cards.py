@@ -106,21 +106,20 @@ class TestCardsService(unittest.TestCase):
         # room.get_host().sid = "1234"
 
         with self.assertRaises(InvalidExchangeParticipants):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session 
     def test_exchange_cards_not_in_turn(self):
         
         room:Room = self.create_valid_room(roomname='test_exchange_cards_not_in_turn', qty_players=4)
-        # room.direction = True
         room.turn=0
-        sender:Player =list(room.players.select(position=2))[0]
-        reciever:Player = list(room.players.select(position=3))[0]
-        card_s : Card= list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
-        card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+        sender = list(room.players.select(position=2))[0]
+        reciever = list(room.players.select(position=3))[0]
+        card_s = list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+        card_r = list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(PlayerNotInTurn):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room, sender,reciever, card_s,card_r)
 
     @db_session 
     def test_exchange_cards_card_not_in_hand(self):
@@ -155,7 +154,7 @@ class TestCardsService(unittest.TestCase):
         card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
         with self.assertRaises(RoleCardExchange):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
     
     @db_session 
     def test_exchange_cards_invalid_ifection_human_to_anything(self):
@@ -193,7 +192,7 @@ class TestCardsService(unittest.TestCase):
         reciever.rol = 'INFECTADO'
         
         with self.assertRaises(RoleCardExchange):
-            self.gs.exchange_cards(room,sender,reciever,card_s,card_r)
+            self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
             
     @db_session
     def test_exchange_cards_invalid_ifection_infected_to_human(self):
