@@ -104,7 +104,7 @@ class host(player):
                                    "name":carta["name"]})
             self.position = data["gameState"]["playerData"]["position"]
             # print(" ")
-            # print("Host escucho el siguiente evento: ", event)
+            print("Host escucho el siguiente evento: ", event)
             # print(" ")
             # import json
             # print(json.dumps(data, indent=2))
