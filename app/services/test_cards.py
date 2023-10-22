@@ -155,11 +155,14 @@ class TestCardsService(unittest.TestCase):
 
     @db_session 
     def test_exchange_cards_not_in_turn(self):
-        
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_not_in_turn', qty_players=4)
-        room.turn=0
+        # creamos una room
+        room = self.create_valid_room(roomname='test_exchange_cards_not_in_turn', qty_players=4)
+        room.turn = 0
+
+        # obtenemos dos jugadores
         sender = list(room.players.select(position=2))[0]
         reciever = list(room.players.select(position=3))[0]
+        # obtenemos las cartas
         card_s = list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         card_r = list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
