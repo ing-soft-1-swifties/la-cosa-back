@@ -104,10 +104,21 @@ class CardsService(DBSessionMixin):
         player_B.hand.add(card_A)
         
         return[{
-                    "name":"on_game_finish_exchange",
-                    "body":{"players":[player_A.name, player_B.name]},
-                    "broadcast":True
+                "name":"on_game_finish_exchange",
+                "body":{"players":[player_A.name, player_B.name]},
+                "broadcast":True
+        },{
+                "name":"on_game_exchange_result",
+                "body":{"card_in":card_B.id, "card_out":card_A.id},
+                "broadcast":False,
+                "receiver_sid":player_A.sid
+        },{
+                "name":"on_game_exchange_result",
+                "body":{"card_in":card_A.id, "card_out":card_B.id},
+                "broadcast":False,
+                "receiver_sid":player_B.sid
         }]
+        
 
     @db_session
     def discard_card(self, sent_sid : str, payload):

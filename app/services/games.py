@@ -244,6 +244,7 @@ class GamesService(DBSessionMixin):
                 from .cards import CardsService
                 cs = CardsService(self.db)
                 events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))
+                print(events)
                 rs = RoomsService(self.db)
                 events.extend(rs.next_turn(sent_sid))
                 return events
