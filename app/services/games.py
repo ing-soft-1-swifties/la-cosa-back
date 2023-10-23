@@ -254,18 +254,23 @@ class GamesService(DBSessionMixin):
                 second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 from .cards import CardsService
                 cs = CardsService(self.db)
-                if room.machine_state_options["on_defense"] or on_defense:
+                if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
                     second_player.cards.remove(second_card)
-                    cs.give_alejate_card(second_player)
+                    cs.give_alejate_card(second_player) #TODO! Habría que ver como se notifica esto al jugador que se esta defendiendo
+                    events.exted([{
+                        "name":"on_game_player_play_defense_card",
+                        "body":{"player":second_player.name, "card":second_card.json()},
+                        "broadcast": True
+                    }])
+                    events.extend(rs.next_turn(sent_sid))
                 else:
                     try:
                         #realizamos el intercambio si no se estaba defendiendo
                         events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))    #falta ver si se esta defendiendo
                         rs = RoomsService(self.db)
                         events.extend(rs.next_turn(sent_sid))
-                        return events
                     except Exception as e:
-                        #volvemos a realizar el intercambio
+                        #ante algun error que no provocó cambios, volvemos a comenzar el intercambio
                         player_A = Player.get(id=room.machine_state_options["ids"][0])  #el que inicia el intercambio es el primer id
                         player_B = Player.get(id=room.machine_state_options["ids"][1])  #el que recive solicitud de intercambio es el segundo id
                         if player_A is None or player_B is None or player_A.playing != player_B.playing:
@@ -274,6 +279,7 @@ class GamesService(DBSessionMixin):
                         return events
             else:
                 raise InvalidAccionException("No corresponde iniciar un intercambio") 
+            return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
     

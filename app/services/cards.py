@@ -41,6 +41,30 @@ class CardsService(DBSessionMixin):
         return card_to_deal
 
     @db_session
+    def give_alejate_card(self, player:Player):
+        """ Toma un jugador y le entrega la primera carta de alejate disponible, no modifica los masos
+        Returns:
+            Carta que se entregó
+        """
+        room = player.playing
+        alejate_available_cards = room.available_cards.select(type = "ALEJATE")
+        alejate_discarted_cards = room.discarted_cards.select(type = "ALEJATE")
+        card_to_deal = None
+        if len(list(alejate_available_cards)) == 0:
+            if(len(list(alejate_discarted_cards)) == 0):
+                rootlog.exception("no hay cartas de tipo Alejate en ninguno de los dos masos")
+                raise Exception()
+            card_to_deal = list(alejate_discarted_cards.random(1))[0]
+            room.discarted_cards.remove(card_to_deal)
+        else:
+            card_to_deal = list(alejate_available_cards.random(1))[0]
+            room.available_cards.remove(card_to_deal)
+
+        # agregamos la carta al jugador
+        player.hand.add(card_to_deal)
+        return card_to_deal
+
+    @db_session
     def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
         """ Realiza el intercambio de cartas.
         
