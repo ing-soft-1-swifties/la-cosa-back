@@ -258,7 +258,7 @@ class GamesService(DBSessionMixin):
                 from .cards import CardsService
                 cs = CardsService(self.db)
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
-                    second_player.cards.remove(second_card)
+                    second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player) #TODO! Habría que ver como se notifica esto al jugador que se esta defendiendo
                     events.exted([{
                         "name":"on_game_player_play_defense_card",
@@ -274,10 +274,14 @@ class GamesService(DBSessionMixin):
                         events.extend(rs.next_turn(sent_sid))
                     except Exception as e:
                         #ante algun error que no provocó cambios, volvemos a comenzar el intercambio
+                        print("El intercambio no fue exitoso, volvemso a intentar")
                         player_A = Player.get(id=room.machine_state_options["ids"][0])  #el que inicia el intercambio es el primer id
                         player_B = Player.get(id=room.machine_state_options["ids"][1])  #el que recive solicitud de intercambio es el segundo id
                         if player_A is None or player_B is None or player_A.playing != player_B.playing:
                             rootlog.exception("los jugadores que estaban intercambiando no eran validos cuando se intento realizar otra vez el intercambio")
+                        e = InvalidAccionException("Error al intercambiar, seleccione nuevamente")
+                        events.extend(e.generate_event(player_A.sid))
+                        events.extend(e.generate_event(player_B.sid))
                         events.extend(self.begin_exchange(room, player_A, player_B))
                         return events
             else:
