@@ -149,6 +149,8 @@ class TestCardsService(unittest.TestCase):
         
         room:Room = self.create_valid_room(roomname='test_exchange_cards_la_cosa', qty_players=4)
         room.direction = True
+        assert list(room.players.select()) != []
+        assert len(list(room.players.select(lambda p:p.rol=='LA_COSA'))) != 0
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn=sender.position
         reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
@@ -182,8 +184,10 @@ class TestCardsService(unittest.TestCase):
     
     @db_session
     def test_exchange_cards_invalid_ifection_last_infection(self):
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_human_to_anything', qty_players=4)
+        room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_ifection_last_infection', qty_players=4)
         room.direction = True
+        assert list(room.players.select()) != []
+        assert len(list(room.players.select(lambda p:p.rol=='LA_COSA'))) != 0
         sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         room.turn=sender.position
         reciever:Player = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
@@ -425,7 +429,6 @@ class TestCardsService(unittest.TestCase):
     @db_session
     def test_play_card_lanzallamas(self):
         room:Room = self.create_valid_room(roomname='test_play_card_lanzallamas', qty_players=4)
-        sender:Player =list(room.players.select(rol='LA_COSA'))[0]
         
         card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
 

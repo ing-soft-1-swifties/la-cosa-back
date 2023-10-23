@@ -163,7 +163,7 @@ class TestGamesService(unittest.TestCase):
     @db_session
     def test_exchange_manager_happy(self):
         # primeras excepciones
-        room: Room = self.create_valid_room(roomname="test_exchange", qty_players=4)
+        room: Room = self.create_valid_room(roomname="test_exchange_manager_happy", qty_players=4)
         host: Player = room.get_host()
         host.sid = "host"
         room.turn = host.position
