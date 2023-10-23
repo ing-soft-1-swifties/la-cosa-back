@@ -2,6 +2,7 @@ from pony.orm import db_session
 from app.models import Player, Room, Card
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+from app.services.play_card import PlayCardsService
 from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.cards import CardsService
@@ -65,9 +66,10 @@ class GamesService(DBSessionMixin):
             unplayable_cards = ["La cosa", "Infectado"]
             
             # inicializamos los servicios
-            cs = CardsService(self.db)
-            ps = PlayersService(self.db)
             rs = RoomsService(self.db)
+            ps = PlayersService(self.db)
+            cs = CardsService(self.db)
+            pcs = PlayCardsService(self.db)
 
             # lista de eventos a informar a los jugadores
             events = []     
@@ -118,10 +120,10 @@ class GamesService(DBSessionMixin):
 
 
             if card.name == "Lanzallamas":
-                events.extend(cs.play_lanzallamas(player, room, card, card_options))
+                events.extend(pcs.play_lanzallamas(player, room, card, card_options))
 
             elif card.name == 'Whisky':
-                events.extend(cs.play_whisky(player, room, card, card_options))
+                events.extend(pcs.play_whisky(player, room, card, card_options))
 
 
             rs.recalculate_positions(sent_sid)
