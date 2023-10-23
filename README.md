@@ -22,7 +22,7 @@
 # TODO cartas
 Acción:
     [x] Whisky
-    [D] Análisis 
+    [x] Análisis 
     [ ] Vigila tus espaldas
     [ ] Cambio de lugar
     [ ] Más vale que corras
