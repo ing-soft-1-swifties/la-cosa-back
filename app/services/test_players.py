@@ -54,7 +54,7 @@ class TestPlayerService(unittest.TestCase):
         for i in range(qty_players - 1):
             rs.join_player(f"player-{i}", room.id)
 
-        
+
         for player in room.players:
             player.sid = str(uuid4())
         
@@ -155,7 +155,7 @@ class TestPlayerService(unittest.TestCase):
     @db_session
     def test_is_host(self):
 
-        TEST_NAME = 'test_has_card'
+        TEST_NAME = 'test_is_host'
         
         # creamos una room valida
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
@@ -163,11 +163,27 @@ class TestPlayerService(unittest.TestCase):
         # obtenemos un jugador y asignamos el token
         host = room.get_host()
 
-        assert self.ps.is_host(host.sid)
+        assert self.ps.is_host(host.sid) == True
 
         player_not_host = room.players.select(lambda p: p.sid != host.sid).random(1)[0]
 
-        assert not self.ps.is_host(player_not_host.sid)
+        assert self.ps.is_host(player_not_host.sid) == False
+
+
+
+    @db_session
+    def test_is_host_invalid_sid(self):
+
+        TEST_NAME = 'test_is_host_invalid_sid'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        # obtenemos un jugador y asignamos el token
+        host = room.get_host()
+
+        with self.assertRaises(InvalidSidException):
+            self.ps.is_host(host.sid + 'invalid')
 
 
     @classmethod
