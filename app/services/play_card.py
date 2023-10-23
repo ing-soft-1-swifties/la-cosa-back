@@ -112,7 +112,7 @@ class PlayCardsService(DBSessionMixin):
         for card_i in target_player.hand:
             cardsJSON.append(card_i.json())
 
-        events.extend({
+        events.extend([{
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
@@ -120,9 +120,9 @@ class PlayCardsService(DBSessionMixin):
             },
             'broadcast': True,
             'except_sid': player.sid
-        })
+        }])
 
-        events.extend({
+        events.extend([{
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
@@ -134,4 +134,6 @@ class PlayCardsService(DBSessionMixin):
             },
             'broadcast': False,
             'receiver_sid': player.sid
-        })
+        }])
+
+        return events

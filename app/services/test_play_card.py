@@ -133,6 +133,59 @@ class TestPlayCardsService(unittest.TestCase):
         for cardJSON in response['body']['effects']['cards']:
             assert cardJSON['id'] in cards_id
 
+    @db_session
+    def test_play_card_analisis_successful(self):
+        TEST_NAME = 'test_play_card_analisis'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # obtenemos un jugador y le damos la carta analisis
+        player = room.players.select(lambda p: p.position==0).first()
+        adyacent_player = room.players.select(lambda p: p.position==1).first()
+
+        analisis = Card.select(lambda c: c.name== 'Analisis').first()
+        player.hand.add(analisis)
+        # jugamos la carta analisis
+        response = self.pcs.play_analisis(player, room, analisis, {"target": adyacent_player.id})
+
+        assert len(response) == 2
+
+        assert response[0]['name'] == 'on_game_player_play_card'
+        assert response[1]['name'] == 'on_game_player_play_card'
+        
+        assert analisis.id == response[0]['body']['card']
+        assert analisis.id == response[1]['body']['card']
+
+        # print(response[0])
+        # print(response[1])
+        response = response[1]
+
+        cards_id = []
+        for card in adyacent_player.hand:
+            cards_id.append(card.id)
+
+        for cardJSON in response['body']['effects']['cards']:
+            assert cardJSON['id'] in cards_id
+
+
+    @db_session
+    def test_play_card_analisis_invalid_adyacent(self):
+        TEST_NAME = 'test_play_card_analisis_invalid_adyacent'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # obtenemos un jugador y le damos la carta analisis
+        player = room.players.select(lambda p: p.position==0).first()
+        adyacent_player = room.players.select(lambda p: p.position==2).first()
+
+        # jugamos la carta analisis
+        analisis = Card.select(lambda c: c.name== 'Analisis').first()
+        player.hand.add(analisis)
+
+        with self.assertRaises(InvalidAccionException):
+            self.pcs.play_analisis(player, room, analisis, {"target": adyacent_player.id})
+
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
