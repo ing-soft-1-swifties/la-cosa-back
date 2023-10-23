@@ -225,15 +225,20 @@ class GamesService(DBSessionMixin):
                     defense_cards = ["¡No, gracias!"]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
+            #if es la primera persona en decidir la carta a intercambiar
             if room.machine_state_options["stage"] == "STARTING":
                 room.machine_state = "EXCHANGING"
-                room.machine_state_options = {"ids":room.machine_state_options["ids"], 
+                #seteamos la maquina para la segunda etapa del intercambio (solo falta uno en decidir)
+                room.machine_state_options={"ids":room.machine_state_options["ids"], 
                                             "stage":"FINISHING",
-                                            "card_id" : card.id,
-                                            "player_id":player.id,
-                                            "on_defense": on_defense if not first_player else False}    #falta verificar si se puede defender con esa carta
-                # print("se completo la primera etapa del intercambio")
+                                            "card_id" : card.id,    #carta de la primera persona en decidir
+                                            "player_id":player.id,  #player_id de la primera persona en decidir
+                                            "on_defense": on_defense if not first_player else False #si es la segunda persona del intercambio, guarda si se esta defendiendo
+                                            }   
+                #habria que ver si notificamos al primer jugador en seleccionar carta de intercambio de que se acepto su eleccion
+                #por ahora luego de que los dos seleccionan se realiza el intercambio y se notifica
                 return events
+            #esif es la ultima persona que faltaba en decidir
             elif room.machine_state_options["stage"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
                 first_player_id = exchanging_players[0]
                 first_player = Player.get(id = first_player_id)
@@ -249,19 +254,24 @@ class GamesService(DBSessionMixin):
                 second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 from .cards import CardsService
                 cs = CardsService(self.db)
-                try:
-                    events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))    #falta ver si se esta defendiendo
-                    rs = RoomsService(self.db)
-                    events.extend(rs.next_turn(sent_sid))
-                    return events
-                except Exception as e:
-                    #volvemos a realizar el intercambio
-                    player_A = Player.get(id=room.machine_state_options["ids"][0])  #el que inicia el intercambio es el primer id
-                    player_B = Player.get(id=room.machine_state_options["ids"][1])  #el que recive solicitud de intercambio es el segundo id
-                    if player_A is None or player_B is None or player_A.playing != player_B.playing:
-                        rootlog.exception("los jugadores que estaban intercambiando no eran validos cuando se intento realizar otra vez el intercambio")
-                    events.extend(self.begin_exchange(room, player_A, player_B))
-                    return events
+                if room.machine_state_options["on_defense"] or on_defense:
+                    second_player.cards.remove(second_card)
+                    cs.give_alejate_card(second_player)
+                else:
+                    try:
+                        #realizamos el intercambio si no se estaba defendiendo
+                        events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))    #falta ver si se esta defendiendo
+                        rs = RoomsService(self.db)
+                        events.extend(rs.next_turn(sent_sid))
+                        return events
+                    except Exception as e:
+                        #volvemos a realizar el intercambio
+                        player_A = Player.get(id=room.machine_state_options["ids"][0])  #el que inicia el intercambio es el primer id
+                        player_B = Player.get(id=room.machine_state_options["ids"][1])  #el que recive solicitud de intercambio es el segundo id
+                        if player_A is None or player_B is None or player_A.playing != player_B.playing:
+                            rootlog.exception("los jugadores que estaban intercambiando no eran validos cuando se intento realizar otra vez el intercambio")
+                        events.extend(self.begin_exchange(room, player_A, player_B))
+                        return events
             else:
                 raise InvalidAccionException("No corresponde iniciar un intercambio") 
         except InvalidAccionException as e:
