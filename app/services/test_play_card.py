@@ -104,6 +104,42 @@ class TestPlayCardsService(unittest.TestCase):
         assert next_player.status == "MUERTO"
         assert len(host.hand) == last_hand_size-1
 
+
+    @db_session
+    def test_play_card_whisky(self):
+        TEST_NAME = 'test_play_card_whisky'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # obtenemos un jugador y le damos la carta whisky
+        player = room.players.random(1)[0]
+        whisky = Card.select(lambda c: c.name== 'Whisky').first()
+        player.hand.add(whisky)
+
+
+        response = self.pcs.play_whisky(player, room, whisky, {'arg': []})
+
+        assert len(response) == 1
+
+        response = response[0]
+
+        assert response['name'] == 'on_game_player_play_card'
+
+        assert whisky.id == response['body']['card']
+
+        cards_id = []
+        for card in player.hand:
+            cards_id.append(card.id)
+
+
+        for cardJSON in response['body']['effects']['cards']:
+            assert cardJSON['id'] in cards_id
+
+        print(response)
+
+
+        
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
