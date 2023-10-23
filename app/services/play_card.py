@@ -72,8 +72,6 @@ class PlayCardsService(DBSessionMixin):
         cardsJSON = []
         for card_i in player.hand:
             cardsJSON.append(card_i.json())
-        for card_i in cards:
-            cardsJSON.append(card_i.json())
 
         events.append({
             'name': 'on_game_player_play_card',
