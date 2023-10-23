@@ -4,20 +4,26 @@ from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 
 class PlayersService(DBSessionMixin):
+
+
     @db_session
-    def connect_player(self, sent_token : str, actual_sid : str):
-        expected_player = Player.get(token=sent_token)
-        if expected_player is None:
+    def connect_player(self, sent_token: str, actual_sid: str):
+        player = Player.get(token=sent_token)
+
+        if player is None:
             raise InvalidTokenException()
+        
         # habria que ver si se estaba usando ese jugador, levantar exepcion y en su handler matar la coneccion vieja
         # if expected_player.sid is not None:
-        # raise UsedTokenException()
-        expected_player.sid = actual_sid
-        return ([{
-            "name": "on_room_new_player",
-            "body": {},
-            "broadcast":True
-        }])
+        #   raise UsedTokenException()
+        player.sid = actual_sid
+        return [
+            {
+                "name": "on_room_new_player",
+                "body": {},
+                "broadcast":True
+            }
+        ]
     
     @db_session
     def disconnect_player(self, actual_sid : str):
