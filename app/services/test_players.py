@@ -170,7 +170,6 @@ class TestPlayerService(unittest.TestCase):
         assert self.ps.is_host(player_not_host.sid) == False
 
 
-
     @db_session
     def test_is_host_invalid_sid(self):
 
@@ -184,7 +183,31 @@ class TestPlayerService(unittest.TestCase):
 
         with self.assertRaises(InvalidSidException):
             self.ps.is_host(host.sid + 'invalid')
+ 
+    @db_session
+    def test_get_name(self):
 
+        TEST_NAME = 'test_get_name'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        player = room.players.random(1)[0]
+
+        assert self.ps.get_name(player.sid) == player.name
+
+    @db_session
+    def test_get_name_invalid_sid(self):
+
+        TEST_NAME = 'test_get_name_invalid_sid'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        player = room.players.random(1)[0]
+
+        with self.assertRaises(InvalidSidException):
+            self.ps.get_name(player.sid + 'invalid')
 
     @classmethod
     @db_session
