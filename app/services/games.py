@@ -204,9 +204,7 @@ class GamesService(DBSessionMixin):
                 "roles": roles
             }
     
-        qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
-        qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
-        if qty_alive_non_human_players == qty_alive_players: 
+        if len(list(room.players.select(lambda p:p.rol=='HUMANO' and p.status=='VIVO'))) == 0: 
             ret='LA_COSA_WON'
             info = {"winner_team":"LA_COSA",
                         "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),

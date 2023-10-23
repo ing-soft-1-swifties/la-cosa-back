@@ -26,7 +26,7 @@ class PlayCardsService(DBSessionMixin):
         
         # Vemos que los jugadores esten adyacentes:
         if abs(player.position - target_player.position) != 1 and \
-            abs(player.position - target_player.position) !=  len(room.players.select(status = "VIVO"))-1:
+            abs(player.position - target_player.position) !=  room.qty_alive_players:
             # falta enriquecer con info a este excepcion
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
@@ -34,7 +34,8 @@ class PlayCardsService(DBSessionMixin):
         events.append({
             "name": "on_game_player_death",
             "body": {
-                "player": target_player.name
+                "player": target_player.name,
+                "reason":"LANZALLAMAS"
             },
             "broadcast": True
         })
