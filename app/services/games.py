@@ -323,16 +323,36 @@ class GamesService(DBSessionMixin):
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
         """
-        events = []   
-        room.machine_state =  "EXCHANGING"
-        room.machine_state_options = {"ids":[player_A.id, player_B.id],
-                                    "stage":"STARTING",
-                                    }
-        events = [{
-                    "name":"on_game_begin_exchange",
-                    "body":{"players":[player_A.name, player_B.name]},
-                    "broadcast":True
-        }]
+        events = []
+        
+        just_infected_a = len(list(player_A.hand.select(lambda c:c.name=='Infectado')))==4
+        superinfection_A = just_infected_a and not (player_A.rol=='INFECTADO' and player_B.rol=='LA_COSA')
+        just_infected_b = len(list(player_B.hand.select(lambda c:c.name=='Infectado')))==4
+        superinfection_B = just_infected_b and not (player_B.rol=='INFECTADO' and player_A.rol=='LA_COSA')
+        
+        if superinfection_A:
+            events.extend([{
+                "name":"on_game_player_death",
+                "body":{"player":player_A.name,"reason":"SUPERINFECCION"},
+                "broadcast":True
+            }])
+        elif superinfection_B:
+            events.extend([{
+                "name":"on_game_player_death",
+                "body":{"player":player_B.name,"reason":"SUPERINFECCION"},
+                "broadcast":True
+            }])
+        else:
+            room.machine_state =  "EXCHANGING"
+            room.machine_state_options = {"ids":[player_A.id, player_B.id],
+                                        "stage":"STARTING",
+                                        }
+            events = [{
+                        "name":"on_game_begin_exchange",
+                        "body":{"players":[player_A.name, player_B.name]},
+                        "broadcast":True
+            }]
+        
         return events
     
     def begin_end_of_turn_exchange(self, room : Room):
