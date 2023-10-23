@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from app.services.exceptions import *
 
-unittest.TestLoader.sortTestMethodsUsing = None
+unittest.TestLoader.sortTestMethodsUsing = None # type: ignore
 
 
 class TestGamesService(unittest.TestCase):
