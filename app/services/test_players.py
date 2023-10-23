@@ -145,11 +145,10 @@ class TestPlayerService(unittest.TestCase):
         # agregamos una carta random al jugador
         card = Card.select().random(1)[0]
         player.hand.add(card)
-
         assert self.ps.has_card(player, card)
 
+        # eliminamos la carta
         player.hand.remove(card)
-
         assert not self.ps.has_card(player, card)
 
 
