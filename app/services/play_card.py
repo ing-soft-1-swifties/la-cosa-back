@@ -56,11 +56,10 @@ class PlayCardsService(DBSessionMixin):
         # Esta carta sólo puedes jugarla sobre ti mismo
         
         events = []
-        cards = list(player.hand)
 
         cardsJSON = []
-        for card in cards:
-            cardsJSON.append(card.json())
+        for card_i in player.hand:
+            cardsJSON.append(card_i.json())
 
         events.append({
             'name': 'on_game_player_play_card',
