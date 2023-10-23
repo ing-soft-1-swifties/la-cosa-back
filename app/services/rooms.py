@@ -4,7 +4,6 @@ from pony.orm import count, db_session, Set
 from pony.orm.dbapiprovider import uuid4
 from app.models import Player, Room, Card
 from app.schemas import NewRoomSchema, RoomSchema
-#from app.services.exceptions import DuplicatePlayerNameException, InvalidRoomException
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.logger import rootlog
@@ -23,11 +22,6 @@ class RoomsService(DBSessionMixin):
         # if name == expected_room.get_host().name:
         #     return expected_room.get_host().token
         # #easter egg end
-        # #ultra easter egg
-        # for player in expected_room.players:
-        #     if player.name == name:
-        #         return player.token
-        # #ultra easter egg end
         if expected_room.status != "LOBBY":   #not in lobby
             raise NotInLobbyException()
         if len(expected_room.players) >= expected_room.max_players:
@@ -62,6 +56,8 @@ class RoomsService(DBSessionMixin):
     @db_session
     def get_players_sid(self, actual_sid):
         expected_player = Player.get(sid = actual_sid)
+        if expected_player is None:
+            raise InvalidSidException()
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
@@ -75,11 +71,12 @@ class RoomsService(DBSessionMixin):
             turn += 1 
 
     @db_session
-    def start_game(self, actual_sid : str):
+    def start_game(self, sent_sid : str):
         """
         si el jugador es propietario de una partida y esta no esta iniciada, dadas las condiciones para que se pueda iniciar una partida, esta se inicia
         """
-        expected_player = Player.get(sid = actual_sid)
+        events = []
+        expected_player = Player.get(sid = sent_sid)
         if expected_player is None:
             raise InvalidSidException()
         if expected_player.is_host == False:
@@ -111,7 +108,14 @@ class RoomsService(DBSessionMixin):
             for player in expected_room.players:
                 player.hand.clear()
             raise e
-
+        events.append(
+        {
+            "name":"on_room_start_game",
+            "body":{},
+            "broadcast":True
+        })
+        events.extend(self.next_turn(sent_sid))
+        return events
 
     @db_session
     def end_game(self, actual_sid : str):
@@ -119,8 +123,6 @@ class RoomsService(DBSessionMixin):
         expected_player = Player.get(sid = actual_sid)
         if expected_player is None:
             raise InvalidSidException()
-        # if expected_player.is_host == False:
-        #     raise NotOwnerExeption()
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
@@ -128,21 +130,9 @@ class RoomsService(DBSessionMixin):
             player.delete()
         expected_room.delete()
 
-
     @db_session
     def list_rooms(self):
-
-        def get_json(room):
-            return { 
-                'id': room.id,
-                'name': room.name,
-                'max_players' : room.max_players,
-                'min_players' : room.min_players,
-                'players_count' : len(room.players),
-                'is_private' : room.is_private
-            }
-
-        return [get_json(room) for room in Room.select(lambda x: x.status == "LOBBY")]
+        return [room.json() for room in Room.select(lambda room: room.status == "LOBBY")]
     
     @db_session
     def initialize_deck(self, room : Room):
@@ -195,3 +185,99 @@ class RoomsService(DBSessionMixin):
                     player.rol = 'LA_COSA'
         return
     
+    @db_session
+    def next_player(self, room):
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        turn = 0
+        if room.machine_state == "INITIAL":
+            turn = 0
+        else:
+            turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+        expected_player = None
+        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
+        for player in room.players:
+            if player.position == turn and player.status == "VIVO":
+                expected_player = player
+        if expected_player is None: 
+            print(f"el jugador con turno {turn} no esta en la partida")
+            raise Exception
+        return expected_player
+
+    @db_session
+    def in_turn_player(self, room):
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        expected_player = None
+        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
+        for player in room.players:
+            if player.position == room.turn and player.status == "VIVO":
+                expected_player = player
+        if expected_player is None: 
+            print(f"el jugador con turno {room.turn} no esta en la partida")
+            raise Exception
+        return expected_player
+
+    @db_session
+    def next_turn(self, sent_sid : str):    
+        try:
+            player = Player.get(sid = sent_sid)
+            if player is None:
+                raise InvalidSidException()
+            room = player.playing
+            if room.machine_state == "INITIAL":
+                room.turn = 0
+            else:
+                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+            in_turn_player = self.in_turn_player(room)
+            #seteamos el estado del juego para esperar que el proximo jugador juegue
+            room.machine_state = "PLAYING"
+            room.machine_state_options = {"id":in_turn_player.id}
+            from app.services.cards import CardsService
+            cs = CardsService(self.db)
+            new_card = cs.give_card(in_turn_player)
+            return([
+            {
+                "name":"on_game_player_turn",
+                "body":{"player":in_turn_player.name},
+                "broadcast":True
+            },
+            {
+                "name":"on_game_player_steal_card",
+                "body":{"cards":[new_card.json()]},
+                "broadcast":False,
+                "receiver_sid":in_turn_player.sid
+            }])
+        except:
+            rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sent_sid}")
+            #cleanup pendiente
+        
+    @db_session
+    def recalculate_positions(self, sent_sid : str):    
+        """
+            Reasigna posiciones, manteniendo el orden de las personas
+            asume que la partida no esta terminada, se puede seguir jugando
+        """
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+        room = player.playing
+        if room.turn is None:
+            print("partida inicializada incorrectamente, turno no pre-seteado")
+            raise Exception
+        id_position = []
+        for player in room.players:
+            if player.status == "VIVO":
+                id_position.append((player.position, player))
+        id_position.sort(key  = lambda x : x[0])
+        position = 0
+        should_update_turn = True
+        for pair in id_position:
+            if pair[1].position != position and position <= room.turn and should_update_turn:
+                room.turn -= 1
+                should_update_turn = False
+                pass
+            pair[1].position = position
+            position += 1

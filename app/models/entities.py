@@ -46,6 +46,17 @@ class Player(db.Entity):
     token = Required(str)
     hand = Set('Card', reverse='player_hand')
 
+    def json(self):
+        return {
+                "name" : self.name,
+                "playerID": self.id,
+                "role" : self.rol,
+                "cards" : [card.json() for card in self.hand],
+                "position":self.position,
+                #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
+                "on_turn": self.status == "VIVO" and self.position == self.playing.turn,
+                "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids"))
+                }
 
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -76,3 +87,14 @@ class Room(db.Entity):
             if player.is_host:
                 return player
         raise Exception()   #muerte
+
+    def json(self):
+        return { 
+            'id': self.id,
+            'name': self.name,
+            'max_players' : self.max_players,
+            'min_players' : self.min_players,
+            'players_count' : len(self.players),
+            'is_private' : self.is_private
+        }
+
