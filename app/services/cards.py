@@ -1,3 +1,4 @@
+from os import name
 from pony.orm import db_session
 from app.models import Player, Card, Room
 from app.services.exceptions import *
@@ -230,8 +231,49 @@ class CardsService(DBSessionMixin):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         target_player.status = "MUERTO"  
-        events.append({"name":"on_game_player_death",
-                       "body":{"player":target_player.name},
-                       "broadcast":True
-                      })
+        events.append({
+            "name": "on_game_player_death",
+            "body": {
+                "player": target_player.name
+            },
+            "broadcast": True
+        })
+
+        events.append({
+            "name":"on_game_player_play_card",
+            "body":{
+                "player": player.name,
+                "card" : card.json(),
+                "card_options" : card_options,
+            },
+            "broadcast":True
+        }) 
         return events
+
+    @db_session
+    def play_whisky(self, player: Player, room: Room, card: Card, card_options):
+        # Whisky: Enséñales todas tus cartas a los demás jugadores. 
+        # Esta carta sólo puedes jugarla sobre ti mismo
+        
+        events = []
+        cards = list(player.hand)
+
+        cardsJSON = []
+        for card in cards:
+            cardsJSON.append(card.json())
+
+        events.append({
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card': card.id,
+                'card_options': card_options,
+                'effects' : {
+                    'player': player.name, 
+                    'cards': cardsJSON
+                }
+            },
+            'broadcast': True
+        })
+
+        return events
+
