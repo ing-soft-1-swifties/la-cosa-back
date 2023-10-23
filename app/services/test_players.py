@@ -26,7 +26,6 @@ class TestPlayerService(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         from app.models.testing_db import db
-
         cls.db = db
         cls.gs = GamesService(db=cls.db)
         cls.rs = RoomsService(db=cls.db)
@@ -131,6 +130,22 @@ class TestPlayerService(unittest.TestCase):
             self.ps.disconnect_player(player.sid + 'invalid')
 
 
+    @db_session
+    def test_has_card(self):
+
+        TEST_NAME = 'test_has_card'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        # obtenemos un jugador y asignamos el token
+        player = room.players.random(1)[0]
+
+        # agregamos una carta random al jugador
+        card = Card.select().random(1)[0]
+        player.hand.add(card)
+
+        assert self.ps.has_card(player, card)
 
     @classmethod
     @db_session
