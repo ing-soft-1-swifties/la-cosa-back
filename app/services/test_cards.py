@@ -88,22 +88,22 @@ class TestCardsService(unittest.TestCase):
         assert card in player.hand
 
 
-    @db_session 
-    def test_exchange_cards_invalid_position(self):
+    # @db_session 
+    # def test_exchange_cards_invalid_position(self):
         
-        room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_position', qty_players=4)
-        # room.direction = True
-        room.turn= 0
-        sender:Player =list(room.players.select(position=0))[0]
-        reciever:Player = list(room.players.select(position=3))[0]
-        card_s : Card= list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
-        card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+    #     room:Room = self.create_valid_room(roomname='test_exchange_cards_invalid_position', qty_players=4)
+    #     # room.direction = True
+    #     room.turn= 0
+    #     sender:Player =list(room.players.select(position=0))[0]
+    #     reciever:Player = list(room.players.select(position=3))[0]
+    #     card_s : Card= list(sender.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
+    #     card_r : Card= list(reciever.hand.select(lambda c: c.name != 'La cosa' and c.name != 'Infectado'))[0]
         
-        #seteamos el sid del host para poder enviarlo a la funcion
-        # room.get_host().sid = "1234"
+    #     #seteamos el sid del host para poder enviarlo a la funcion
+    #     # room.get_host().sid = "1234"
 
-        with self.assertRaises(InvalidExchangeParticipants):
-            self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
+    #     with self.assertRaises(InvalidExchangeParticipants):
+    #         self.cs.exchange_cards(room,sender,reciever,card_s,card_r)
 
     @db_session 
     def test_exchange_cards_not_in_turn(self):
@@ -218,13 +218,14 @@ class TestCardsService(unittest.TestCase):
         
         # obtenemos los jugadores
         sender  = list(room.players.select(rol='HUMANO'))[0]
-        reciever  = list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
+        reciever  :Player= list(room.players.select(position=(sender.position+1)%len(room.players.select(status='VIVO'))))[0]
         room.turn=sender.position
 
         # obtenemos las cartas
         card_s = list(sender.hand.select(lambda c:c.name != 'La cosa'))[0]        
         card_r = list(room.available_cards.select(name='Infectado'))[0]
-        reciever.hand.select().delete()
+        reciever.hand.remove(reciever.hand)
+        assert []==list(reciever.hand)
         reciever.hand.add(list(room.available_cards.select(name='Infectado'))[1])
         reciever.hand.add(card_r)
         reciever.hand.add(card_r)

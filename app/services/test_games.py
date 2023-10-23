@@ -36,9 +36,6 @@ class TestGamesService(unittest.TestCase):
     def create_valid_room(
         self, roomname: str = "newroom", qty_players: int = 12
     ) -> Room:
-        Room.select().delete()
-        Player.select().delete()
-
         rs = RoomsService(self.db)
 
         newroom = NewRoomSchema(
@@ -111,7 +108,7 @@ class TestGamesService(unittest.TestCase):
 
         host = room.get_host()
         host.hand.add(card)
-        host.sid = "1234"
+        host.sid = "test_play_card"
 
         room.status = "IN_GAME"
         room.machine_state = "PLAYING"
@@ -120,7 +117,7 @@ class TestGamesService(unittest.TestCase):
         room.turn = host.position
         last_hand_size = len(host.hand)
         self.gs.play_card_manager(
-            "1234", {"card": card.id, "card_options": {"target": None}}
+            "test_play_card", {"card": card.id, "card_options": {"target": None}}
         )
         assert last_hand_size == len(host.hand) + 1
 
@@ -227,17 +224,17 @@ class TestGamesService(unittest.TestCase):
         # primeras excepciones
         room: Room = self.create_valid_room(roomname="test_exchange_manager_success_defense", qty_players=4)
         host: Player = room.get_host()
-        host.sid = uuid4()
+        host.sid = str(uuid4())
         room.turn = host.position
         next_p: Player = self.rs.next_player(room)
-        next_p.sid = uuid4()
+        next_p.sid = str(uuid4())
         card_host: Card = list(
             host.hand.select(lambda c: c.name != "La cosa" and c.name != "Infectado")
         )[0]
         card_next_p_old: Card = list(
             next_p.hand.select(lambda c: c.name != "La cosa" and c.name != "Infectado")
         )[0]        
-        card_next_p: Card = Card.select(lambda c:c.name == "¡No, gracias!")
+        card_next_p: Card = list(Card.select(lambda c:c.name == "¡No, gracias!"))[0]
         
         next_p.hand.remove(card_next_p_old)
         next_p.hand.add(card_next_p)
@@ -266,21 +263,9 @@ class TestGamesService(unittest.TestCase):
 
         expected_events = [
             {
-                "name": "on_game_finish_exchange",
-                "body": {"players": [host.name, next_p.name]},
-                "broadcast": True,
-            },
-            {
-                "name": "on_game_exchange_result",
-                "body": {"card_in": card_next_p.id, "card_out": card_host.id},
-                "broadcast": False,
-                "receiver_sid": host.sid,
-            },
-            {
-                "name": "on_game_exchange_result",
-                "body": {"card_in": card_host.id, "card_out": card_next_p.id},
-                "broadcast": False,
-                "receiver_sid": next_p.sid,
+                "name":"on_game_player_play_defense_card",
+                "body":{"player":next_p.name, "card":card_next_p.json()},
+                "broadcast": True
             }
         ]
         assert room.machine_state == "PLAYING"

@@ -228,6 +228,8 @@ class GamesService(DBSessionMixin):
                     defense_cards = ["¡No, gracias!"]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
+                    
+            rs = RoomsService(self.db)
             #if es la primera persona en decidir la carta a intercambiar
             if room.machine_state_options["stage"] == "STARTING":
                 room.machine_state = "EXCHANGING"
@@ -260,7 +262,7 @@ class GamesService(DBSessionMixin):
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
                     second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player) #TODO! Habría que ver como se notifica esto al jugador que se esta defendiendo
-                    events.exted([{
+                    events.extend([{
                         "name":"on_game_player_play_defense_card",
                         "body":{"player":second_player.name, "card":second_card.json()},
                         "broadcast": True
@@ -270,7 +272,6 @@ class GamesService(DBSessionMixin):
                     try:
                         #realizamos el intercambio si no se estaba defendiendo
                         events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))    #falta ver si se esta defendiendo
-                        rs = RoomsService(self.db)
                         events.extend(rs.next_turn(sent_sid))
                     except Exception as e:
                         #ante algun error que no provocó cambios, volvemos a comenzar el intercambio

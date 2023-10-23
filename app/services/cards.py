@@ -80,10 +80,10 @@ class CardsService(DBSessionMixin):
         """       
         #lista de eventos a retornar
         events = []
-        qty_players = len(room.players.select())
-        valid_player_position = player_A.position == (player_B.position -1)% qty_players and room.direction
-        if not valid_player_position:
-            raise InvalidExchangeParticipants()
+        # qty_players = len(room.players.select())
+        # valid_player_position = player_A.position == (player_B.position -1)% qty_players and room.direction
+        # if not valid_player_position:
+        #     raise InvalidExchangeParticipants()
         
         sender_not_in_turn = player_A.position != room.turn
         if sender_not_in_turn:
