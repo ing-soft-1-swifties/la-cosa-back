@@ -16,3 +16,24 @@
 - **test**: corre un test especificado con `arg=`, ejemplo `make test arg=test1`
 - **test-all**: corre todos los tests y dice coverage
 - **test-report**: crea un reporte de test, donde se puede ver toda la info de coverage
+
+
+
+# TODO cartas
+Acción:
+    [x] Whisky
+    [D] Análisis 
+    [ ] Vigila tus espaldas
+    [ ] Cambio de lugar
+    [ ] Más vale que corras
+    [ ] Seducción
+    [ ] Hacha
+    [ ] Sospecha - DOING
+
+Defensa:
+
+    [ ] Aterrador
+    [ ] Aquí estoy bien
+    [ ] No, gracias
+    [ ] Fallaste
+    [ ] Nada de Barbacoas

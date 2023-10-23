@@ -104,7 +104,6 @@ class TestPlayCardsService(unittest.TestCase):
         assert next_player.status == "MUERTO"
         assert len(host.hand) == last_hand_size-1
 
-
     @db_session
     def test_play_card_whisky(self):
         TEST_NAME = 'test_play_card_whisky'
@@ -131,10 +130,8 @@ class TestPlayCardsService(unittest.TestCase):
         for card in player.hand:
             cards_id.append(card.id)
 
-
         for cardJSON in response['body']['effects']['cards']:
             assert cardJSON['id'] in cards_id
-
 
     @classmethod
     @db_session
