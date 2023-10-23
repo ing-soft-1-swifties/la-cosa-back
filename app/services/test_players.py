@@ -100,7 +100,20 @@ class TestPlayerService(unittest.TestCase):
             self.ps.connect_player(TEST_NAME, player.sid)
 
 
+    @db_session
+    def test_disconnect_player_succesfull(self):
+        TEST_NAME = 'test_disconnect_player_succesfull'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        # obtenemos un jugador y asignamos el token
+        player = room.players.random(1)[0]
+        player.token = TEST_NAME
 
+        response = self.ps.disconnect_player(player.sid)
+
+        assert response[0]['name'] == 'on_room_left_player'
 
 
     @classmethod

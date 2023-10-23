@@ -27,17 +27,25 @@ class PlayersService(DBSessionMixin):
     
     @db_session
     def disconnect_player(self, actual_sid : str):
-        expected_player = Player.get(sid=actual_sid)
-        if expected_player is None:
+
+        # obtenemos el jugador
+        player = Player.get(sid=actual_sid)
+
+        if player is None:
             raise InvalidSidException()
-        (expected_player.playing).players.remove(expected_player)
-        expected_player.delete()
-        return ([{
-            "name": "on_room_left_player",
-            "body": {},
-            "broadcast":True
-        }])
-        #falta borrar el player de la base de datos
+
+        # obtenemos la room y eliminamos al jugador
+        room = player.playing
+        room.players.remove(player)
+        player.delete()
+
+        return [
+            {
+                "name": "on_room_left_player",
+                "body": {},
+                "broadcast":True
+            }
+        ]
 
     @db_session
     def is_host(self, actual_sid : str):
