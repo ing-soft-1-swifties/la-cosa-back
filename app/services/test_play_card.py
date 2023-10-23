@@ -135,10 +135,6 @@ class TestPlayCardsService(unittest.TestCase):
         for cardJSON in response['body']['effects']['cards']:
             assert cardJSON['id'] in cards_id
 
-        print(response)
-
-
-        
 
     @classmethod
     @db_session
