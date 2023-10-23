@@ -152,6 +152,23 @@ class TestPlayerService(unittest.TestCase):
         assert not self.ps.has_card(player, card)
 
 
+    @db_session
+    def test_is_host(self):
+
+        TEST_NAME = 'test_has_card'
+        
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+        
+        # obtenemos un jugador y asignamos el token
+        host = room.get_host()
+
+        assert self.ps.is_host(host.sid)
+
+        player_not_host = room.players.select(lambda p: p.sid != host.sid).random(1)[0]
+
+        assert not self.ps.is_host(player_not_host.sid)
+
 
     @classmethod
     @db_session
