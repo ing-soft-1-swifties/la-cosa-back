@@ -132,11 +132,16 @@ async def notify_events(events, sid):
              body: <Json>
              broadcast: <Bool>
              receiver_sid: <Str>
+             except_sid: <Str>
              }
     """
+
     for event in events:
         if event["broadcast"]:
             for player_sid in rs.get_players_sid(sid):
+                if events.get('except_sid') is not None:
+                    if player_sid == events.get('except_sid'):
+                        continue
                 gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 event["body"].update(gameState)
                 await sio_server.emit(event["name"], event["body"], to = player_sid)

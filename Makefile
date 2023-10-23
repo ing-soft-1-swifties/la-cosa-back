@@ -15,7 +15,7 @@ run:
 
 
 test:
-	pytest -W ignore::DeprecationWarning -k $(arg)
+	pytest -W ignore::DeprecationWarning -k $(arg) -s
 
 test-all:
 	pytest -W ignore::DeprecationWarning --cov
