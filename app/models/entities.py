@@ -52,7 +52,10 @@ class Player(db.Entity):
                 "playerID": self.id,
                 "role" : self.rol,
                 "cards" : [card.json() for card in self.hand],
-                "position":self.position
+                "position":self.position,
+                #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
+                "on_turn": self.status == "VIVO" and self.position == self.playing.turn,
+                "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids"))
                 }
 
 class Room(db.Entity):

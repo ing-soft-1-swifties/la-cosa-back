@@ -20,7 +20,10 @@ class GamesService(DBSessionMixin):
                 "id" : player.id,
                 "status" : player.status,
                 "position" : player.position,
-                "in_quarantine" : player.in_quarantine
+                "in_quarantine" : player.in_quarantine,
+                #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
+                "on_turn": player.status == "VIVO" and player.position == room.turn,
+                "on_exchange": room.machine_state == "EXCHANGING" and (player.id in room.machine_state_options.get("ids"))
             }
         game_state = {
             "config" : {
