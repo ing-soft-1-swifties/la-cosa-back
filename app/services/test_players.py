@@ -68,6 +68,7 @@ class TestPlayerService(unittest.TestCase):
 
         return room
 
+
     @db_session
     def test_connect_player_succesfull(self):
         TEST_NAME = 'test_connect_player_succesfull'
@@ -146,6 +147,12 @@ class TestPlayerService(unittest.TestCase):
         player.hand.add(card)
 
         assert self.ps.has_card(player, card)
+
+        player.hand.remove(card)
+
+        assert not self.ps.has_card(player, card)
+
+
 
     @classmethod
     @db_session
