@@ -6,6 +6,7 @@ from app.services.games import GamesService
 from app.services.cards import CardsService
 from app.services.rooms import RoomsService
 from app.schemas import NewRoomSchema
+from uuid import uuid4 
 
 from app.services.exceptions import *
 
@@ -195,6 +196,71 @@ class TestGamesService(unittest.TestCase):
 
         # payload setting segunda llamada a intercambio
         payload = {"card": card_next_p.id, "on_defense": False}
+
+        events = self.gs.exchange_card_manager(next_p.sid, payload)
+
+        expected_events = [
+            {
+                "name": "on_game_finish_exchange",
+                "body": {"players": [host.name, next_p.name]},
+                "broadcast": True,
+            },
+            {
+                "name": "on_game_exchange_result",
+                "body": {"card_in": card_next_p.id, "card_out": card_host.id},
+                "broadcast": False,
+                "receiver_sid": host.sid,
+            },
+            {
+                "name": "on_game_exchange_result",
+                "body": {"card_in": card_host.id, "card_out": card_next_p.id},
+                "broadcast": False,
+                "receiver_sid": next_p.sid,
+            }
+        ]
+        assert room.machine_state == "PLAYING"
+        for event in expected_events:
+            assert event in events
+
+    @db_session
+    def test_exchange_manager_success_defense(self):
+        # primeras excepciones
+        room: Room = self.create_valid_room(roomname="test_exchange_manager_success_defense", qty_players=4)
+        host: Player = room.get_host()
+        host.sid = uuid4()
+        room.turn = host.position
+        next_p: Player = self.rs.next_player(room)
+        next_p.sid = uuid4()
+        card_host: Card = list(
+            host.hand.select(lambda c: c.name != "La cosa" and c.name != "Infectado")
+        )[0]
+        card_next_p_old: Card = list(
+            next_p.hand.select(lambda c: c.name != "La cosa" and c.name != "Infectado")
+        )[0]        
+        card_next_p: Card = Card.select(lambda c:c.name == "¡No, gracias!")
+        
+        next_p.hand.remove(card_next_p_old)
+        next_p.hand.add(card_next_p)
+
+        # setting maquina de estados
+        machine_state_options = {"ids": [host.id, next_p.id], "stage": "STARTING"}
+        room.machine_state = "EXCHANGING"
+        room.machine_state_options = machine_state_options
+
+        # payload setting primera llamada a intercambio
+        payload = {"card": card_host.id, "on_defense": False}
+
+        events = self.gs.exchange_card_manager(host.sid, payload)
+
+        # chequeos
+        assert room.machine_state == "EXCHANGING"
+        assert room.machine_state_options["stage"] == "FINISHING"
+        assert room.machine_state_options["card_id"] == card_host.id
+        assert room.machine_state_options["player_id"] == host.id
+        assert events == []
+
+        # payload setting segunda llamada a intercambio
+        payload = {"card": card_next_p.id, "on_defense": True}
 
         events = self.gs.exchange_card_manager(next_p.sid, payload)
 
