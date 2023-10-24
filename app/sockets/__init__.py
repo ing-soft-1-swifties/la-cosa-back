@@ -139,8 +139,8 @@ async def notify_events(events, sid):
     for event in events:
         if event["broadcast"]:
             for player_sid in rs.get_players_sid(sid):
-                if events.get('except_sid') is not None:
-                    if player_sid == events.get('except_sid'):
+                if event.get('except_sid') is not None:
+                    if player_sid == event.get('except_sid'):
                         continue
                 gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 event["body"].update(gameState)
