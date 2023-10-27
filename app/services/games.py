@@ -61,6 +61,85 @@ class GamesService(DBSessionMixin):
         return player_in_game_state
 
     @db_session
+    def play_defense_card_manager(self, sent_sid : str, payload):
+        try:
+            rs = RoomsService(self.db)
+            ps = PlayersService(self.db)
+            cs = CardsService(self.db)
+            pcs = PlayCardsService(self.db)
+
+            # lista de eventos a informar a los jugadores
+            events = []     
+
+            # verificamos inputs correctos            
+            sent_card_id = payload.get("card")
+            on_defense = payload.get("on_defense")
+            if sent_card_id is None or on_defense is None:
+                raise InvalidDataException()
+            
+            # obtenemos y verificamos el jugador
+            player = Player.get(sid = sent_sid)
+            if player is None:
+                raise InvalidSidException()
+
+            # obtenemos y verificamos las cartas
+            played_card = Card.get(id = room.machine_state_options["card"])
+            card = Card.get(id = sent_card_id) 
+            if card is None or played_card is None:
+                raise InvalidCidException()
+
+            if ps.has_card(player, card) == False:
+                raise InvalidCardException()
+
+            #obtenemos el jugador que jugo la carta inicialmente
+            in_turn_player = Player.get(sid = room.machine_state_options["id"])
+            if in_turn_player is None:
+                rootlog.exception("deberia estar el jugador que jugo la carta en machine_state_options y no lo esta")
+                raise Exception()
+            # obtenemos y verificamos la maquina de estados
+            room = player.playing
+            if room.machine_state != "PLAYING" and room.machine_state == "FINISHING":
+                rootlog.exception("No correspondia defenderse de una carta")
+                raise InvalidAccionException("No corresponde defenderse")
+
+            if room.machine_state_options["target"] != player.id:
+                rootlog.exception(f"No correspondia que esta persona se defienda")
+                raise InvalidAccionException("No estan jugando una carta sobre vos")
+            
+
+            #
+            if card not in played_card.defense_cards:
+                raise InvalidAccionException(f"No se puede defender {played_card.name} con {card.name}")
+
+            events = []
+            if on_defense == False:
+                events.extend(self.play_card_manager(in_turn_player.sid, room.machine_state_options))
+            else:
+                if card.name == "¡Nada de barbacoas!":
+                    pass
+
+            rs.recalculate_positions(sent_sid)
+            player.hand.remove(card)
+            room.discarted_cards.add(card)
+            
+            result, json = self.end_game_condition(sent_sid)
+
+            if result != "GAME_IN_PROGRESS":
+                events.append({
+                    "name":"on_game_end",
+                    "body":json,
+                    "broadcast":True
+                })
+                #si hago esto cuando quireo notificar no existen mass los jugadores
+                #TODO! ver como eliminar la partida
+                #rs.end_game(sent_sid)
+            else:
+                events.extend(self.begin_end_of_turn_exchange(room))
+            return events
+        except InvalidAccionException as e:
+            return e.generate_event(sent_sid)
+
+    @db_session
     def play_card_manager(self, sent_sid : str, payload):
 
         try:
@@ -110,16 +189,6 @@ class GamesService(DBSessionMixin):
 
             # caso: la carta jugada es lanzallamas ¡ruido de asadoo!
             events = []
-            # events.append({
-            #     "name":"on_game_player_play_card",
-            #     "body":{
-            #         "player": player.name,
-            #         "card" : card.json(),
-            #         "card_options" : payload["card_options"],
-            #     },
-            #     "broadcast":True
-            # })
-
 
             if card.name == cards.LANZALLAMAS:
                 events.extend(pcs.play_lanzallamas(player, room, card, card_options))

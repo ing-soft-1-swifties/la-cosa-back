@@ -41,7 +41,6 @@ class PlayCardsService(DBSessionMixin):
             # falta enriquecer con info a este excepcion
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
-        target_player.status = "MUERTO"  
         events.append({
             "name": "on_game_player_death",
             "body": {
@@ -61,6 +60,27 @@ class PlayCardsService(DBSessionMixin):
             },
             "broadcast": True
         }) 
+        if room.machine_state_options["stage"] == "STARTING" and\
+            len(target_player.hand.select(lambda card : card.name == "¡Nada de barbacoas!")) > 0:
+            #la persona se puede defender
+            room.machine_state =  "PLAYING"
+            room.machine_state_options = {
+                "id" : player.id,
+                "stage" : "FINISHING",
+                "card" : card.name,
+                "card_options" : card_options,
+                "target" : target_player
+            }
+        else:
+            target_player.status = "MUERTO"  
+            events.append({
+                "name": "on_game_player_death",
+                "body": {
+                    "player": target_player.name
+                },
+                "broadcast": True
+            })
+
         return events
 
     @db_session
@@ -409,5 +429,3 @@ class PlayCardsService(DBSessionMixin):
             o de un jugador adyacente
         """
         return []
-
-

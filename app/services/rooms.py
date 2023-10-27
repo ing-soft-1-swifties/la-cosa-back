@@ -229,7 +229,8 @@ class RoomsService(DBSessionMixin):
             in_turn_player = self.in_turn_player(room)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"
-            room.machine_state_options = {"id":in_turn_player.id}
+            room.machine_state_options = {"id":in_turn_player.id,
+                                          "stage":"STARTING"}
             from app.services.cards import CardsService
             cs = CardsService(self.db)
             new_card = cs.give_card(in_turn_player)
