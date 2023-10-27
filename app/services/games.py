@@ -175,6 +175,7 @@ class GamesService(DBSessionMixin):
                 raise InvalidAccionException(f"No se puede jugar {card.name}")
 
             if ps.has_card(player, card) == False:
+                rootlog.exception("Un jugador quiso jugar una carta la cual no era de su pertenencia")
                 raise InvalidCardException()
 
             # obtenemos y verificamos la room
@@ -187,8 +188,17 @@ class GamesService(DBSessionMixin):
                 rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}")
                 raise InvalidAccionException("No es tu turno")
 
-            # caso: la carta jugada es lanzallamas ¡ruido de asadoo!
             events = []
+            #veamos si es una carta que se juega sobre alguien
+            if card.need_target == True:
+                target = Player.get(id = card_options["target"])
+                if target in None:
+                    raise InvalidDataException()
+                #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
+                card_names = map(lambda x:x.name,target.hand)
+                can_defense = any(map(lambda x:x.name in card_names, card.defense_cards))
+                if can_defense:
+                    pass
 
             if card.name == cards.LANZALLAMAS:
                 events.extend(pcs.play_lanzallamas(player, room, card, card_options))
