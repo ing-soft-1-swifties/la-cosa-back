@@ -7,7 +7,7 @@ from app.models.entities import Player, Room, Card
 
 unittest.TestLoader.sortTestMethodsUsing = None  # type: ignore
 
-class TestPlayCardsService(unittest.TestCase):
+class TestEntities(unittest.TestCase):
     db: Database
 
     @classmethod
@@ -39,6 +39,14 @@ class TestPlayCardsService(unittest.TestCase):
             is_host=is_host,
             token=str(uuid4())
         )
+
+    # TODO
+    def test_player_add_card(self):
+        pass
+
+    # TODO
+    def test_player_remove_card(self):
+        pass
 
     # TODO
     def test_player_has_card(self):
