@@ -105,13 +105,12 @@ class PlayCardsService(DBSessionMixin):
         if not self.valid_adyacent_player(player, target_player, room):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
-
         # obtenemos las cartas en formato JSON
         cardsJSON = []
         for card_i in target_player.hand:
             cardsJSON.append(card_i.json())
 
-        events.extend([{
+        events.append({
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
@@ -119,9 +118,9 @@ class PlayCardsService(DBSessionMixin):
             },
             'broadcast': True,
             'except_sid': player.sid
-        }])
+        })
 
-        events.extend([{
+        events.append({
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
@@ -133,7 +132,7 @@ class PlayCardsService(DBSessionMixin):
             },
             'broadcast': False,
             'receiver_sid': player.sid
-        }])
+        })
 
         return events
 
@@ -154,3 +153,44 @@ class PlayCardsService(DBSessionMixin):
         }]
         return events
 
+    def play_que_quede_entre_nosotros(self, player: Player, room: Room, card: Card, card_options):
+        # muestrale todas las cartas de tu mano a un jugador adjacente de tu eleccion
+        # validamos el input
+        target_id = card_options.get("target")
+        if target_id is None:
+            raise InvalidAccionException("Objetivo invalido")
+
+        target_player: Player = Player.get(id=target_id)
+        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
+            raise InvalidAccionException("Objetivo Invalido")
+
+        if not self.valid_adyacent_player(player, target_player, room):
+            raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+        card_json = player.serialize_hand()
+
+        events = [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card': card.id,
+                    'card_options': card_options,
+                    'effects': {
+                        'player': player.name,
+                        'cards': card_json
+                    }
+                },
+                'broadcast': False,
+                'receiver_sid': target_player.sid
+            }, {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card': card.id,
+                    'card_options': card_options,
+                },
+                'broadcast': True,
+                'except_sid': player.sid
+            }
+        ]
+
+        return events
