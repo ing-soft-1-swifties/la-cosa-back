@@ -87,7 +87,7 @@ class Room(db.Entity):
     name = Required(str)
     min_players = Required(int)
     max_players = Required(int)
-    is_private = Required(bool) 
+    is_private = Required(bool)
     password = Optional(str, default="")
     status = Required(str)          # {LOBBY, IN_GAME, FINISHED}
     turn = Required(int, default=0)
@@ -97,7 +97,7 @@ class Room(db.Entity):
     discarted_cards = Set(Card, reverse='roomsD')
     machine_state = Optional(str)
     machine_state_options = Optional(Json)
-    
+
     def qty_alive_players(self)->int:
         return len(list(self.players.select(lambda player:player.status=='VIVO')))
 
@@ -111,7 +111,7 @@ class Room(db.Entity):
         raise Exception()   #muerte
 
     def json(self):
-        return { 
+        return {
             'id': self.id,
             'name': self.name,
             'max_players' : self.max_players,
@@ -130,6 +130,7 @@ class Room(db.Entity):
         """
         next_turn_position = (self.turn + 1 if self.direction else self.turn - 1) % self.qty_alive_players()
         return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO').first()
+
 
     def swap_cards(self, player1: Player, card1: Card, player2: Player, card2: Card):
         """
@@ -154,13 +155,17 @@ class Room(db.Entity):
         player2.add_card(card1.id)
 
     def discard_card(self, player: Player, card: Card):
-        count = player.hand.count()
-        for c in player.hand.__iter__():
-            if c == card:
-                player.hand.remove(card)
-        if count == player.hand.count():
-            # error
-            pass
+        """
+            Comportamiento:
+                - Se descarta la carta seleccionada
+            Checks:
+                - Se intenta descartar cartas que no estan en las manos de los players
+
+        """
+        if not player.has_card(card.id):
+            raise InvalidAccionException(msg='Carta para descartar no esta en la mano')
+        else:
+            player.remove_card(card.id)
 
 
     def are_players_adjacent(self, player1: Player, player2: Player):
@@ -175,7 +180,7 @@ class Room(db.Entity):
         # si son adyacentes entonces estaran a uno de distancia
         # Ó estarán a una vuelta de distancia
         return abs(player1.position - player2.position) == 1 or \
-               abs(player1.position - player2.position) ==  self.qty_alive_players() - 1
+            abs(player1.position - player2.position) ==  self.qty_alive_players() - 1
 
     def kill_player(self, player: Player):
         """
@@ -183,7 +188,7 @@ class Room(db.Entity):
         """
 
         # Matar al jugador
-        player.status = "MUERTO"  
+        player.status = "MUERTO"
 
         # Reordenar al resto de los jugadores.
         # Las posiciones se mantienen de 0 a cantidad de jugadores - 1

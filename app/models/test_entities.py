@@ -5,6 +5,7 @@ from pony.orm import Database, db_session
 from app.models.populate_cards import populate
 from app.models.entities import Player, Room, Card
 from app.schemas import NewRoomSchema
+from app.services.exceptions import InvalidAccionException
 from app.services.rooms import RoomsService
 
 unittest.TestLoader.sortTestMethodsUsing = None  # type: ignore
@@ -129,6 +130,44 @@ class TestEntities(unittest.TestCase):
         room.turn = (host.position - 1) % room.qty_alive_players()
 
         assert room.next_player() == host
+
+    @db_session
+    def test_swap_cards(self):
+        room: Room = self.create_valid_room(roomname='test_swap_cards')
+        host: Player = room.get_host()
+        room.turn = host.position
+        card_host = host.hand.select().first()
+
+        player2 = room.next_player()
+        card_p2 = player2.hand.select().first()
+
+        room.swap_cards(host, card_host, player2, card_p2)
+        assert host.has_card(card_p2.id)
+        assert not host.has_card(card_host.id)
+
+        assert player2.has_card(card_host.id)
+        assert not player2.has_card(card_p2.id)
+
+        with self.assertRaises(InvalidAccionException):
+            room.swap_cards(host, card_host, player2, card_host)
+
+
+    @db_session
+    def test_discard_card(self):
+        room: Room = self.create_valid_room(roomname='test_discard_card')
+        host: Player = room.get_host()
+
+        card = host.hand.select().first()
+        assert host.has_card(card.id)
+
+        room.discard_card(host, card)
+        assert not host.has_card(card.id)
+
+        with self.assertRaises(InvalidAccionException):
+            room.discard_card(host, card)
+
+
+
 
     @classmethod
     @db_session
