@@ -65,7 +65,7 @@ class PlayCardsService(DBSessionMixin):
 
     @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options):
-        # Whisky: Enséñales todas tus cartas a los demás jugadores. 
+        # Enséñales todas tus cartas a los demás jugadores.
         # Esta carta sólo puedes jugarla sobre ti mismo
         
         events = []
@@ -138,3 +138,20 @@ class PlayCardsService(DBSessionMixin):
         }])
 
         return events
+
+    def play_ups(self, player: Player, room: Room, card: Card, card_options):
+        # muestrele todas las cartas de tu mano a todos los jugadores
+
+        cards_json = player.serialize_hand()
+        events = [{
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card': card.id,
+                'card_options': card_options,
+                'effects': {
+                    'player': player.name,
+                    'cards': cards_json
+                }
+            },
+            'broadcast': True
+        }]
