@@ -57,13 +57,18 @@ class Player(db.Entity):
                 "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids"))
                 }
 
-    # TODO:
-    def has_card(self, card_id):
-        pass
+    def has_card(self, card_id: int) -> bool :
+        card = Card.get(id=card_id)
+        if card is None:
+            return False
 
-    # TODO:
-    def serialize_hand(self):
-        pass
+        return card in self.hand
+
+    def serialize_hand(self) -> list[Card]:
+        cards_JSON = []
+        for card in self.hand:
+            cards_JSON.append(card.json())
+        return cards_JSON
 
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)

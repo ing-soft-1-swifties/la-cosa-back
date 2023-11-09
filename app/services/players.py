@@ -5,13 +5,11 @@ from app.services.mixins import DBSessionMixin
 
 class PlayersService(DBSessionMixin):
 
-    # TODO
-    def get_player_by_pid(self, pid: str):
-        pass
+    def get_player_by_pid(self, pid: str) -> Player:
+        return Player.get(id=pid)
 
-    # TODO
-    def get_player_by_sid(self, sid: str):
-        pass
+    def get_player_by_sid(self, sid: str) -> Player:
+        return Player.get(sid=sid)
 
     @db_session
     def connect_player(self, sent_token: str, actual_sid: str):
