@@ -1,5 +1,5 @@
 from pony.orm import (Database, PrimaryKey, Required, Set, Optional, Json)
-
+from app.services.exceptions import *
 db = Database()
 
 class Obstacle(db.Entity):
@@ -117,23 +117,49 @@ class Room(db.Entity):
             'is_private' : self.is_private
         }
 
-    # TODO:
-    #   el jugador de la posicion actual
     def get_current_player(self):
-        pass
+        """ Retorna el jugador vivo que esta actualmente en su turno
+        """
 
-    # TODO:
-    #   teniendo en cuenta el sentido de la misma, y que esten vivos
+        return self.players.select(lambda p: p.position == self.turn).first()
+
     def next_player(self):
-        pass
+        """ Retorna el jugador vivo que sigue segun el orden de la ronda
+        """
+        next_turn_position = (self.turn + 1 if self.direction else self.turn - 1) % self.qty_alive_players()
+        return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO')
 
-    # TODO:
-    def swap_cards(player1, card1, player2, card2):
-        pass
+    def swap_cards(self, player1: Player, card1: Card, player2: Player, card2: Card):
+        """
+        Comportamiento:
+            - Le saca la carta 2 al player 2 y se la da al player 1
+            - Le saca la carta 1 al player 1 y se la da al player 2
+        Checks:
+            - Se intenta intercambiar cartas que no estan en las manos de los players
 
-    # TODO:
-    def discard_card(self, player, card):
-        pass
+        :param player1: Player
+        :param card1: Card
+        :param player2: Player
+        :param card2: Card
+        """
+
+        if not (player1.has_card(card1.id) and player2.has_card(card2.id)):
+            raise InvalidAccionException(msg="Se quiso intercambiar cartas que no estaban en la mano del jugador")
+
+        player1.remove_card(card1.id)
+        player1.add_card(card2.id)
+        player2.remove_card(card2.id)
+        player2.add_card(card1.id)
+
+    def discard_card(self, player: Player, card: Card):
+        count = player.hand.count()
+        for c in player.hand.__iter__():
+            if c == card:
+                player.hand.remove(card)
+        if count == player.hand.count():
+            # error
+            pass
+
 
     # TODO:
     def are_players_adjacent(player1, player2):
