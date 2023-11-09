@@ -70,7 +70,7 @@ class Player(db.Entity):
 
         return card in self.hand
 
-    def serialize_hand(self) -> list[Card]:
+    def serialize_hand(self):
         cards_JSON = []
         for card in self.hand:
             cards_JSON.append(card.json())

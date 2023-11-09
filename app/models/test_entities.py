@@ -32,7 +32,7 @@ class TestEntities(unittest.TestCase):
         )
 
     @db_session
-    def create_player(self, player_name: str, room: Room, is_host) -> Player:
+    def create_player(self, player_name: str, room: Room, is_host: bool) -> Player:
         return Player(
             name=player_name,
             playing=room,
@@ -40,25 +40,51 @@ class TestEntities(unittest.TestCase):
             token=str(uuid4())
         )
 
-    # TODO
-    def test_player_add_card(self):
-        pass
+    @db_session
+    def test_player_add_has_remove_card(self):
+        """
+            Testea los siguientes metodos:
+                - player.add_card()
+                - player.has_card()
+                - player.remove_card()
+        """
+        room = self.create_room(room_name='test_player_add_has_remove_card')
+        player = self.create_player(player_name='player1', room=room, is_host=True)
+        card = Card.get(id=1)
 
-    # TODO
-    def test_player_remove_card(self):
-        pass
+        player.add_card(card.id)
+        assert card in player.hand
+        assert (card in player.hand) == player.has_card(card.id)
 
-    # TODO
-    def test_player_has_card(self):
-        pass
+        player.remove_card(card.id)
+        assert not card in player.hand
+        assert (card in player.hand) == player.has_card(card.id)
 
-    # TODO
-    def test_player_serialize_hand(self):
-        pass
+        assert not player.has_card(4000)
 
-    # TODO
+    @db_session
     def test_player_json(self):
-        pass
+        room = self.create_room(room_name='test_player_add_has_remove_card')
+        player = self.create_player(player_name='player1', room=room, is_host=True)
+
+        player_json = player.json()
+
+        assert player_json['playerID'] == player.id
+        assert player_json['name'] == player.name
+        assert player_json['role'] == player.rol
+
+    @db_session
+    def test_player_serialize_hand(self):
+        room = self.create_room(room_name='test_player_add_has_remove_card')
+        player = self.create_player(player_name='player1', room=room, is_host=True)
+
+        cards = Card.select().random(4)
+        player.hand.add(cards)
+        hand_serialize = player.serialize_hand()
+
+        for card in cards:
+            assert card.json() in hand_serialize
+
 
     @classmethod
     @db_session
