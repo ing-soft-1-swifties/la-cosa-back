@@ -13,8 +13,6 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def join_player(self, name: str, room_id: int):
-        # TODO: validar partida y union del jugador
-        
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
@@ -186,14 +184,6 @@ class RoomsService(DBSessionMixin):
         return
 
 
-    """
-        TODO:
-            - en la entidad room, implementar:
-                - next_player() 
-                    teniendo en cuenta el sentido de la misma, y que esten vivos.
-                - get_current_player()
-                    el jugador de la posicion actual
-    """
     @db_session
     def next_player(self, room):
 
@@ -215,12 +205,6 @@ class RoomsService(DBSessionMixin):
             raise Exception
         return expected_player
 
-    """
-        TODO:
-            - en la entidad room, implementar:
-                - get_current_player()
-                    el jugador de la posicion actual
-    """
     @db_session
     def in_turn_player(self, room):
         if room.turn is None:
@@ -236,11 +220,6 @@ class RoomsService(DBSessionMixin):
             raise Exception
         return expected_player
 
-    """
-        TODO:
-            - en la entidad room, implementar:
-                - quantity_players_alive()                
-    """
     @db_session
     def next_turn(self, sent_sid : str):    
         try:

@@ -4,14 +4,14 @@ from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 
 class PlayersService(DBSessionMixin):
-    """
-        TODO:
-            - implementar:
-                - get_player_by_pid(pid)
-                - get_player_by_sid(sid)
-    """
 
+    # TODO
+    def get_player_by_pid(self, pid: str):
+        pass
 
+    # TODO
+    def get_player_by_sid(self, sid: str):
+        pass
 
     @db_session
     def connect_player(self, sent_token: str, actual_sid: str):
@@ -61,12 +61,6 @@ class PlayersService(DBSessionMixin):
             raise InvalidSidException()
         return (expected_player.is_host)
 
-
-    """
-        TODO:
-            - en la entidad player, implementar:
-                - has_card(card_id)                
-    """
     @db_session
     def has_card(self, player : Player, card : Card):
         return card in player.hand

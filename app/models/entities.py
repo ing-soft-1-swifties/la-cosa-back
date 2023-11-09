@@ -58,6 +58,10 @@ class Player(db.Entity):
                 "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids"))
                 }
 
+    # TODO:
+    def has_card(self, card_id):
+        pass
+
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)
     obstacles = Set(Obstacle)
@@ -77,10 +81,9 @@ class Room(db.Entity):
     
     def qty_alive_players(self)->int:
         return len(list(self.players.select(lambda player:player.status=='VIVO')))
-    
+
     def qty_players(self)->int:
         return len(list(self.players.select()))
-    
 
     def get_host(self):
         for player in self.players:
@@ -97,4 +100,29 @@ class Room(db.Entity):
             'players_count' : len(self.players),
             'is_private' : self.is_private
         }
+
+    # TODO:
+    #   el jugador de la posicion actual
+    def get_current_player(self):
+        pass
+
+    # TODO:
+    #   teniendo en cuenta el sentido de la misma, y que esten vivos
+    def next_player(self):
+        pass
+
+    # TODO:
+    def swap_cards(player1, card1, player2, card2):
+        pass
+
+
+    # TODO:
+    def discard_card(self, player, card):
+        # discard_card(player, card), room => player.playing
+        pass
+
+    # TODO:
+    def are_adjacent_players(player1, player2):
+        pass
+
 

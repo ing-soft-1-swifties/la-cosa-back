@@ -13,7 +13,6 @@ class GamesService(DBSessionMixin):
 
     @db_session
     def game_state(self, room : Room):
-        # TODO: exporta en json el estado de la partida, para enviar al frontend
         rs = RoomsService(self.db)
         def player_state(player):
             return{
@@ -138,9 +137,8 @@ class GamesService(DBSessionMixin):
                     "body":json,
                     "broadcast":True
                 })
-                #si hago esto cuando quireo notificar no existen mass los jugadores
-                #TODO! ver como eliminar la partida
-                #rs.end_game(sent_sid)
+                # si hago esto cuando quireo notificar no existen mass los jugadores
+                # rs.end_game(sent_sid)
             else:
                 events.extend(self.begin_end_of_turn_exchange(room))
             return events
@@ -288,7 +286,7 @@ class GamesService(DBSessionMixin):
                 cs = CardsService(self.db)
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
                     second_player.hand.remove(second_card)
-                    cs.give_alejate_card(second_player) #TODO! Habría que ver como se notifica esto al jugador que se esta defendiendo
+                    cs.give_alejate_card(second_player)
                     events.extend([{
                         "name":"on_game_player_play_defense_card",
                         "body":{"player":second_player.name, "card":second_card.json()},
