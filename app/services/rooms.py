@@ -1,20 +1,18 @@
 from pickle import EMPTY_LIST
 from fastapi import HTTPException
 from pony.orm import count, db_session, Set
-from pony.orm.dbapiprovider import uuid4
 from app.models import Player, Room, Card
 from app.schemas import NewRoomSchema, RoomSchema
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.logger import rootlog
 import random
+from uuid import uuid4
 
 class RoomsService(DBSessionMixin):
 
     @db_session
     def join_player(self, name: str, room_id: int):
-        # TODO: validar partida y union del jugador
-        
         expected_room = Room.get(id=room_id)
         if expected_room is None:
             raise InvalidRoomException()
@@ -159,9 +157,7 @@ class RoomsService(DBSessionMixin):
         # cantidad de cartas a repartir
         qty_cards_to_deal = len(room.players)*4
         # obtenemos todas todas las cartas alejate menos las de contagio
-        cards_to_deal = list(room.available_cards \
-                            .select(lambda c : c.name != 'La cosa' and c.type != 'PANICO' and c.sub_type != 'CONTAGIO')\
-                            .limit(qty_cards_to_deal -1))
+        cards_to_deal = list(room.available_cards.select(lambda c : c.name != 'La cosa' and c.type != 'PANICO' and c.sub_type != 'CONTAGIO').limit(qty_cards_to_deal -1))
         #se agrega la cosa a las cartas repartibles 
         cards_to_deal.append(list(room.available_cards.select(lambda lacosa : lacosa.name == 'La cosa') ))
         
@@ -184,9 +180,11 @@ class RoomsService(DBSessionMixin):
                 if card.name == 'La cosa':
                     player.rol = 'LA_COSA'
         return
-    
+
+
     @db_session
     def next_player(self, room):
+
         if room.turn is None:
             print("partida inicializada incorrectamente, turno no pre-seteado")
             raise Exception
@@ -230,9 +228,10 @@ class RoomsService(DBSessionMixin):
             if room.machine_state == "INITIAL":
                 room.turn = 0
             else:
-                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+                #cantidad de jugadores que siguen jugando
+                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))
             in_turn_player = self.in_turn_player(room)
-            #seteamos el estado del juego para esperar que el proximo jugador juegue
+            # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"
             room.machine_state_options = {"id":in_turn_player.id}
             from app.services.cards import CardsService
