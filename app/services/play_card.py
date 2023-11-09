@@ -5,6 +5,12 @@ from app.services.mixins import DBSessionMixin
 
 class PlayCardsService(DBSessionMixin):
 
+
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - are_adjacent_players(player1, player2)
+    """
     def valid_adyacent_player(self, player_1: Player, player_2: Player, room: Room) -> bool:
         
         if player_1.position is None or player_2.position is None:

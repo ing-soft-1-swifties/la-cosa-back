@@ -6,6 +6,7 @@ from app.logger import rootlog
 
 class CardsService(DBSessionMixin):
     pass
+
     @db_session
     def card_to_JSON_from_cid(self, card_id : int):
         card = Card.get(id = card_id)
@@ -64,6 +65,12 @@ class CardsService(DBSessionMixin):
         player.hand.add(card_to_deal)
         return card_to_deal
 
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - swap_cards(player1, card1 , player2, card2)
+            - extraerlo de exchange_cards
+    """
     @db_session
     def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
         """ Realiza el intercambio de cartas.
@@ -143,6 +150,12 @@ class CardsService(DBSessionMixin):
                 "receiver_sid":player_B.sid
         }]
 
+
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - discard_card(player, card), room => player.playing           
+    """
     @db_session
     def discard_card(self, sent_sid : str, payload):
         try:
@@ -184,7 +197,6 @@ class CardsService(DBSessionMixin):
 
             player.hand.remove(card)
             room.discarted_cards.add(card)
-            #TODO!  Falta agregar un evento de que un jugdor descarto una carta
             from .rooms import RoomsService
             rs = RoomsService(self.db)
 

@@ -184,9 +184,19 @@ class RoomsService(DBSessionMixin):
                 if card.name == 'La cosa':
                     player.rol = 'LA_COSA'
         return
-    
+
+
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - next_player() 
+                    teniendo en cuenta el sentido de la misma, y que esten vivos.
+                - get_current_player()
+                    el jugador de la posicion actual
+    """
     @db_session
     def next_player(self, room):
+
         if room.turn is None:
             print("partida inicializada incorrectamente, turno no pre-seteado")
             raise Exception
@@ -205,6 +215,12 @@ class RoomsService(DBSessionMixin):
             raise Exception
         return expected_player
 
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - get_current_player()
+                    el jugador de la posicion actual
+    """
     @db_session
     def in_turn_player(self, room):
         if room.turn is None:
@@ -220,6 +236,11 @@ class RoomsService(DBSessionMixin):
             raise Exception
         return expected_player
 
+    """
+        TODO:
+            - en la entidad room, implementar:
+                - quantity_players_alive()                
+    """
     @db_session
     def next_turn(self, sent_sid : str):    
         try:
@@ -230,9 +251,10 @@ class RoomsService(DBSessionMixin):
             if room.machine_state == "INITIAL":
                 room.turn = 0
             else:
-                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
+                #cantidad de jugadores que siguen jugando
+                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))
             in_turn_player = self.in_turn_player(room)
-            #seteamos el estado del juego para esperar que el proximo jugador juegue
+            # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"
             room.machine_state_options = {"id":in_turn_player.id}
             from app.services.cards import CardsService
