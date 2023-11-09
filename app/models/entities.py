@@ -62,6 +62,9 @@ class Player(db.Entity):
     def has_card(self, card_id):
         pass
 
+    # TODO:
+    def serialize_hand(self):
+
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)
     obstacles = Set(Obstacle)
@@ -115,14 +118,23 @@ class Room(db.Entity):
     def swap_cards(player1, card1, player2, card2):
         pass
 
-
     # TODO:
     def discard_card(self, player, card):
-        # discard_card(player, card), room => player.playing
         pass
 
     # TODO:
-    def are_adjacent_players(player1, player2):
+    def are_players_adjacent(player1, player2):
         pass
 
+    # TODO:
+    def kill_player(self):
+        pass
+
+    # TODO:
+    def change_direction(self):
+        pass
+
+    # TODO
+    def swap_players_positions(self, player1, player2):
+        pass
 
