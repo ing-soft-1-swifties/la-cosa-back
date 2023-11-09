@@ -120,17 +120,16 @@ class Room(db.Entity):
             'is_private' : self.is_private
         }
 
-    def get_current_player(self):
+    def get_current_player(self) -> Player:
         """ Retorna el jugador vivo que esta actualmente en su turno
         """
-
         return self.players.select(lambda p: p.position == self.turn).first()
 
-    def next_player(self):
+    def next_player(self) -> Player:
         """ Retorna el jugador vivo que sigue segun el orden de la ronda
         """
         next_turn_position = (self.turn + 1 if self.direction else self.turn - 1) % self.qty_alive_players()
-        return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO')
+        return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO').first()
 
     def swap_cards(self, player1: Player, card1: Card, player2: Player, card2: Card):
         """

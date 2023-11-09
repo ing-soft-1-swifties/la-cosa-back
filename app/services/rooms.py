@@ -1,13 +1,13 @@
 from pickle import EMPTY_LIST
 from fastapi import HTTPException
 from pony.orm import count, db_session, Set
-from pony.orm.dbapiprovider import uuid4
 from app.models import Player, Room, Card
 from app.schemas import NewRoomSchema, RoomSchema
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.logger import rootlog
 import random
+from uuid import uuid4
 
 class RoomsService(DBSessionMixin):
 
@@ -157,9 +157,7 @@ class RoomsService(DBSessionMixin):
         # cantidad de cartas a repartir
         qty_cards_to_deal = len(room.players)*4
         # obtenemos todas todas las cartas alejate menos las de contagio
-        cards_to_deal = list(room.available_cards \
-                            .select(lambda c : c.name != 'La cosa' and c.type != 'PANICO' and c.sub_type != 'CONTAGIO')\
-                            .limit(qty_cards_to_deal -1))
+        cards_to_deal = list(room.available_cards.select(lambda c : c.name != 'La cosa' and c.type != 'PANICO' and c.sub_type != 'CONTAGIO').limit(qty_cards_to_deal -1))
         #se agrega la cosa a las cartas repartibles 
         cards_to_deal.append(list(room.available_cards.select(lambda lacosa : lacosa.name == 'La cosa') ))
         

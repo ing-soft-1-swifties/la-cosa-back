@@ -4,8 +4,11 @@ from uuid import uuid4
 from pony.orm import Database, db_session
 from app.models.populate_cards import populate
 from app.models.entities import Player, Room, Card
+from app.schemas import NewRoomSchema
+from app.services.rooms import RoomsService
 
 unittest.TestLoader.sortTestMethodsUsing = None  # type: ignore
+
 
 class TestEntities(unittest.TestCase):
     db: Database
@@ -30,6 +33,31 @@ class TestEntities(unittest.TestCase):
             is_private=False,
             status='INITIAL'
         )
+
+    def create_valid_room(
+        self, roomname: str = "newroom", qty_players: int = 12
+    ) -> Room:
+        rs = RoomsService(self.db)
+
+        newroom = NewRoomSchema(
+            room_name=roomname,
+            host_name="hostName",
+            min_players=4,
+            max_players=12,
+            is_private=False,
+        )
+        rs.create_room(newroom)
+        room = Room.get(name=roomname)
+
+        for i in range(qty_players - 1):
+            rs.join_player(f"player-{i}", room.id)
+
+        room.status = "IN_GAME"
+        rs.initialize_deck(room)
+        rs.initial_deal(room)
+        rs.assign_turns(room)
+
+        return room
 
     @db_session
     def create_player(self, player_name: str, room: Room, is_host: bool) -> Player:
@@ -85,6 +113,22 @@ class TestEntities(unittest.TestCase):
         for card in cards:
             assert card.json() in hand_serialize
 
+
+    @db_session
+    def test_get_current_player(self):
+        room: Room = self.create_valid_room(roomname='test_get_current_player')
+        host: Player = room.get_host()
+        room.turn = host.position
+
+        assert room.get_current_player().id == host.id
+
+    @db_session
+    def test_next_player(self):
+        room: Room = self.create_valid_room(roomname='test_next_player')
+        host: Player = room.get_host()
+        room.turn = (host.position - 1) % room.qty_alive_players()
+
+        assert room.next_player() == host
 
     @classmethod
     @db_session
