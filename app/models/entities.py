@@ -8,7 +8,6 @@ class Obstacle(db.Entity):
     position = Required(int)
     room = Required('Room')
 
-
 class Card(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Required(str)
@@ -64,6 +63,7 @@ class Player(db.Entity):
 
     # TODO:
     def serialize_hand(self):
+        pass
 
 class Room(db.Entity):
     id = PrimaryKey(int, auto=True)
