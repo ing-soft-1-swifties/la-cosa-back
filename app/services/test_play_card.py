@@ -167,7 +167,6 @@ class TestPlayCardsService(unittest.TestCase):
         for cardJSON in response['body']['effects']['cards']:
             assert cardJSON['id'] in cards_id
 
-
     @db_session
     def test_play_card_analisis_invalid_adyacent(self):
         TEST_NAME = 'test_play_card_analisis_invalid_adyacent'
@@ -184,6 +183,29 @@ class TestPlayCardsService(unittest.TestCase):
 
         with self.assertRaises(InvalidAccionException):
             self.pcs.play_analisis(player, room, analisis, {"target": adyacent_player.id})
+
+    @db_session
+    def test_play_card_ups(self):
+        TEST_NAME = 'test_play_card_ups'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        player: Player = room.players.random(1)[0]
+        ups = Card.select(lambda c: c.name == '¡Ups!').first()
+        player.add_card(ups.id)
+
+        response = self.pcs.play_ups(
+            player=player,
+            room=room,
+            card=ups,
+            card_options={'arg': []}
+        )[0]
+        assert response["body"]["card"] == ups.id
+
+        card_json = player.serialize_hand()
+        for card in card_json:
+            assert card in response['body']['effects']['cards']
+
 
 
     @classmethod
