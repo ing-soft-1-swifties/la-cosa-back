@@ -76,6 +76,9 @@ class Player(db.Entity):
             cards_JSON.append(card.json())
         return cards_JSON
 
+    def is_alive(self) -> bool:
+        return self.status == "VIVO"
+
 
 
 class Room(db.Entity):
@@ -161,19 +164,70 @@ class Room(db.Entity):
             pass
 
 
-    # TODO:
-    def are_players_adjacent(player1, player2):
-        pass
+    def are_players_adjacent(self, player1: Player, player2: Player):
 
-    # TODO:
-    def kill_player(self):
-        pass
+        if player1 not in self.players or player2 not in self.players:
+            raise Exception("Players not in this Room")
+        if not (player1.is_alive and player2.is_alive):
+            raise Exception("Players aren't alive")
+        if None in [player1.position, player2.position]:
+            raise Exception("Players positions not set")
 
-    # TODO:
+        # si son adyacentes entonces estaran a uno de distancia
+        # Ó estarán a una vuelta de distancia
+        return abs(player1.position - player2.position) == 1 or \
+               abs(player1.position - player2.position) ==  self.qty_alive_players() - 1
+
+    def kill_player(self, player: Player):
+        """
+        Mata a un jugador, quitándolo de la mesa y reordenando al resto de jugadores.
+        """
+
+        # Matar al jugador
+        player.status = "MUERTO"  
+
+        # Reordenar al resto de los jugadores.
+        # Las posiciones se mantienen de 0 a cantidad de jugadores - 1
+
+        room = self
+
+        if room.turn is None:
+            raise Exception("partida inicializada incorrectamente, turno no pre-seteado")
+
+        # lista de tuplas
+        # [(posicion, jugador)]
+        id_position = []
+        for player in room.players: #type:ignore
+            if player.is_alive():
+                id_position.append((player.position, player))
+
+        # Ordenar las posiciones
+        id_position.sort(key = lambda x : x[0])
+        position = 0
+
+        # Actualizar posiciones de los jugadores 
+        # y la posición en turno en caso de que el que está en turno 
+        # tenga ahora una nueva posicion
+        should_update_turn = True
+        for pair in id_position:
+
+            # Actualiza el turno de ser necesario
+            if pair[1].position != position and position <= room.turn and should_update_turn:
+                room.turn -= 1
+                should_update_turn = False
+
+            # Actualizamos la posicion
+            pair[1].position = position
+            position += 1
+
     def change_direction(self):
-        pass
+        """
+        Cambia la direccion del juego
+        """
+        self.direction = not self.direction
 
-    # TODO
-    def swap_players_positions(self, player1, player2):
-        pass
-
+    def swap_players_positions(self, player1: Player, player2: Player):
+        """
+        Intercambia las posiciones de dos jugadores
+        """
+        player1.position, player2.position = player2.position, player1.position
