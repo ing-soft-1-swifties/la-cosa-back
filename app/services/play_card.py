@@ -225,3 +225,37 @@ class PlayCardsService(DBSessionMixin):
                 'receiver_sid': player.sid
             }
         ]
+
+    def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options):
+        # cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
+
+        pass
+
+
+"""
+    TODO: (D = doing | x = done)
+    - P0:
+        - Ataque:
+            [x] Análisis
+            [x] Sospecha
+            [x] Whisky
+            [ ] Cambio de lugar
+            [ ] Vigila tus espaldas
+            [ ] Más vale que corras
+            [ ] Seducción
+        - Defensa:
+            [ ] Aterrador
+            [ ] Aquí estoy bien
+            [ ] No, gracias
+            [ ] Fallaste
+            [ ] Nada de Barbacoas
+    - P1:
+        - Panico:
+            [ ] Solo entre nosotros
+            [ ] Revelaciones
+            [ ] Cita a ciegas
+            [x] Oops!
+        [ ] Cuarentena
+        [ ] Puerta Atrancada
+        [ ] Hacha
+"""
