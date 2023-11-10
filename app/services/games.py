@@ -360,7 +360,7 @@ class GamesService(DBSessionMixin):
         if is_player_a_superinfected:
             room: Room = player_A.playing
             room.kill_player(player_B)
-            events.extend({
+            events.append({
                 "name": "on_game_player_death",
                 "body": {"player": player_A.name, "reason": "SUPERINFECCION" },
                 "broadcast": True
@@ -369,7 +369,7 @@ class GamesService(DBSessionMixin):
         if is_player_b_superinfected:
             room: Room = player_B.playing
             room.kill_player(player_B)
-            events.extend({
+            events.append({
                 "name": "on_game_player_death",
                 "body": {"player": player_B.name, "reason": "SUPERINFECCION"},
                 "broadcast": True
@@ -378,18 +378,18 @@ class GamesService(DBSessionMixin):
         if is_player_a_superinfected or is_player_b_superinfected:
 
             for i in range(player_A.position, player_A.position + room.qty_alive_players()):
+                pass
+            # events.extend(rs.next_turn())
 
-
-            events.extend(rs.next_turn())
         else:
             room.machine_state = "EXCHANGING"
             room.machine_state_options = {"ids": [player_A.id, player_B.id],
                                           "stage": "STARTING"}
-            events = [{
+            events.append({
                 "name": "on_game_begin_exchange",
                 "body": {"players": [player_A.name, player_B.name]},
                 "broadcast": True
-            }]
+            })
         return events
 
     def begin_end_of_turn_exchange(self, room : Room):

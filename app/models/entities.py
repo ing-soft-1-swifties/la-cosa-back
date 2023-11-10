@@ -119,6 +119,9 @@ class Room(db.Entity):
                 return player
         raise Exception()   #muerte
 
+    def get_player_by_pos(self, pos) -> Player:
+        return self.players.select(lambda p: p.position == pos and p.status == 'VIVO').first()
+
     def json(self):
         return {
             'id': self.id,

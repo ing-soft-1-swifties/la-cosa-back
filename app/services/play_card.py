@@ -53,13 +53,13 @@ class PlayCardsService(DBSessionMixin):
         })
 
         events.append({
-            "name":"on_game_player_play_card",
-            "body":{
+            "name": "on_game_player_play_card",
+            "body": {
                 "player": player.name,
-                "card" : card.json(),
-                "card_options" : card_options,
+                "card": card.json(),
+                "card_options": card_options,
             },
-            "broadcast":True
+            "broadcast": True
         }) 
         return events
 

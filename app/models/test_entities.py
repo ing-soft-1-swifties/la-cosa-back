@@ -35,6 +35,7 @@ class TestEntities(unittest.TestCase):
             status='INITIAL'
         )
 
+    @db_session
     def create_valid_room(
         self, roomname: str = "newroom", qty_players: int = 12
     ) -> Room:
@@ -114,6 +115,15 @@ class TestEntities(unittest.TestCase):
         for card in cards:
             assert card.json() in hand_serialize
 
+    @db_session
+    def test_get_player_by_pos(self):
+        room: Room = self.create_valid_room(roomname='test_get_player_by_pos')
+
+        player: Player = room.get_host()
+        position_host = player.position
+
+        assert player.id == room.get_player_by_pos(position_host).id
+        assert player.id != room.get_player_by_pos(position_host + 1).id
 
     @db_session
     def test_get_current_player(self):
