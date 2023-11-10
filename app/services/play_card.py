@@ -167,22 +167,21 @@ class PlayCardsService(DBSessionMixin):
         if not self.valid_adyacent_player(player, target_player, room):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
-        card_json = player.serialize_hand()
-
-        events = [
-            {
+        return [
+            {   # este se lo mandamos solo al target
                 'name': 'on_game_player_play_card',
                 'body': {
                     'card': card.id,
                     'card_options': card_options,
                     'effects': {
                         'player': player.name,
-                        'cards': card_json
+                        'cards': player.serialize_hand()
                     }
                 },
                 'broadcast': False,
                 'receiver_sid': target_player.sid
-            }, {
+            },
+            {   # este se lo mandamos solo a todos
                 'name': 'on_game_player_play_card',
                 'body': {
                     'card': card.id,
@@ -192,5 +191,3 @@ class PlayCardsService(DBSessionMixin):
                 'except_sid': player.sid
             }
         ]
-
-        return events
