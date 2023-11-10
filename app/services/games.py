@@ -27,6 +27,7 @@ def superinfection_check(player_checked: Player, player_exchanging: Player) -> b
 class GamesService(DBSessionMixin):
 
 
+
     @db_session
     def game_state(self, room : Room):
         rs = RoomsService(self.db)
@@ -352,30 +353,43 @@ class GamesService(DBSessionMixin):
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
         """
         events = []
+        rs = RoomsService(self.db)
 
         is_player_a_superinfected = superinfection_check(player_A, player_B)
+        is_player_b_superinfected = superinfection_check(player_B, player_A)
         if is_player_a_superinfected:
             room: Room = player_A.playing
             room.kill_player(player_B)
+            events.extend({
+                "name": "on_game_player_death",
+                "body": {"player": player_A.name, "reason": "SUPERINFECCION" },
+                "broadcast": True
+            })
 
-        is_player_b_superinfected = superinfection_check(player_B, player_A)
         if is_player_b_superinfected:
             room: Room = player_B.playing
             room.kill_player(player_B)
+            events.extend({
+                "name": "on_game_player_death",
+                "body": {"player": player_B.name, "reason": "SUPERINFECCION"},
+                "broadcast": True
+            })
 
         if is_player_a_superinfected or is_player_b_superinfected:
-            pass
-            
+
+            for i in range(player_A.position, player_A.position + room.qty_alive_players()):
 
 
-        room.machine_state = "EXCHANGING"
-        room.machine_state_options = {"ids": [player_A.id, player_B.id],
-                                      "stage": "STARTING"}
-        events = [{
-            "name": "on_game_begin_exchange",
-            "body": {"players": [player_A.name, player_B.name]},
-            "broadcast": True
-        }]
+            events.extend(rs.next_turn())
+        else:
+            room.machine_state = "EXCHANGING"
+            room.machine_state_options = {"ids": [player_A.id, player_B.id],
+                                          "stage": "STARTING"}
+            events = [{
+                "name": "on_game_begin_exchange",
+                "body": {"players": [player_A.name, player_B.name]},
+                "broadcast": True
+            }]
         return events
 
     def begin_end_of_turn_exchange(self, room : Room):
