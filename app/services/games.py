@@ -139,6 +139,54 @@ class GamesService(DBSessionMixin):
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
 
+    def dispatch_card_effect(self, sent_sid, player, room, card, card_options):
+        pcs = PlayCardsService(self.db)
+        events = []
+
+        if card.name == cards.LANZALLAMAS:
+            events.extend(pcs.play_lanzallamas(player, room, card, card_options))
+
+        elif card.name == cards.WHISKY:
+            events.extend(pcs.play_whisky(player, room, card, card_options))
+
+        elif card.name == cards.SOSPECHA:
+            events.extend(pcs.play_sospecha(player, room, card, card_options))
+
+        elif card.name == cards.UPS:
+            events.extend(pcs.play_ups(player, room, card, card_options))
+
+        elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
+            events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
+
+        elif card.name == cards.ANALISIS:
+            events.extend(pcs.play_analisis(player, room, card, card_options))
+
+        elif card.name == cards.CAMBIO_DE_LUGAR:
+            events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
+
+        elif card.name == cards.VIGILA_TUS_ESPALDAS:
+            events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
+
+        elif card.name == cards.MAS_VALES_QUE_CORRAS:
+            events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
+
+        rs.recalculate_positions(sent_sid)
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+
+        result, json = self.end_game_condition(sent_sid)
+
+        if result != "GAME_IN_PROGRESS":
+            events.append({
+                "name":"on_game_end",
+                "body":json,
+                "broadcast":True
+            })
+        else:
+            events.extend(self.begin_end_of_turn_exchange(room))
+        return events
+
+
     @db_session
     def play_card_manager(self, sent_sid : str, payload):
 
@@ -223,48 +271,7 @@ class GamesService(DBSessionMixin):
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:
-            if card.name == cards.LANZALLAMAS:
-                events.extend(pcs.play_lanzallamas(player, room, card, card_options))
-
-            elif card.name == cards.WHISKY:
-                events.extend(pcs.play_whisky(player, room, card, card_options))
-
-            elif card.name == cards.SOSPECHA:
-                events.extend(pcs.play_sospecha(player, room, card, card_options))
-
-            elif card.name == cards.UPS:
-                events.extend(pcs.play_ups(player, room, card, card_options))
-
-            elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
-                events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
-
-            elif card.name == cards.ANALISIS:
-                events.extend(pcs.play_analisis(player, room, card, card_options))
-
-            elif card.name == cards.CAMBIO_DE_LUGAR:
-                events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
-
-            elif card.name == cards.VIGILA_TUS_ESPALDAS:
-                events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
-
-            elif card.name == cards.MAS_VALES_QUE_CORRAS:
-                events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
-
-
-            rs.recalculate_positions(sent_sid)
-            player.hand.remove(card)
-            room.discarted_cards.add(card)
-
-            result, json = self.end_game_condition(sent_sid)
-
-            if result != "GAME_IN_PROGRESS":
-                events.append({
-                    "name":"on_game_end",
-                    "body":json,
-                    "broadcast":True
-                })
-            else:
-                events.extend(self.begin_end_of_turn_exchange(room))
+            events.extend(self.dispatch_card_effect(sent_sid, player, room, card, card_options))
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
