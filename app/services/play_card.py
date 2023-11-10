@@ -2,6 +2,7 @@ from pony.orm import db_session
 from app.models import Player, Card, Room
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
+import random
 
 class PlayCardsService(DBSessionMixin):
 
@@ -68,8 +69,10 @@ class PlayCardsService(DBSessionMixin):
         return [{
             'name': 'on_game_player_play_card',
             'body': {
-                'card': card.id,
+                'card_id': card.id,
+                'card_name': card.name,
                 'card_options': card_options,
+                'player_name': player.name,
                 'effects' : {
                     'player': player.name, 
                     'cards': player.serialize_hand(exclude=[card.id])
@@ -78,11 +81,8 @@ class PlayCardsService(DBSessionMixin):
             'broadcast': True
         }]
 
-    @db_session
     def play_analisis(self, player: Player, room: Room, card: Card, card_options):
         # Agarra 1 carta aleatoria de un jugador adyacente, mirala y devuélvesela
-        
-        events = []
 
         # validamos el input
         target_id = card_options.get("target")
@@ -95,45 +95,45 @@ class PlayCardsService(DBSessionMixin):
 
         if not self.valid_adyacent_player(player, target_player, room):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
-
-        # obtenemos las cartas en formato JSON
-        cardsJSON = []
-        for card_i in target_player.hand:
-            cardsJSON.append(card_i.json())
-
-        events.append({
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card': card.id,
-                'card_options': card_options,
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+                'except_sid': player.sid
             },
-            'broadcast': True,
-            'except_sid': player.sid
-        })
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                    'effects' : {
+                        'player': target_player.name,
+                        'cards': [random.choice(target_player.serialize_hand())]
+                    }
+                },
+                'broadcast': False,
+                'receiver_sid': player.sid
+            }
+        ]
 
-        events.append({
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card': card.id,
-                'card_options': card_options,
-                'effects' : {
-                    'player': player.name, 
-                    'cards': cardsJSON
-                }
-            },
-            'broadcast': False,
-            'receiver_sid': player.sid
-        })
-
-        return events
 
     def play_ups(self, player: Player, room: Room, card: Card, card_options):
         # muestrele todas las cartas de tu mano a todos los jugadores
         return [{
             'name': 'on_game_player_play_card',
             'body': {
-                'card': card.id,
+                'card_id': card.id,
+                'card_name': card.name,
                 'card_options': card_options,
+                'player_name': player.name,
                 'effects': {
                     'player': player.name,
                     'cards': player.serialize_hand(exclude=[card.id])
@@ -160,8 +160,10 @@ class PlayCardsService(DBSessionMixin):
             {   # este se lo mandamos solo al target
                 'name': 'on_game_player_play_card',
                 'body': {
-                    'card': card.id,
+                    'card_id': card.id,
+                    'card_name': card.name,
                     'card_options': card_options,
+                    'player_name': player.name,
                     'effects': {
                         'player': player.name,
                         'cards': player.serialize_hand(exclude=[card.id])
@@ -173,10 +175,14 @@ class PlayCardsService(DBSessionMixin):
             {   # este se lo mandamos solo a todos
                 'name': 'on_game_player_play_card',
                 'body': {
-                    'card': card.id,
+                    'card_id': card.id,
+                    'card_name': card.name,
                     'card_options': card_options,
+                    'player_name': player.name,
                 },
                 'broadcast': True,
                 'except_sid': player.sid
             }
         ]
+
+
