@@ -70,11 +70,20 @@ class Player(db.Entity):
 
         return card in self.hand
 
-    def serialize_hand(self):
-        cards_JSON = []
+    def serialize_hand(self, exclude: list[int]=None) -> list[dict]:
+        """
+        Retorna una lista de diccionarios de cartas, excluyendo las cartas pasadas por parametros.
+        - exclude: list[card_id], es una lista de ids de cartas, no tiene en cuenta un id invalido
+        """
+        if exclude is None:
+            exclude = []
+
+        res = []
         for card in self.hand:
-            cards_JSON.append(card.json())
-        return cards_JSON
+            if not card.id in exclude:
+                res.append(card.json())
+
+        return res
 
     def is_alive(self) -> bool:
         return self.status == "VIVO"
