@@ -228,6 +228,8 @@ class PlayCardsService(DBSessionMixin):
 
     def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options):
         # cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
+
+        # TODO: "que no este en cuarentena o tras una puerta atrancada"
         # validamos el input
         target_id = card_options.get("target")
         if target_id is None:
@@ -242,7 +244,6 @@ class PlayCardsService(DBSessionMixin):
 
         # cambia las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
-
         return [
             {
                 'name': 'on_game_swap_positions',

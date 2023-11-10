@@ -168,14 +168,14 @@ class TestPlayCardsService(unittest.TestCase):
 
         # obtenemos un jugador y le damos la carta sospecha
         player = room.players.select(lambda p: p.position==0).first()
-        adyacent_player = room.players.select(lambda p: p.position==2).first()
+        no_adyacent_player = room.players.select(lambda p: p.position==2).first()
 
         # jugamos la carta sospecha
         sospecha = Card.select(lambda c: c.name== 'Sospecha').first()
         player.hand.add(sospecha)
 
         with self.assertRaises(InvalidAccionException):
-            self.pcs.play_sospecha(player, room, sospecha, {'target': adyacent_player.id})
+            self.pcs.play_sospecha(player, room, sospecha, {'target': no_adyacent_player.id})
 
     @db_session
     def test_play_card_ups(self):
@@ -242,14 +242,14 @@ class TestPlayCardsService(unittest.TestCase):
         player.add_card(between_us.id)
 
         # seleccionamos un jugador adjacente
-        adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
+        no_adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
 
         with self.assertRaises(InvalidAccionException):
             response = self.pcs.play_que_quede_entre_nosotros(
                 player=player,
                 room=room,
                 card=between_us,
-                card_options={'target': adyacent_player.id} # INTVALID
+                card_options={'target': no_adyacent_player.id} # INTVALID
             )
         with self.assertRaises(InvalidAccionException):
             response = self.pcs.play_que_quede_entre_nosotros(
@@ -315,14 +315,14 @@ class TestPlayCardsService(unittest.TestCase):
         analisis = Card.select(lambda c: c.name == 'Analisis').first()
         player.add_card(analisis.id)
 
-        # seleccionamos un jugador adjacente
-        adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
+        # seleccionamos un jugador no adjacente
+        no_adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
         with self.assertRaises(InvalidAccionException):
             response = self.pcs.play_analisis(
                 player=player,
                 room=room,
                 card=analisis,
-                card_options={'target': adyacent_player.id}  # INTVALID
+                card_options={'target': no_adyacent_player.id}  # INTVALID
             )
         with self.assertRaises(InvalidAccionException):
             response = self.pcs.play_analisis(
@@ -338,6 +338,94 @@ class TestPlayCardsService(unittest.TestCase):
                 card=analisis,
                 card_options={'target': 2131231231}  # INVALID
             )
+
+    @db_session
+    def test_play_cambio_de_lugar(self):
+        TEST_NAME = 'test_play_cambio_de_lugar'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position == 0).first()
+        room.turn = player.position
+        cambio_de_lugar = Card.select(lambda c: c.name == '¡Cambio de lugar!').first()
+        player.add_card(cambio_de_lugar.id)
+
+        # seleccionamos un jugador no adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position == 1).first()
+
+        player_position = player.position
+        adyacent_player_position = adyacent_player.position
+
+        # seleccionamos un jugador adjacente
+        response = self.pcs.play_cambio_de_lugar(
+            player=player,
+            room=room,
+            card=cambio_de_lugar,
+            card_options={'target': adyacent_player.id}  # INTVALID
+        )
+
+        # comportamiento esperado de rooms
+        assert player.position == adyacent_player_position
+        assert adyacent_player.position == player_position
+
+        # evento on_game_swap_positions
+        assert len(response) == 2
+        assert response[0]['name'] == 'on_game_swap_positions'
+        assert player.name in response[0]['body']['players']
+        assert adyacent_player.name in response[0]['body']['players']
+        assert response[0]['broadcast']
+
+        # evento on_game_player_play_card
+        assert response[1]['name'] == 'on_game_player_play_card'
+        assert response[1]['broadcast']
+        assert response[1]['body']['card_id'] == cambio_de_lugar.id
+        assert response[1]['body']['card_name'] == cambio_de_lugar.name
+        assert response[1]['body']['player_name'] == player.name
+
+    @db_session
+    def test_play_cambio_de_lugar_invalido(self):
+        TEST_NAME = 'test_play_cambio_de_lugar_invalido'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position == 0).first()
+        cambio_de_lugar = Card.select(lambda c: c.name == '¡Cambio de lugar!').first()
+        player.add_card(cambio_de_lugar.id)
+
+        # seleccionamos un jugador no adjacente
+        no_adyacent_player: Player = room.players.select(lambda p: p.position==4).first()
+
+        # seleccionamos un jugador adjacente
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_cambio_de_lugar(
+                player=player,
+                room=room,
+                card=cambio_de_lugar,
+                card_options={'target': no_adyacent_player.id}  # INTVALID
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_cambio_de_lugar(
+                player=player,
+                room=room,
+                card=cambio_de_lugar,
+                card_options={}  # NONE
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_cambio_de_lugar(
+                player=player,
+                room=room,
+                card=cambio_de_lugar,
+                card_options={'target': 2131231231}  # INVALID
+            )
+
+
+
+
+
+
+
 
     @classmethod
     @db_session
