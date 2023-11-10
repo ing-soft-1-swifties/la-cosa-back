@@ -228,12 +228,43 @@ class PlayCardsService(DBSessionMixin):
 
     def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options):
         # cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
+        # validamos el input
+        target_id = card_options.get("target")
+        if target_id is None:
+            raise InvalidAccionException("Objetivo invalido")
 
-        pass
+        target_player: Player = Player.get(id=target_id)
+        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
+            raise InvalidAccionException("Objetivo Invalido")
 
+        if not self.valid_adyacent_player(player, target_player, room):
+            raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+        # cambia las posiciones de los jugadores
+        room.swap_players_positions(player, target_player)
+
+        return [
+            {
+                'name': 'on_game_swap_positions',
+                'body': {
+                    'players': [player.name, target_player.name],
+                },
+                'broadcast': True,
+            },
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True
+            }
+        ]
 
 """
-    TODO: (D = doing | x = done)
+    TODO:
     - P0:
         - Ataque:
             [x] Análisis
