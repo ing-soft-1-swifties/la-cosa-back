@@ -377,9 +377,9 @@ class GamesService(DBSessionMixin):
 
         if is_player_a_superinfected or is_player_b_superinfected:
 
-            for i in range(player_A.position, player_A.position + room.qty_alive_players()):
-                pass
-            # events.extend(rs.next_turn())
+
+            events.extend(rs.next_turn(player_A.sid))
+
 
         else:
             room.machine_state = "EXCHANGING"
