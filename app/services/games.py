@@ -8,6 +8,22 @@ from app.services.rooms import RoomsService
 from app.services.cards import CardsService
 from app.logger import rootlog
 
+
+def superinfection_check(player_checked: Player, player_exchanging: Player) -> bool:
+    # Superinfeccion
+
+    # - no sos la cosa
+    is_superinfected = player_checked.rol != 'LA_COSA'
+
+    # - solo tenes cartas infectado
+    for card in player_checked.hand.__iter__():
+        is_superinfected &= card.name == 'Infeccion'
+
+    # sos superinfectado si no sos un infectado intercambiando con la cosa
+    is_superinfected &= not (player_checked.rol == 'INFECTADO' and player_exchanging.rol == 'LA_COSA')
+    return is_superinfected
+
+
 class GamesService(DBSessionMixin):
 
 
@@ -39,7 +55,7 @@ class GamesService(DBSessionMixin):
             "players" : [player_state(player) for player in room.players]
         }
         return game_state
-    
+
     @db_session
     def get_game_status_by_sid(self, sent_sid : str):
         return self.game_state(Player.get(sid = sent_sid).playing)
@@ -63,7 +79,7 @@ class GamesService(DBSessionMixin):
         try:
             # definimos las cartas que no se pueden jugar
             unplayable_cards = ["La cosa", "Infectado"]
-            
+
             # inicializamos los servicios
             rs = RoomsService(self.db)
             ps = PlayersService(self.db)
@@ -71,9 +87,9 @@ class GamesService(DBSessionMixin):
             pcs = PlayCardsService(self.db)
 
             # lista de eventos a informar a los jugadores
-            events = []     
+            events = []
 
-            # verificamos inputs correctos            
+            # verificamos inputs correctos
             sent_card_id = payload.get("card")
             card_options = payload.get("card_options")
             if sent_card_id is None or card_options is None:
@@ -85,13 +101,13 @@ class GamesService(DBSessionMixin):
                 raise InvalidSidException()
 
             # obtenemos y verificamos las cartas
-            card = Card.get(id = sent_card_id) 
+            card = Card.get(id = sent_card_id)
             if card is None:
                 raise InvalidCidException()
-            
+
             if card.name in unplayable_cards:
                 raise InvalidAccionException(f"No se puede jugar {card.name}")
-            
+
             if ps.has_card(player, card) == False:
                 raise InvalidCardException()
 
@@ -115,7 +131,7 @@ class GamesService(DBSessionMixin):
             #         "card_options" : payload["card_options"],
             #     },
             #     "broadcast":True
-            # }) 
+            # })
 
 
             if card.name == "Lanzallamas":
@@ -142,7 +158,7 @@ class GamesService(DBSessionMixin):
             rs.recalculate_positions(sent_sid)
             player.hand.remove(card)
             room.discarted_cards.add(card)
-            
+
             result, json = self.end_game_condition(sent_sid)
 
             if result != "GAME_IN_PROGRESS":
@@ -179,13 +195,13 @@ class GamesService(DBSessionMixin):
         if player is None:
             raise InvalidSidException()
         room: Room = player.playing
-        
+
         roles = []
         for player in room.players:
             roles.append((player.name, player.rol))
-        
+
         ret = 'GAME_IN_PROGRESS'
-        # Si queda solo un sobreviviente     
+        # Si queda solo un sobreviviente
         if len(room.players.select(lambda p: p.status != 'MUERTO')) == 1:
             survivor: Player = list(room.players.select(lambda p: p.status != 'MUERTO'))[0] # type: ignore
             # Chequeo si es la cosa
@@ -195,19 +211,19 @@ class GamesService(DBSessionMixin):
                     "winner_team": "LA_COSA",
                     "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
                     "roles":roles
-                }                
-            else: 
+                }
+            else:
                 ret = 'HUMANS_WON'
                 info = {
                     "winner_team": "HUMANOS",
                     "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
                     "roles":roles
                 }
-        
+
         # Chequeo el estado de la cosa
         la_cosa: Player = list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0] # type: ignore
         # la_cosa: Player = room.players.get(rol = 'LA_COSA') # type: ignore
-        
+
         if la_cosa.status == 'MUERTO':
             ret = 'HUMANS_WON'
             info = {
@@ -215,17 +231,17 @@ class GamesService(DBSessionMixin):
                 "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
                 "roles": roles
             }
-    
+
         qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
         qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
-        if qty_alive_non_human_players == qty_alive_players: 
+        if qty_alive_non_human_players == qty_alive_players:
             ret='LA_COSA_WON'
             info = {"winner_team":"LA_COSA",
-                        "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
-                        "roles":roles}   
-                
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
+                    "roles":roles}
+
         return ret, info
-    
+
     @db_session
     def exchange_card_manager(self, sent_sid : str, payload):
         try:
@@ -267,18 +283,18 @@ class GamesService(DBSessionMixin):
                     defense_cards = ["¡No, gracias!"]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
-                    
+
             rs = RoomsService(self.db)
             #if es la primera persona en decidir la carta a intercambiar
             if room.machine_state_options["stage"] == "STARTING":
                 room.machine_state = "EXCHANGING"
                 #seteamos la maquina para la segunda etapa del intercambio (solo falta uno en decidir)
-                room.machine_state_options={"ids":room.machine_state_options["ids"], 
+                room.machine_state_options={"ids":room.machine_state_options["ids"],
                                             "stage":"FINISHING",
                                             "card_id" : card.id,    #carta de la primera persona en decidir
                                             "player_id":player.id,  #player_id de la primera persona en decidir
                                             "on_defense": on_defense if not first_player else False #si es la segunda persona del intercambio, guarda si se esta defendiendo
-                                            }   
+                                            }
                 #habria que ver si notificamos al primer jugador en seleccionar carta de intercambio de que se acepto su eleccion
                 #por ahora luego de que los dos seleccionan se realiza el intercambio y se notifica
                 return events
@@ -325,28 +341,43 @@ class GamesService(DBSessionMixin):
                         events.extend(self.begin_exchange(room, player_A, player_B))
                         return events
             else:
-                raise InvalidAccionException("No corresponde iniciar un intercambio") 
+                raise InvalidAccionException("No corresponde iniciar un intercambio")
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
-    
-    def begin_exchange(self, room : Room, player_A : Player, player_B : Player):
+
+    def begin_exchange(self, room : Room, player_A: Player, player_B: Player):
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
         """
-        events = []   
-        room.machine_state =  "EXCHANGING"
-        room.machine_state_options = {"ids":[player_A.id, player_B.id],
-                                    "stage":"STARTING",
-                                    }
+        events = []
+
+        is_player_a_superinfected = superinfection_check(player_A, player_B)
+        if is_player_a_superinfected:
+            room: Room = player_A.playing
+            room.kill_player(player_B)
+
+        is_player_b_superinfected = superinfection_check(player_B, player_A)
+        if is_player_b_superinfected:
+            room: Room = player_B.playing
+            room.kill_player(player_B)
+
+        if is_player_a_superinfected or is_player_b_superinfected:
+            pass
+            
+
+
+        room.machine_state = "EXCHANGING"
+        room.machine_state_options = {"ids": [player_A.id, player_B.id],
+                                      "stage": "STARTING"}
         events = [{
-                    "name":"on_game_begin_exchange",
-                    "body":{"players":[player_A.name, player_B.name]},
-                    "broadcast":True
+            "name": "on_game_begin_exchange",
+            "body": {"players": [player_A.name, player_B.name]},
+            "broadcast": True
         }]
         return events
-    
+
     def begin_end_of_turn_exchange(self, room : Room):
         in_turn_player = list(room.players.select(lambda player : player.position == room.turn and player.status == "VIVO"))[0]
         if in_turn_player is None:
