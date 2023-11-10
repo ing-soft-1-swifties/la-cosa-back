@@ -101,6 +101,8 @@ async def game_play_card(sid : str, data):
     try:
         events = gs.play_card_manager(sid, data)
         await notify_events(events, sid)
+    except InvalidAccionException as e:
+        return e.generate_event(sid)
     except Exception:
         rootlog.exception("ocurrio un error inesperado al jugar una carta, posible estado inconsistente")
     return True

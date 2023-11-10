@@ -50,36 +50,15 @@ class PlayCardsService(DBSessionMixin):
             "broadcast": True
         })
 
+        room.kill_player(target_player)
+
         events.append({
-            "name": "on_game_player_play_card",
+            "name": "on_game_player_death",
             "body": {
-                "card_id": card.id,
-                "card_name": card.name,
-                "card_options": card_options,
-                "player_name": player.name
+                "player": target_player.name
             },
             "broadcast": True
-        }) 
-        if room.machine_state_options["stage"] == "STARTING" and\
-            len(target_player.hand.select(lambda card : card.name == "¡Nada de barbacoas!")) > 0:
-            #la persona se puede defender
-            room.machine_state =  "PLAYING"
-            room.machine_state_options = {
-                "id" : player.id,
-                "stage" : "FINISHING",
-                "card" : card.name,
-                "card_options" : card_options,
-                "target" : target_player
-            }
-        else:
-            target_player.status = "MUERTO"  
-            events.append({
-                "name": "on_game_player_death",
-                "body": {
-                    "player": target_player.name
-                },
-                "broadcast": True
-            })
+        })
 
         return events
 
