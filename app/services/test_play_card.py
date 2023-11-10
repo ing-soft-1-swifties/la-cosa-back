@@ -33,12 +33,12 @@ class TestPlayCardsService(unittest.TestCase):
         populate()
     
     @db_session
-    def create_valid_room(self, roomname: str = "newroom", qty_players: int = 12) -> Room:
+    def create_valid_room(self, roomname: str = 'newroom', qty_players: int = 12) -> Room:
         rs = RoomsService(self.db)
 
         newroom = NewRoomSchema(
             room_name=roomname,
-            host_name="hostName",
+            host_name='hostName',
             min_players=4,
             max_players=12,
             is_private=False,
@@ -47,9 +47,9 @@ class TestPlayCardsService(unittest.TestCase):
         room = Room.get(name=roomname)
 
         for i in range(qty_players - 1):
-            rs.join_player(f"player-{i}", room.id)
+            rs.join_player(f'player-{i}', room.id)
 
-        room.status = "IN_GAME"
+        room.status = 'IN_GAME'
         
         rs.initialize_deck(room)
         rs.initial_deal(room)
@@ -61,13 +61,13 @@ class TestPlayCardsService(unittest.TestCase):
     def test_play_card_lanzallamas(self):
         room: Room = self.create_valid_room(roomname='test_play_card_lanzallamas', qty_players=4)
         
-        card = list(Card.select(lambda x : x.name == "Lanzallamas"))[0]
+        card = list(Card.select(lambda x : x.name == 'Lanzallamas'))[0]
 
         host = room.get_host()
         #agregamos lazallamas a la mano de host
         host.hand.add(card)
         #setemos el sid del host para poder invacar play_card desde host
-        host.sid = "test_play_card_lanzallamas"
+        host.sid = 'test_play_card_lanzallamas'
 
         #host en la posicion 0
         host.position = 0
@@ -83,25 +83,25 @@ class TestPlayCardsService(unittest.TestCase):
         next_player = list(room.players.select(lambda player: player.position == 1))[0]
 
         #seetamos el room para que le toque a host
-        room.status = "IN_GAME"
-        room.machine_state = "PLAYING"
-        room.machine_state_options = {"id" : host.id}
+        room.status = 'IN_GAME'
+        room.machine_state = 'PLAYING'
+        room.machine_state_options = {'id' : host.id}
         room.turn = host.position
         
         #far_player sera un jugador que no esta al lado de host
         far_player = list(room.players.select(lambda player: player.position == 2))[0]
         
-        json =  {"card": card.id, "card_options": {"target": far_player.id}}
-        ret = self.gs.play_card_manager("test_play_card_lanzallamas", json)
-        assert ret[0]["name"] == "on_game_invalid_action"
-        assert ret[0]["broadcast"] == False
+        json =  {'card': card.id, 'card_options': {'target': far_player.id}}
+        ret = self.gs.play_card_manager('test_play_card_lanzallamas', json)
+        assert ret[0]['name'] == 'on_game_invalid_action'
+        assert ret[0]['broadcast'] == False
 
         
         #veamos que si la jugamos correctamente se muere el objetivo
         last_hand_size = len(host.hand)
-        ret = self.gs.play_card_manager("test_play_card_lanzallamas", {"card": card.id, "card_options": {"target": next_player.id}})
-        assert ret[0]["name"] !=  "on_game_invalid_action"
-        assert next_player.status == "MUERTO"
+        ret = self.gs.play_card_manager('test_play_card_lanzallamas', {'card': card.id, 'card_options': {'target': next_player.id}})
+        assert ret[0]['name'] !=  'on_game_invalid_action'
+        assert next_player.status == 'MUERTO'
         assert len(host.hand) == last_hand_size-1
 
     @db_session
@@ -123,7 +123,7 @@ class TestPlayCardsService(unittest.TestCase):
         response = response[0]
 
         assert response['name'] == 'on_game_player_play_card'
-        assert whisky.id == response['body']['card']
+        assert whisky.id == response['body']['card_id']
         assert player.serialize_hand(exclude=[whisky.id]) == response['body']['effects']['cards']
 
     @db_session
@@ -139,15 +139,15 @@ class TestPlayCardsService(unittest.TestCase):
         analisis = Card.select(lambda c: c.name== 'Analisis').first()
         player.hand.add(analisis)
         # jugamos la carta analisis
-        response = self.pcs.play_analisis(player, room, analisis, card_options={"target": adyacent_player.id})
+        response = self.pcs.play_analisis(player, room, analisis, card_options={'target': adyacent_player.id})
 
         assert len(response) == 2
 
         assert response[0]['name'] == 'on_game_player_play_card'
         assert response[1]['name'] == 'on_game_player_play_card'
         
-        assert analisis.id == response[0]['body']['card']
-        assert analisis.id == response[1]['body']['card']
+        assert analisis.id == response[0]['body']['card_id']
+        assert analisis.id == response[1]['body']['card_id']
 
         # print(response[0])
         # print(response[1])
@@ -175,7 +175,7 @@ class TestPlayCardsService(unittest.TestCase):
         player.hand.add(analisis)
 
         with self.assertRaises(InvalidAccionException):
-            self.pcs.play_analisis(player, room, analisis, {"target": adyacent_player.id})
+            self.pcs.play_analisis(player, room, analisis, {'target': adyacent_player.id})
 
     @db_session
     def test_play_card_ups(self):
@@ -193,7 +193,7 @@ class TestPlayCardsService(unittest.TestCase):
             card=ups,
             card_options={'arg': []}
         )[0]
-        assert response["body"]["card"] == ups.id
+        assert response['body']['card_id'] == ups.id
         assert  player.serialize_hand(exclude=[ups.id]) == response['body']['effects']['cards']
 
     @db_session
@@ -214,20 +214,20 @@ class TestPlayCardsService(unittest.TestCase):
             player=player,
             room=room,
             card=between_us,
-            card_options={"target": adyacent_player.id}
+            card_options={'target': adyacent_player.id}
         )
         assert len(response) == 2
 
         assert response[0]['name'] == 'on_game_player_play_card'
-        assert response[0]['body']['card'] == between_us.id
+        assert response[0]['body']['card_id'] == between_us.id
         assert response[0]['receiver_sid'] == adyacent_player.sid
         assert response[0]['body']['effects']['player'] == player.name
         assert response[0]['body']['effects']['cards'] == player.serialize_hand(exclude=[between_us.id])
 
         assert response[1]['name'] == 'on_game_player_play_card'
-        assert response[1]['body']['card'] == between_us.id
+        assert response[1]['body']['card_id'] == between_us.id
 
-        assert response[1]["body"]["card"] == between_us.id
+        assert response[1]['body']['card_id'] == between_us.id
         assert player.serialize_hand(exclude=[between_us.id]) == response[0]['body']['effects']['cards']
 
     @db_session
@@ -249,7 +249,7 @@ class TestPlayCardsService(unittest.TestCase):
                 player=player,
                 room=room,
                 card=between_us,
-                card_options={"target": adyacent_player.id} # INTVALID
+                card_options={'target': adyacent_player.id} # INTVALID
             )
         with self.assertRaises(InvalidAccionException):
             response = self.pcs.play_que_quede_entre_nosotros(
@@ -263,7 +263,7 @@ class TestPlayCardsService(unittest.TestCase):
                 player=player,
                 room=room,
                 card=between_us,
-                card_options={"target": 2131231231} # INVALID
+                card_options={'target': 2131231231} # INVALID
             )
 
 
