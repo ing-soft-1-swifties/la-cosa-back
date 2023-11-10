@@ -111,7 +111,7 @@ class TestPlayCardsService(unittest.TestCase):
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
         # obtenemos un jugador y le damos la carta whisky
-        player = room.players.random(1)[0]
+        player: Player = room.players.random(1)[0]
         whisky = Card.select(lambda c: c.name== 'Whisky').first()
         player.hand.add(whisky)
 
@@ -123,15 +123,8 @@ class TestPlayCardsService(unittest.TestCase):
         response = response[0]
 
         assert response['name'] == 'on_game_player_play_card'
-
         assert whisky.id == response['body']['card']
-
-        cards_id = []
-        for card in player.hand:
-            cards_id.append(card.id)
-
-        for cardJSON in response['body']['effects']['cards']:
-            assert cardJSON['id'] in cards_id
+        assert player.serialize_hand(exclude=[whisky.id]) == response['body']['effects']['cards']
 
     @db_session
     def test_play_card_analisis_successful(self):
@@ -201,10 +194,7 @@ class TestPlayCardsService(unittest.TestCase):
             card_options={'arg': []}
         )[0]
         assert response["body"]["card"] == ups.id
-
-        card_json = player.serialize_hand()
-        for card in card_json:
-            assert card in response['body']['effects']['cards']
+        assert  player.serialize_hand(exclude=[ups.id]) == response['body']['effects']['cards']
 
     @db_session
     def test_play_card_que_quede_entre_nosotros(self):
@@ -232,14 +222,13 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[0]['body']['card'] == between_us.id
         assert response[0]['receiver_sid'] == adyacent_player.sid
         assert response[0]['body']['effects']['player'] == player.name
-        assert response[0]['body']['effects']['cards'] == player.serialize_hand()
+        assert response[0]['body']['effects']['cards'] == player.serialize_hand(exclude=[between_us.id])
 
         assert response[1]['name'] == 'on_game_player_play_card'
         assert response[1]['body']['card'] == between_us.id
 
-
-        for card in player.serialize_hand():
-            assert card in response[0]['body']['effects']['cards']
+        assert response[1]["body"]["card"] == between_us.id
+        assert player.serialize_hand(exclude=[between_us.id]) == response[0]['body']['effects']['cards']
 
     @db_session
     def test_play_card_que_quede_entre_nosotros_invalido(self):

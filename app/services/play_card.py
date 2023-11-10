@@ -65,27 +65,18 @@ class PlayCardsService(DBSessionMixin):
     def play_whisky(self, player: Player, room: Room, card: Card, card_options):
         # Enséñales todas tus cartas a los demás jugadores.
         # Esta carta sólo puedes jugarla sobre ti mismo
-        
-        events = []
-
-        cardsJSON = []
-        for card_i in player.hand:
-            cardsJSON.append(card_i.json())
-
-        events.append({
+        return [{
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
                 'card_options': card_options,
                 'effects' : {
                     'player': player.name, 
-                    'cards': cardsJSON
+                    'cards': player.serialize_hand(exclude=[card.id])
                 }
             },
             'broadcast': True
-        })
-
-        return events
+        }]
 
     @db_session
     def play_analisis(self, player: Player, room: Room, card: Card, card_options):
@@ -138,20 +129,18 @@ class PlayCardsService(DBSessionMixin):
 
     def play_ups(self, player: Player, room: Room, card: Card, card_options):
         # muestrele todas las cartas de tu mano a todos los jugadores
-        cards_json = player.serialize_hand()
-        events = [{
+        return [{
             'name': 'on_game_player_play_card',
             'body': {
                 'card': card.id,
                 'card_options': card_options,
                 'effects': {
                     'player': player.name,
-                    'cards': cards_json
+                    'cards': player.serialize_hand(exclude=[card.id])
                 }
             },
             'broadcast': True
         }]
-        return events
 
     def play_que_quede_entre_nosotros(self, player: Player, room: Room, card: Card, card_options):
         # muestrale todas las cartas de tu mano a un jugador adjacente de tu eleccion
@@ -175,7 +164,7 @@ class PlayCardsService(DBSessionMixin):
                     'card_options': card_options,
                     'effects': {
                         'player': player.name,
-                        'cards': player.serialize_hand()
+                        'cards': player.serialize_hand(exclude=[card.id])
                     }
                 },
                 'broadcast': False,
