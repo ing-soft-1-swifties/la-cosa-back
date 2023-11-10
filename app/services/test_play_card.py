@@ -127,27 +127,27 @@ class TestPlayCardsService(unittest.TestCase):
         assert player.serialize_hand(exclude=[whisky.id]) == response['body']['effects']['cards']
 
     @db_session
-    def test_play_card_analisis_successful(self):
-        TEST_NAME = 'test_play_card_analisis'
+    def test_play_card_sospecha_successful(self):
+        TEST_NAME = 'test_play_card_sospecha_successful'
         # creamos una room valida
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
-        # obtenemos un jugador y le damos la carta analisis
+        # obtenemos un jugador y le damos la carta sospecha
         player = room.players.select(lambda p: p.position==0).first()
         adyacent_player = room.players.select(lambda p: p.position==1).first()
 
-        analisis = Card.select(lambda c: c.name== 'Analisis').first()
-        player.hand.add(analisis)
-        # jugamos la carta analisis
-        response = self.pcs.play_analisis(player, room, analisis, card_options={'target': adyacent_player.id})
+        sospecha = Card.select(lambda c: c.name== 'Sospecha').first()
+        player.hand.add(sospecha)
+        # jugamos la carta sospecha
+        response = self.pcs.play_sospecha(player, room, sospecha, card_options={'target': adyacent_player.id})
 
         assert len(response) == 2
 
         assert response[0]['name'] == 'on_game_player_play_card'
         assert response[1]['name'] == 'on_game_player_play_card'
         
-        assert analisis.id == response[0]['body']['card_id']
-        assert analisis.id == response[1]['body']['card_id']
+        assert sospecha.id == response[0]['body']['card_id']
+        assert sospecha.id == response[1]['body']['card_id']
 
         # print(response[0])
         # print(response[1])
@@ -161,21 +161,21 @@ class TestPlayCardsService(unittest.TestCase):
             assert cardJSON['id'] in cards_id
 
     @db_session
-    def test_play_card_analisis_invalid_adyacent(self):
-        TEST_NAME = 'test_play_card_analisis_invalid_adyacent'
+    def test_play_card_sospecha_invalid_adyacent(self):
+        TEST_NAME = 'test_play_card_sospecha_invalid_adyacent'
         # creamos una room valida
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
-        # obtenemos un jugador y le damos la carta analisis
+        # obtenemos un jugador y le damos la carta sospecha
         player = room.players.select(lambda p: p.position==0).first()
         adyacent_player = room.players.select(lambda p: p.position==2).first()
 
-        # jugamos la carta analisis
-        analisis = Card.select(lambda c: c.name== 'Analisis').first()
-        player.hand.add(analisis)
+        # jugamos la carta sospecha
+        sospecha = Card.select(lambda c: c.name== 'Sospecha').first()
+        player.hand.add(sospecha)
 
         with self.assertRaises(InvalidAccionException):
-            self.pcs.play_analisis(player, room, analisis, {'target': adyacent_player.id})
+            self.pcs.play_sospecha(player, room, sospecha, {'target': adyacent_player.id})
 
     @db_session
     def test_play_card_ups(self):
@@ -266,6 +266,78 @@ class TestPlayCardsService(unittest.TestCase):
                 card_options={'target': 2131231231} # INVALID
             )
 
+    @db_session
+    def test_play_card_analisis(self):
+        TEST_NAME = 'test_play_card_analisis'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position==1).first()
+        analisis = Card.select(lambda c: c.name == 'Analisis').first()
+        player.add_card(analisis.id)
+
+        # seleccionamos un jugador adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position==2).first()
+
+        response = self.pcs.play_analisis(
+            player=player,
+            room=room,
+            card=analisis,
+            card_options={'target': adyacent_player.id}
+        )
+        assert len(response) == 2
+
+        # broadcast
+        assert response[0]['name'] == 'on_game_player_play_card'
+        assert response[0]['body']['card_id'] == analisis.id
+        assert response[0]['body']['card_name'] == analisis.name
+        assert response[0]['body']['player_name'] == player.name
+        assert response[0]['broadcast']
+
+        # objectivo
+        assert response[1]['name'] == 'on_game_player_play_card'
+        assert response[1]['body']['card_id'] == analisis.id
+        assert response[1]['body']['card_name'] == analisis.name
+        assert response[1]['body']['player_name'] == player.name
+        assert response[1]['body']['effects']['player'] == adyacent_player.name
+        assert response[1]['body']['effects']['cards'] == adyacent_player.serialize_hand()
+        assert not response[1]['broadcast']
+
+    @db_session
+    def test_play_card_analisis_invalid(self):
+        TEST_NAME = 'test_play_card_analisis_invalid'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position==1).first()
+        analisis = Card.select(lambda c: c.name == 'Analisis').first()
+        player.add_card(analisis.id)
+
+        # seleccionamos un jugador adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_analisis(
+                player=player,
+                room=room,
+                card=analisis,
+                card_options={'target': adyacent_player.id}  # INTVALID
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_analisis(
+                player=player,
+                room=room,
+                card=analisis,
+                card_options={}  # NONE
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_analisis(
+                player=player,
+                room=room,
+                card=analisis,
+                card_options={'target': 2131231231}  # INVALID
+            )
 
     @classmethod
     @db_session

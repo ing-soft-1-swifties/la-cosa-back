@@ -81,8 +81,8 @@ class PlayCardsService(DBSessionMixin):
             'broadcast': True
         }]
 
-    def play_analisis(self, player: Player, room: Room, card: Card, card_options):
-        # Agarra 1 carta aleatoria de un jugador adyacente, mirala y devuélvesela
+    def play_sospecha(self, player: Player, room: Room, card: Card, card_options):
+        # mira una carta aleatoria de la mano de un jugador adjacente
 
         # validamos el input
         target_id = card_options.get("target")
@@ -123,7 +123,6 @@ class PlayCardsService(DBSessionMixin):
                 'receiver_sid': player.sid
             }
         ]
-
 
     def play_ups(self, player: Player, room: Room, card: Card, card_options):
         # muestrele todas las cartas de tu mano a todos los jugadores
@@ -185,4 +184,44 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
+    def play_analisis(self, player: Player, room: Room, card: Card, card_options):
+        # mira la mano de un jugador adjacente
+        target_id = card_options.get("target")
+        if target_id is None:
+            raise InvalidAccionException("Objetivo invalido")
 
+        target_player: Player = Player.get(id=target_id)
+        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
+            raise InvalidAccionException("Objetivo Invalido")
+
+        if not self.valid_adyacent_player(player, target_player, room):
+            raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+                'except_sid': player.sid
+            },
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                    'effects': {
+                        'player': target_player.name,
+                        'cards': target_player.serialize_hand()
+                    }
+                },
+                'broadcast': False,
+                'receiver_sid': player.sid
+            }
+        ]
