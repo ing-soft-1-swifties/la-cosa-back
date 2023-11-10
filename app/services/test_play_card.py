@@ -127,8 +127,8 @@ class TestPlayCardsService(unittest.TestCase):
         assert player.serialize_hand(exclude=[whisky.id]) == response['body']['effects']['cards']
 
     @db_session
-    def test_play_card_analisis_successful(self):
-        TEST_NAME = 'test_play_card_analisis'
+    def test_play_card_sospecha_successful(self):
+        TEST_NAME = 'test_play_card_sospecha_successful'
         # creamos una room valida
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
@@ -139,7 +139,7 @@ class TestPlayCardsService(unittest.TestCase):
         analisis = Card.select(lambda c: c.name== 'Analisis').first()
         player.hand.add(analisis)
         # jugamos la carta analisis
-        response = self.pcs.play_analisis(player, room, analisis, card_options={'target': adyacent_player.id})
+        response = self.pcs.play_sospecha(player, room, analisis, card_options={'target': adyacent_player.id})
 
         assert len(response) == 2
 
@@ -161,8 +161,8 @@ class TestPlayCardsService(unittest.TestCase):
             assert cardJSON['id'] in cards_id
 
     @db_session
-    def test_play_card_analisis_invalid_adyacent(self):
-        TEST_NAME = 'test_play_card_analisis_invalid_adyacent'
+    def test_play_card_sospecha_invalid_adyacent(self):
+        TEST_NAME = 'test_play_card_sospecha_invalid_adyacent'
         # creamos una room valida
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
@@ -175,7 +175,7 @@ class TestPlayCardsService(unittest.TestCase):
         player.hand.add(analisis)
 
         with self.assertRaises(InvalidAccionException):
-            self.pcs.play_analisis(player, room, analisis, {'target': adyacent_player.id})
+            self.pcs.play_sospecha(player, room, analisis, {'target': adyacent_player.id})
 
     @db_session
     def test_play_card_ups(self):

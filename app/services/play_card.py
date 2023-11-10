@@ -81,8 +81,8 @@ class PlayCardsService(DBSessionMixin):
             'broadcast': True
         }]
 
-    def play_analisis(self, player: Player, room: Room, card: Card, card_options):
-        # Agarra 1 carta aleatoria de un jugador adyacente, mirala y devuélvesela
+    def play_sospecha(self, player: Player, room: Room, card: Card, card_options):
+        # mira una carta aleatoria de la mano de un jugador adjacente
 
         # validamos el input
         target_id = card_options.get("target")

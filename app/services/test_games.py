@@ -104,7 +104,7 @@ class TestGamesService(unittest.TestCase):
     def test_play_card(self):
         room: Room = self.create_valid_room(roomname="test_play_card", qty_players=4)
 
-        card = list(Card.select(lambda x: x.name == "Sospecha"))[0]
+        card = list(Card.select(lambda x: x.name == "Revelaciones"))[0]
 
         host = room.get_host()
         host.hand.add(card)

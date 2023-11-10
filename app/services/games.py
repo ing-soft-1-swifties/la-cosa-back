@@ -124,8 +124,8 @@ class GamesService(DBSessionMixin):
             elif card.name == 'Whisky':
                 events.extend(pcs.play_whisky(player, room, card, card_options))
 
-            elif card.name == 'Analisis':
-                events.extend(pcs.play_analisis(player, room, card, card_options))
+            elif card.name == 'Sospecha':
+                events.extend(pcs.play_sospecha(player, room, card, card_options))
 
             elif card.name == '¡Ups!':
                 events.extend(pcs.play_ups(player, room, card, card_options))
