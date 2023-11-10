@@ -124,6 +124,14 @@ class GamesService(DBSessionMixin):
             elif card.name == 'Whisky':
                 events.extend(pcs.play_whisky(player, room, card, card_options))
 
+            elif card.name == 'Analisis':
+                events.extend(pcs.play_analisis(player, room, card, card_options))
+
+            elif card.name == '¡Ups!':
+                events.extend(pcs.play_ups(player, room, card, card_options))
+
+            elif card.name == 'Que quede entre nosotros...':
+                events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
 
             rs.recalculate_positions(sent_sid)
             player.hand.remove(card)

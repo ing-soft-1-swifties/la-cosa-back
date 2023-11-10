@@ -146,7 +146,7 @@ class TestPlayCardsService(unittest.TestCase):
         analisis = Card.select(lambda c: c.name== 'Analisis').first()
         player.hand.add(analisis)
         # jugamos la carta analisis
-        response = self.pcs.play_analisis(player, room, analisis, {"target": adyacent_player.id})
+        response = self.pcs.play_analisis(player, room, analisis, card_options={"target": adyacent_player.id})
 
         assert len(response) == 2
 
@@ -206,6 +206,76 @@ class TestPlayCardsService(unittest.TestCase):
         for card in card_json:
             assert card in response['body']['effects']['cards']
 
+    @db_session
+    def test_play_card_que_quede_entre_nosotros(self):
+        TEST_NAME = 'test_play_card_que_quede_entre_nosotros'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position==1).first()
+        between_us = Card.select(lambda c: c.name == 'Que quede entre nosotros...').first()
+        player.add_card(between_us.id)
+
+        # seleccionamos un jugador adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position==2).first()
+
+        response = self.pcs.play_que_quede_entre_nosotros(
+            player=player,
+            room=room,
+            card=between_us,
+            card_options={"target": adyacent_player.id}
+        )
+        assert len(response) == 2
+
+        assert response[0]['name'] == 'on_game_player_play_card'
+        assert response[0]['body']['card'] == between_us.id
+        assert response[0]['receiver_sid'] == adyacent_player.sid
+        assert response[0]['body']['effects']['player'] == player.name
+        assert response[0]['body']['effects']['cards'] == player.serialize_hand()
+
+        assert response[1]['name'] == 'on_game_player_play_card'
+        assert response[1]['body']['card'] == between_us.id
+
+
+        for card in player.serialize_hand():
+            assert card in response[0]['body']['effects']['cards']
+
+    @db_session
+    def test_play_card_que_quede_entre_nosotros_invalido(self):
+        TEST_NAME = 'test_play_card_que_quede_entre_nosotros_invalido'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position==1).first()
+        between_us = Card.select(lambda c: c.name == 'Que quede entre nosotros...').first()
+        player.add_card(between_us.id)
+
+        # seleccionamos un jugador adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position==3).first()
+
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_que_quede_entre_nosotros(
+                player=player,
+                room=room,
+                card=between_us,
+                card_options={"target": adyacent_player.id} # INTVALID
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_que_quede_entre_nosotros(
+                player=player,
+                room=room,
+                card=between_us,
+                card_options={} # NONE
+            )
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_que_quede_entre_nosotros(
+                player=player,
+                room=room,
+                card=between_us,
+                card_options={"target": 2131231231} # INVALID
+            )
 
 
     @classmethod
