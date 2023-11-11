@@ -271,7 +271,7 @@ class PlayCardsService(DBSessionMixin):
             [x] Análisis
             [x] Sospecha
             [x] Whisky
-            [ ] Cambio de lugar
+            [x] Cambio de lugar
             [ ] Vigila tus espaldas
             [ ] Más vale que corras
             [ ] Seducción
