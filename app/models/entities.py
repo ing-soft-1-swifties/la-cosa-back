@@ -247,7 +247,7 @@ class Room(db.Entity):
         if player1.playing.turn == player1.position:
             player1.playing.turn = player2.position
 
-        if player2.playing.turn == player2.position:
-            player2.playing.turn = player1.position
+        # if player2.playing.turn == player2.position:
+        #     player2.playing.turn = player1.position
 
         player1.position, player2.position = player2.position, player1.position
