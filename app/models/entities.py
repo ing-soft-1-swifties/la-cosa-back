@@ -146,7 +146,7 @@ class Room(db.Entity):
     def qty_players(self)->int:
         return len(list(self.players.select()))
 
-    def get_host(self):
+    def get_host(self) -> Player:
         for player in self.players:
             if player.is_host:
                 return player

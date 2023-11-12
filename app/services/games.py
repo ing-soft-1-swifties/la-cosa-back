@@ -179,7 +179,7 @@ class GamesService(DBSessionMixin):
         player.hand.remove(card)
         room.discarted_cards.add(card)
 
-        result, json = self.end_game_condition(sent_sid)
+        result, json = self.end_game_condition_one_player(sent_sid)
 
         if result != "GAME_IN_PROGRESS":
             events.append({
@@ -301,7 +301,7 @@ class GamesService(DBSessionMixin):
         return events
 
     @db_session
-    def end_game_condition(self, sent_sid : str):
+    def end_game_condition_one_player(self, sent_sid: str):
         """Chequea si se finalizo la partida.
 
         Args: room (Room): current valid room
@@ -329,7 +329,7 @@ class GamesService(DBSessionMixin):
                 info = {
                     "winner_team": "LA_COSA",
                     "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
-                    "roles":roles
+                    "roles": roles
                 }
             else:
                 ret = 'HUMANS_WON'
@@ -360,6 +360,52 @@ class GamesService(DBSessionMixin):
                     "roles":roles}
 
         return ret, info
+
+
+    def end_game_condition_la_cosa(self, sent_sid: str):
+        """La cosa chequea si se finalizo la partida.
+
+        Args: room (Room): current valid room
+
+        Returns: event: on_game_end
+        """
+
+
+        player = Player.get(sid=sent_sid)
+        if player.rol != 'LA_COSA':
+            raise InvalidAccionException(msg="Alguien quiso finalizar la partida y nos es la cosa")
+
+        # inputs validos
+        if player is None:
+            raise InvalidSidException()
+        room: Room = player.playing
+
+        roles = []
+        for player in room.players:
+            roles.append((player.name, player.rol))
+
+        if len(room.players.select(lambda p: p.status != 'MUERTO' and p.rol == 'HUMANO')) == 0:
+
+            info = {
+                    "winner_team": "LA_COSA",
+                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
+                    "roles": roles
+                }
+        else:
+
+            info = {
+                "winner_team": "HUMANOS",
+                "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                "roles": roles
+            }
+
+        event = [{
+            "name": "on_game_end",
+            "body": info,
+            "broadcast": True
+        }]
+
+        return event
 
     @db_session
     def exchange_card_manager(self, sent_sid: str, payload):

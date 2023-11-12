@@ -74,18 +74,18 @@ class TestGamesService(unittest.TestCase):
         room.get_host().sid = "1234"
 
         # tan todos los players vivos
-        assert self.gs.end_game_condition("1234")[0] == "GAME_IN_PROGRESS"
+        assert self.gs.end_game_condition_one_player("1234")[0] == "GAME_IN_PROGRESS"
 
         list(room.players.select(lambda p: p.rol == "LA_COSA"))[0].status = "MUERTO"
         # esta la cosa muerta
-        assert self.gs.end_game_condition("1234")[0] == "HUMANS_WON"
+        assert self.gs.end_game_condition_one_player("1234")[0] == "HUMANS_WON"
 
         for player in room.players.select():
             player.rol = "INFECTADO"
             player.status = "VIVO"
         list(room.players.select())[0].rol = "LA_COSA"
         # todos lod players estan infectados
-        assert self.gs.end_game_condition("1234")[0] == "LA_COSA_WON"
+        assert self.gs.end_game_condition_one_player("1234")[0] == "LA_COSA_WON"
 
         for player in room.players.select():
             player.rol = "HUMANO"
@@ -93,12 +93,44 @@ class TestGamesService(unittest.TestCase):
         list(room.players.select())[0].rol = "LA_COSA"
         list(room.players.select(lambda p: p.rol == "LA_COSA"))[0].status = "VIVO"
         # solo queda la cosa viva
-        assert self.gs.end_game_condition("1234")[0] == "LA_COSA_WON"
+        assert self.gs.end_game_condition_one_player("1234")[0] == "LA_COSA_WON"
 
         list(room.players.select(lambda p: p.rol == "LA_COSA"))[0].status = "MUERTO"
         list(room.players.select(lambda p: p.rol != "LA_COSA"))[0].status = "VIVO"
         # esta la cosa muerta, y un humano vivo
-        assert self.gs.end_game_condition("1234")[0] == "HUMANS_WON"
+        assert self.gs.end_game_condition_one_player("1234")[0] == "HUMANS_WON"
+
+    @db_session
+    def test_end_game_condition_la_cosa(self):
+        # room valido
+        room: Room = self.create_valid_room(
+            roomname="test_end_game_condition_la_cosa", qty_players=4
+        )
+
+        for player in room.players:
+            player.rol = "HUMANO"
+            player.status = "VIVO"
+        room.get_host().rol = "LA_COSA"
+
+        # seteamos el sid del host para poder enviarlo a la funcion
+        room.get_host().sid = "test_end_game_condition_la_cosa_host"
+
+        event = self.gs.end_game_condition_la_cosa("test_end_game_condition_la_cosa_host")[0]
+        assert event["name"] == 'on_game_end'
+        assert event["body"]["winner_team"] == "HUMANOS"
+
+        for player in room.players:
+            player.rol = "INFECTADO"
+
+        room.get_host().rol = 'LA_COSA'
+        event = self.gs.end_game_condition_la_cosa("test_end_game_condition_la_cosa_host")[0]
+        assert event["name"] == 'on_game_end'
+        assert event["body"]["winner_team"] == "LA_COSA"
+
+        room.get_host().rol = 'HUMANO'
+        with self.assertRaises(InvalidAccionException):
+            self.gs.end_game_condition_la_cosa("test_end_game_condition_la_cosa_host")
+
 
     @db_session
     def test_play_card(self):
