@@ -73,7 +73,6 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
             Muestra todas tus cartas a todos los jugadores.
@@ -249,7 +248,6 @@ class PlayCardsService(DBSessionMixin):
             Cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
         """
 
-        # TODO: "que no este en cuarentena o tras una puerta atrancada"
         # validamos el input
         target_id = card_options.get("target")
         if target_id is None:
@@ -261,6 +259,9 @@ class PlayCardsService(DBSessionMixin):
 
         if not self.valid_adyacent_player(player, target_player, room):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+        if target_player.is_in_quarantine():
+            raise InvalidAccionException("El objetivo esta en cuarentena")
 
         # cambia las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
@@ -309,7 +310,6 @@ class PlayCardsService(DBSessionMixin):
             Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
             ignorando cualquier puerta atrancada
         """
-        # TODO: "que no este en cuarentena"
         target_id = card_options.get("target")
         if target_id is None:
             raise InvalidAccionException("Objetivo invalido")
@@ -317,6 +317,9 @@ class PlayCardsService(DBSessionMixin):
         target_player: Player = Player.get(id=target_id)
         if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
             raise InvalidAccionException("Objetivo Invalido")
+
+        if target_player.is_in_quarantine():
+            raise InvalidAccionException("El objetivo esta en cuarentena")
 
         # cambiamos las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
@@ -400,7 +403,31 @@ class PlayCardsService(DBSessionMixin):
             Durante dos rondas, un jugador adyacente debe robar, descartar e intercambiar
             cartas boca arriba. No puede eliminar jugadores ni cambiar de sitio
         """
-        return []
+        target_id = card_options.get("target")
+        if target_id is None:
+            raise InvalidAccionException("Objetivo invalido")
+
+        target_player: Player = Player.get(id=target_id)
+        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
+            raise InvalidAccionException("Objetivo Invalido")
+
+        if not self.valid_adyacent_player(player, target_player, room):
+            raise InvalidAccionException("El objetivo no esta al lado tuyo")
+
+        target_player.set_quarantine(2)
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            },
+        ]
 
     def play_puerta_atrancada(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """

@@ -193,8 +193,7 @@ class RoomsService(DBSessionMixin):
             raise Exception
         turn = 0
         if room.machine_state == "INITIAL":
-            # TODO: cambiar por get_player_by_pos(0)
-            expected_player = room.players.select(lambda player: player.position==0)
+            expected_player = room.get_player_by_pos(0)
         else:
             expected_player = room.next_player()
             if expected_player is None:
