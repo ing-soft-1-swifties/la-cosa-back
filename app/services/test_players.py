@@ -108,11 +108,12 @@ class TestPlayerService(unittest.TestCase):
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
         
         # obtenemos un jugador y asignamos el token
-        player = room.players.random(1)[0]
+        player = room.players.select(lambda x:not x.is_host).first()
 
         response = self.ps.disconnect_player(player.sid)
 
         assert response[0]['name'] == 'on_room_left_player'
+        assert len(room.players) == 11
 
 
     @db_session
