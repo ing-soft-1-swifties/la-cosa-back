@@ -244,7 +244,11 @@ class Room(db.Entity):
         Intercambia las posiciones de dos jugadores
         """
         # si es nuestro turno nos lo llevamos
-        if player1.playing.turn == player1.position:
-            player1.playing.turn = player2.position
+        room = player1.playing
+        if room.turn == player1.position:
+            room.turn = player2.position
+
+        elif room.turn == player2.position:
+            room.turn = player1.position
 
         player1.position, player2.position = player2.position, player1.position
