@@ -7,6 +7,7 @@ from app.services.cards import CardsService
 from app.services.play_card import PlayCardsService
 from app.services.rooms import RoomsService
 from app.schemas import NewRoomSchema
+from app.models.constants import CardName as cards
 
 from app.services.exceptions import *
 
@@ -61,7 +62,7 @@ class TestPlayCardsService(unittest.TestCase):
     def test_play_card_lanzallamas(self):
         room: Room = self.create_valid_room(roomname='test_play_card_lanzallamas', qty_players=4)
         
-        card = list(Card.select(lambda x : x.name == 'Lanzallamas'))[0]
+        card = list(Card.select(lambda x : x.name == cards.LANZALLAMAS))[0]
 
         host = room.get_host()
         #agregamos lazallamas a la mano de host
@@ -112,7 +113,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # obtenemos un jugador y le damos la carta whisky
         player: Player = room.players.random(1)[0]
-        whisky = Card.select(lambda c: c.name== 'Whisky').first()
+        whisky = Card.select(lambda c: c.name== cards.WHISKY).first()
         player.hand.add(whisky)
 
 
@@ -136,7 +137,7 @@ class TestPlayCardsService(unittest.TestCase):
         player = room.players.select(lambda p: p.position==0).first()
         adyacent_player = room.players.select(lambda p: p.position==1).first()
 
-        sospecha = Card.select(lambda c: c.name== 'Sospecha').first()
+        sospecha = Card.select(lambda c: c.name== cards.SOSPECHA).first()
         player.hand.add(sospecha)
         # jugamos la carta sospecha
         response = self.pcs.play_sospecha(player, room, sospecha, card_options={'target': adyacent_player.id})
@@ -171,7 +172,7 @@ class TestPlayCardsService(unittest.TestCase):
         no_adyacent_player = room.players.select(lambda p: p.position==2).first()
 
         # jugamos la carta sospecha
-        sospecha = Card.select(lambda c: c.name== 'Sospecha').first()
+        sospecha = Card.select(lambda c: c.name== cards.SOSPECHA).first()
         player.hand.add(sospecha)
 
         with self.assertRaises(InvalidAccionException):
@@ -184,7 +185,7 @@ class TestPlayCardsService(unittest.TestCase):
         room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
         player: Player = room.players.random(1)[0]
-        ups = Card.select(lambda c: c.name == '¡Ups!').first()
+        ups = Card.select(lambda c: c.name == cards.UPS).first()
         player.add_card(ups.id)
 
         response = self.pcs.play_ups(
@@ -204,7 +205,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position==1).first()
-        between_us = Card.select(lambda c: c.name == 'Que quede entre nosotros...').first()
+        between_us = Card.select(lambda c: c.name == cards.QUE_QUEDE_ENTRE_NOSOTROS).first()
         player.add_card(between_us.id)
 
         # seleccionamos un jugador adjacente
@@ -238,7 +239,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position==1).first()
-        between_us = Card.select(lambda c: c.name == 'Que quede entre nosotros...').first()
+        between_us = Card.select(lambda c: c.name == cards.QUE_QUEDE_ENTRE_NOSOTROS).first()
         player.add_card(between_us.id)
 
         # seleccionamos un jugador adjacente
@@ -274,7 +275,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position==1).first()
-        analisis = Card.select(lambda c: c.name == 'Analisis').first()
+        analisis = Card.select(lambda c: c.name == cards.ANALISIS).first()
         player.add_card(analisis.id)
 
         # seleccionamos un jugador adjacente
@@ -312,7 +313,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position==1).first()
-        analisis = Card.select(lambda c: c.name == 'Analisis').first()
+        analisis = Card.select(lambda c: c.name == cards.ANALISIS).first()
         player.add_card(analisis.id)
 
         # seleccionamos un jugador no adjacente
@@ -348,7 +349,7 @@ class TestPlayCardsService(unittest.TestCase):
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position == 0).first()
         room.turn = player.position
-        cambio_de_lugar = Card.select(lambda c: c.name == '¡Cambio de lugar!').first()
+        cambio_de_lugar = Card.select(lambda c: c.name == cards.CAMBIO_DE_LUGAR).first()
         player.add_card(cambio_de_lugar.id)
 
         # seleccionamos un jugador no adjacente
@@ -391,7 +392,7 @@ class TestPlayCardsService(unittest.TestCase):
 
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position == 0).first()
-        cambio_de_lugar = Card.select(lambda c: c.name == '¡Cambio de lugar!').first()
+        cambio_de_lugar = Card.select(lambda c: c.name == cards.CAMBIO_DE_LUGAR).first()
         player.add_card(cambio_de_lugar.id)
 
         # seleccionamos un jugador no adjacente
@@ -429,7 +430,7 @@ class TestPlayCardsService(unittest.TestCase):
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position == 0).first()
         room.turn = player.position
-        card = Card.select(lambda c: c.name == 'Vigila tus espaldas').first()
+        card = Card.select(lambda c: c.name == cards.VIGILA_TUS_ESPALDAS).first()
         player.add_card(card.id)
 
         # guardamos la direccion vieja
@@ -464,7 +465,7 @@ class TestPlayCardsService(unittest.TestCase):
         # seleccionamos un jugador al azar y le damos la carta
         player: Player = room.players.select(lambda p: p.position == 0).first()
         room.turn = player.position
-        card = Card.select(lambda c: c.name == '¡Más vale que corras!').first()
+        card = Card.select(lambda c: c.name == cards.MAS_VALES_QUE_CORRAS).first()
         player.add_card(card.id)
 
         # seleccionamos un jugador no adjacente
