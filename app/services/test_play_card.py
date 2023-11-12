@@ -475,11 +475,11 @@ class TestPlayCardsService(unittest.TestCase):
         adyacent_player_position = adyacent_player.position
 
         # seleccionamos un jugador adjacente
-        response = self.pcs.play_cambio_de_lugar(
+        response = self.pcs.play_mas_vale_que_corras(
             player=player,
             room=room,
             card=card,
-            card_options={'target': adyacent_player.id}  # INTVALID
+            card_options={'target': adyacent_player.id}
         )
 
         # comportamiento esperado de rooms
@@ -499,6 +499,22 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[1]['body']['card_id'] == card.id
         assert response[1]['body']['card_name'] == card.name
         assert response[1]['body']['player_name'] == player.name
+
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_mas_vale_que_corras(
+                player=player,
+                room=room,
+                card=card,
+                card_options={}  # NONE
+            )
+
+        with self.assertRaises(InvalidAccionException):
+            response = self.pcs.play_mas_vale_que_corras(
+                player=player,
+                room=room,
+                card=card,
+                card_options={'target': 2131231231} # INVALID
+            )
 
     @classmethod
     @db_session
