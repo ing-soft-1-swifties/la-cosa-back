@@ -521,7 +521,7 @@ class GamesService(DBSessionMixin):
 
         return is_superinfected
 
-    def begin_exchange(self, room: Room, player_A: Player, player_B: Player):
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player) -> list[dict]:
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
