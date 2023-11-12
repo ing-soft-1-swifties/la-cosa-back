@@ -55,16 +55,22 @@ class PlayCardsService(DBSessionMixin):
         return events
 
     def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options):
-        return [{
-            "name": "on_game_player_play_defense_card",
-            "body": {
-                "player_name": player.name,
-                "card_name": card.name,
-                "card_options": card_options,
-                "card_id": card.id
-                },
-            "broadcast": True
-            }]
+        """
+            Cancela una carta LANZALLAMAS que te tenga como objetivo. Roba
+            una carta ALEJATE en sustitucion de esta
+        """
+        return [
+            {
+                "name": "on_game_player_play_defense_card",
+                "body": {
+                    "player_name": player.name,
+                    "card_name": card.name,
+                    "card_options": card_options,
+                    "card_id": card.id
+                    },
+                "broadcast": True
+            }
+        ]
 
     @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
@@ -371,17 +377,13 @@ class PlayCardsService(DBSessionMixin):
         """
         return []
 
-    def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        """
-            Cancela una carta LANZALLAMAS que te tenga como objetivo. Roba
-            una carta ALEJATE en sustitucion de esta
-        """
-        return []
-
-    def play_solo_entre_nosotros(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        return []
-
     def play_revelaciones(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            empezando por ti y siguiendo en el orden de juego, cada jugador
+            elige si revela o no su mano.
+            La ronda de revelaciones termina cuando un jugador muestre una carta
+            INFECTADO, sin que tenga que revelar el resto de su mano.
+        """
         return []
 
     def play_cita_a_ciegas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
@@ -412,3 +414,102 @@ class PlayCardsService(DBSessionMixin):
             o de un jugador adyacente
         """
         return []
+
+    def play_cuerdas_podridas(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Las viejas cuerdas que usaste son faciles de romper!
+            Todas las cartas CUARENTENA que haya en juego son descartadas
+        """
+        return []
+
+    def play_es_aqui_la_fiesta(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Descarta todas las cartas CUARENTENA y PUERTA ATRANCADA que haya en el juego.
+            A continuacion, empezando por ti, todos los jugadores cambian de sitio
+            por parejas, en el sentido pde las agujas del reloj.
+            Si hay un numero impar de jugadores, el ultimo jugador no se mueve.
+        """
+        return []
+
+    def play_vuelta_y_vuelta(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Tods los jugadores deben darle una carta al siguiente jugador que tengan
+            al lado, simultaneamente y en el sentido de juego actual, ignorando cualquier carta
+            PUERTA ATRANCADA y CUARENTENA que haya en el juego.
+            No puedes usar ninguna carta para evitar este intercambio.
+            LA COSA puede infectar a otro jugador de esta forma.
+            Tu turno termina.
+        """
+        return []
+
+    def play_no_podemos_ser_amigos(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Intercambia una carta con cualquier jugador de tu eleccion que no este en cuarentena
+        """
+        return []
+
+    def play_olvidadizo(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Descarta 3 cartas de tu mano y roba 3 nuevas cartas ALEJATE descartando
+            cualquier carta de PANICO robada.
+        """
+        return []
+
+    def play_sal_de_aqui(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena
+        """
+        return []
+
+    def play_uno_dos(self, player: Player, room: Room, card: Card, card_options):
+        """
+            cambiate de sitio con el tercer jugador que tengas a tu izquierda o a tu derecha (tu eleccion),
+            ignorando cualquier carta PUERTA ATRANCADA que haya en juego.
+            Si tu o ese jugador estais en CUARENTENA, el cambio no se realiza.
+
+        """
+        return []
+
+    def play_tres_cuatro(self, player: Player, room: Room, card: Card, card_options):
+        """
+            Todas las cartas PURTA ATRANCADA que haya en juego son descartadas
+        """
+        return []
+
+"""
+P0 
+    Ataque:
+        [x] Vigila tus espaldas
+        [x] Cambio de lugar
+        [x] Más vale que corras
+        [ ] Seducción
+        [x] Análisis
+        [x] Sospecha
+        [x] Whisky
+    Defensa:
+        [ ] Aterrador
+        [ ] Aquí estoy bien
+        [ ] No, gracias
+        [ ] Fallaste
+        [x] Nada de Barbacoas
+P1
+    Pánico:
+        [ ] Solo entre nosotros
+        [ ] Revelaciones
+        [ ] Cita a ciegas
+        [x] Oops!
+    Otras cartas
+        [ ] Cuarentena ----------------
+        [ ] Puerta Atrancada
+        [ ] Hacha
+P2 
+    Pánico:
+        [ ] Cuerdas podridas ----------------
+        [ ] Esta es la fiesta? -----------------
+        [x] Oops!
+        [ ] Ronda y ronda
+        [ ] Podemos ser Amigos?
+        [ ] Olvidadizo
+        [ ] Carta 1, 2 ... (movimiento) ------------------
+        [ ] Carta 3, 4 ... (movimiento)
+"""
