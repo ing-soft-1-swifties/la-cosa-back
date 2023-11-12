@@ -92,7 +92,7 @@ cardsJSON = [
     },
     {
         'name' : 'Vigila tus espaldas',
-        'amounts' : [18,0,0,0,0,1,0,0],
+        'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
