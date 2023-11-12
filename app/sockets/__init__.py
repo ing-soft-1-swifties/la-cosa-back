@@ -62,7 +62,7 @@ async def room_quit_game(sid : str):
 
     try:
         if ps.is_host(sid):
-            await end_game(sid)
+            events = await end_game(sid)
         else:
             events = ps.disconnect_player(sid)
             await sio_server.disconnect(sid)
@@ -137,6 +137,16 @@ async def game_exchange_card(sid : str, data):
         rootlog.exception("error al descartar carta")
     return True
 
+
+@sio_server.event
+async def game_new_message(sid : str, data):
+    try:
+        events = rs.new_message(sid, data)
+        await notify_events(events, sid)
+    except Exception:
+        rootlog.exception("error al recibir un nuevo mensaje")
+    return True
+
 async def notify_events(events, sid):
     """
     recibe una lista de eventos
@@ -145,11 +155,18 @@ async def notify_events(events, sid):
              broadcast: <Bool>
              receiver_sid: <Str>
              except_sid: <Str>
+
+             sid_list: List(Str)
+             //opcional si no se desea eviar por partida derivada de sid
              }
     """
-
     for event in events:
-        if event["broadcast"]:
+        if event.get("sid_list") != None:   #si sid_list viene especificado enviamos el evento solo a esos sids
+            for player_sid in event.get("sid_list"):
+                gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
+                event["body"].update(gameState)
+                await sio_server.emit(event["name"], event["body"], to = player_sid)
+        elif event["broadcast"]:    #si sid_list no viene especificado y broadcast si
             for player_sid in rs.get_players_sid(sid):
                 if event.get('except_sid') is not None:
                     if player_sid == event.get('except_sid'):
@@ -157,7 +174,7 @@ async def notify_events(events, sid):
                 gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 event["body"].update(gameState)
                 await sio_server.emit(event["name"], event["body"], to = player_sid)
-        else:
+        else:   #si no viene ni sid_list ni broadcast especificado deberia venir receiver_sid (si no se levanta una excepcion)
             gameState = {"gameState": gs.get_personal_game_status_by_sid(event["receiver_sid"])}
             event["body"].update(gameState)
             await sio_server.emit(event["name"], event["body"], to = event["receiver_sid"])

@@ -124,9 +124,11 @@ class RoomsService(DBSessionMixin):
         expected_room = expected_player.playing
         if expected_room is None:
             raise InvalidRoomException()
-        for player in expected_room.players:
-            player.delete()
-        expected_room.delete()
+        #por ahora no vamos a borrar la partida para no inducir bugs sobre accesos tardios a sid de jugadores eliminados
+        # for player in expected_room.players:
+        #     player.delete()
+        # expected_room.delete()
+        expected_room.status = "FINISHED"
 
     @db_session
     def list_rooms(self):
@@ -278,3 +280,18 @@ class RoomsService(DBSessionMixin):
                 pass
             pair[1].position = position
             position += 1
+            
+
+    @db_session
+    def new_message(sent_sid : str, data):
+        try:
+            return [{
+                "name" : "on_player_new_message",
+                "body" : {
+                    "player_name" : Player.get(sid = sent_sid),
+                    "message" : data["message"]
+                },
+                "broadcast" : True
+            }]
+        except:
+            raise InvalidDataException()

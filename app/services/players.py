@@ -31,15 +31,19 @@ class PlayersService(DBSessionMixin):
         ]
     
     @db_session
-    def disconnect_player(self, actual_sid : str):
+    def disconnect_player(self, sent_sid : str):
 
         # obtenemos el jugador
-        player = Player.get(sid=actual_sid)
+        player = Player.get(sid=sent_sid)
 
         if player is None:
             raise InvalidSidException()
 
         # obtenemos la room y eliminamos al jugador
+        from .rooms import RoomsService
+        rs = RoomsService(self.db)
+        player_sids = rs.get_players_sid(sent_sid)
+        player_sids.remove(player.sid)
         room = player.playing
         room.players.remove(player)
         player.delete()
@@ -48,7 +52,7 @@ class PlayersService(DBSessionMixin):
             {
                 "name": "on_room_left_player",
                 "body": {},
-                "broadcast": True
+                "sid_list" : player_sids
             }
         ]
 
