@@ -239,10 +239,15 @@ class Room(db.Entity):
         # Matar al jugador
         player.status = "MUERTO"
 
+
         # Reordenar al resto de los jugadores.
         # Las posiciones se mantienen de 0 a cantidad de jugadores - 1
 
         room = self
+
+        # Devolver sus cartas al mazo
+        room.discarted_cards.add(player.hand)
+        player.hand.remove(player.hand)
 
         if room.turn is None:
             raise Exception("partida inicializada incorrectamente, turno no pre-seteado")

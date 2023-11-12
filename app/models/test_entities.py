@@ -176,9 +176,15 @@ class TestEntities(unittest.TestCase):
 
         with self.assertRaises(InvalidAccionException):
             room.discard_card(host, card)
+    @db_session
+    def test_kill_player(self):
+        room: Room = self.create_valid_room(roomname='test_kill_player')
+        some_player: Player = list(room.players)[0] #type:ignore
 
+        room.kill_player(some_player)
 
-
+        assert len(some_player.hand) == 0
+        assert some_player.status == "MUERTO"
 
     @classmethod
     @db_session
