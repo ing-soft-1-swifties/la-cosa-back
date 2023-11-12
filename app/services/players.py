@@ -41,6 +41,7 @@ class PlayersService(DBSessionMixin):
 
         # obtenemos la room y eliminamos al jugador
         room = player.playing
+        players_sid_list.remove(player.sid)
         room.players.remove(player)
         player.delete()
 

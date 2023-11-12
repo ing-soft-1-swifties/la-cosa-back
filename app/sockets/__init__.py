@@ -62,7 +62,7 @@ async def room_quit_game(sid : str):
 
     try:
         if ps.is_host(sid):
-            await end_game(sid)
+            events = await end_game(sid)
         else:
             events = ps.disconnect_player(sid)
             await sio_server.disconnect(sid)
