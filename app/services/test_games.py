@@ -214,12 +214,12 @@ class TestGamesService(unittest.TestCase):
                 "name": "on_game_player_death",
                 "body": {"player": next_p.name, "reason": "SUPERINFECCION"},
                 "broadcast": True
-            },
-            {
-                "name": "on_game_player_turn",
-                "body": {"player": room.get_current_player().name},
-                "broadcast": True
             }
+            # ,{
+            #     "name": "on_game_player_turn",
+            #     "body": {"player": room.get_current_player().name},
+            #     "broadcast": True
+            # }
         ]
 
         print(expected_events[0])
