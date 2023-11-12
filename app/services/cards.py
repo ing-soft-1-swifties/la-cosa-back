@@ -43,7 +43,7 @@ class CardsService(DBSessionMixin):
 
     @db_session
     def give_alejate_card(self, player:Player):
-        """ Toma un jugador y le entrega la primera carta de alejate disponible, no modifica los masos
+        """ Toma un jugador y le entrega la primera carta de alejate disponible, no hace shuffle de ser necesario, solo obtiene la carta del maso de descartes
         Returns:
             Carta que se entregó
         """

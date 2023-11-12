@@ -64,77 +64,77 @@ class GamesService(DBSessionMixin):
     @db_session
     def play_defense_card_manager(self, sent_sid : str, payload):
         try:
-            rs = RoomsService(self.db)
             ps = PlayersService(self.db)
             cs = CardsService(self.db)
-            pcs = PlayCardsService(self.db)
 
             # lista de eventos a informar a los jugadores
             events = []     
 
             # verificamos inputs correctos            
             sent_card_id = payload.get("card")
-            on_defense = payload.get("on_defense")
-            if sent_card_id is None or on_defense is None:
-                raise InvalidDataException()
-            
+            on_defense: bool = payload.get("on_defense")
+
             # obtenemos y verificamos el jugador
             player = Player.get(sid = sent_sid)
             if player is None:
                 raise InvalidSidException()
 
-            # obtenemos y verificamos las cartas
-            played_card = Card.get(id = room.machine_state_options["card"])
-            card = Card.get(id = sent_card_id) 
-            if card is None or played_card is None:
-                raise InvalidCidException()
+            if on_defense is None or not isinstance(on_defense, bool):
+                raise InvalidDataException()
 
-            if ps.has_card(player, card) == False:
-                raise InvalidCardException()
+            room: Room = player.playing
+            played_card = room.suspended_card
 
-            #obtenemos el jugador que jugo la carta inicialmente
-            in_turn_player = Player.get(sid = room.machine_state_options["id"])
-            if in_turn_player is None:
-                rootlog.exception("deberia estar el jugador que jugo la carta en machine_state_options y no lo esta")
-                raise Exception()
-            # obtenemos y verificamos la maquina de estados
-            room = player.playing
-            if room.machine_state != "PLAYING" and room.machine_state == "FINISHING":
+            if room.machine_state != MachineState.DEFENDING:
                 rootlog.exception("No correspondia defenderse de una carta")
                 raise InvalidAccionException("No corresponde defenderse")
 
-            if room.machine_state_options["target"] != player.id:
+            if room.suspended_card_target != player:
                 rootlog.exception(f"No correspondia que esta persona se defienda")
                 raise InvalidAccionException("No estan jugando una carta sobre vos")
+
+            # Early return, ejecutamos el efecto de la carta suspendida
+            if not on_defense:
+                #obtenemos el jugador que jugo la carta inicialmente
+                player_in_turn = Player.get(position = room.turn)
+                played_card_options = room.machine_state_options.get("card_options", {})
+
+                if played_card is None:
+                    raise InvalidCidException()
+
+                if player_in_turn is None:
+                    rootlog.exception("deberia estar el jugador que jugo la carta en machine_state_options y no lo esta")
+                    raise Exception()
+
+                if sent_card_id is None:
+                    raise InvalidDataException()
+
+                events.extend(self.dispatch_card_effect(player_in_turn.sid, player_in_turn, room, played_card, played_card_options))
+
+                return events
+
+            defense_card = Card.get(id = sent_card_id) 
+
+            # TODO: cambiar esto por player.has_card(defense_card.id) luego de hacer rebase
+            if not ps.has_card(player, defense_card):
+                raise InvalidCardException()
+
+            assert room.machine_state is not None
+
+            if defense_card.name not in self.defense_for_card(played_card.name):
+                raise InvalidAccionException(f"No se puede defender {played_card.name} con {defense_card.name}")
+
+            assert room.machine_state_options is not None
+
+            events.extend(self.dispatch_card_effect(sent_sid, player, room, defense_card, {}))
+
+            # Descartar la carta
+            player.hand.remove(defense_card)
+            room.discarted_cards.add(defense_card)
+
+            # Dar carta "Alejate" al jugador que se defendio
+            cs.give_alejate_card(player)
             
-
-            if card not in played_card.defense_cards:
-                raise InvalidAccionException(f"No se puede defender {played_card.name} con {card.name}")
-
-            events = []
-            if on_defense == False:
-                events.extend(self.play_card_manager(in_turn_player.sid, room.machine_state_options))
-            else:
-                if card.name == "¡Nada de barbacoas!":
-                    pass
-
-            rs.recalculate_positions(sent_sid)
-            player.hand.remove(card)
-            room.discarted_cards.add(card)
-            
-            result, json = self.end_game_condition(sent_sid)
-
-            if result != "GAME_IN_PROGRESS":
-                events.append({
-                    "name":"on_game_end",
-                    "body":json,
-                    "broadcast":True
-                })
-                #si hago esto cuando quireo notificar no existen mass los jugadores
-                #TODO! ver como eliminar la partida
-                #rs.end_game(sent_sid)
-            else:
-                events.extend(self.begin_end_of_turn_exchange(room))
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
@@ -148,6 +148,8 @@ class GamesService(DBSessionMixin):
 
         elif card.name == cards.WHISKY:
             events.extend(pcs.play_whisky(player, room, card, card_options))
+        elif card.name == "¡Nada de barbacoas!":
+            events.extend(pcs.play_nada_de_barbacoas(player, room, card, card_options))
 
         elif card.name == cards.SOSPECHA:
             events.extend(pcs.play_sospecha(player, room, card, card_options))
@@ -186,21 +188,23 @@ class GamesService(DBSessionMixin):
             events.extend(self.begin_end_of_turn_exchange(room))
         return events
 
-
-    @db_session
-    def play_card_manager(self, sent_sid : str, payload):
-
+    @staticmethod
+    def defense_for_card(card_name: str) -> list[str]:
         defense_dict = {
             "Lanzallamas": ["¡Nada de barbacoas!"]
         }
+
+        return defense_dict.get(card_name, [])
+
+
+    @db_session
+    def play_card_manager(self, sent_sid : str, payload):
 
         # definimos las cartas que no se pueden jugar
         unplayable_cards = ["La cosa", "Infectado"]
         
         # inicializamos los servicios
         ps = PlayersService(self.db)
-        pcs = PlayCardsService(self.db)
-        rs = RoomsService(self.db)
 
         # lista de eventos a informar a los jugadores
         events = []     
@@ -262,12 +266,16 @@ class GamesService(DBSessionMixin):
             if target is None:
                 raise InvalidDataException()
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
-            can_defend = any([defense_card in target.hand.name for defense_card in defense_dict.get(card.name, [])])
-            if can_defend:
+            defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
+
+            # Si se puede defender, dejamos asentada la info necesaria para ejecutar su efecto luego
+            if defense:
                 room.suspended_card = card
                 room.suspended_card_target = target
                 room.machine_state = MachineState.DEFENDING
-                defense = True
+                room.machine_state_options = {
+                    "card_options": card_options
+                }
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:
