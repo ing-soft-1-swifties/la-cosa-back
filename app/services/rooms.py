@@ -278,3 +278,18 @@ class RoomsService(DBSessionMixin):
                 pass
             pair[1].position = position
             position += 1
+            
+
+    @db_session
+    def new_message(sent_sid : str, data):
+        try:
+            return [{
+                "name" : "on_player_new_message",
+                "body" : {
+                    "player_name" : Player.get(sid = sent_sid),
+                    "message" : data["message"]
+                },
+                "broadcast" : True
+            }]
+        except:
+            raise InvalidDataException()

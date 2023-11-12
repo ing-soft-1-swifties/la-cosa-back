@@ -137,6 +137,16 @@ async def game_exchange_card(sid : str, data):
         rootlog.exception("error al descartar carta")
     return True
 
+
+@sio_server.event
+async def game_new_message(sid : str, data):
+    try:
+        events = rs.new_message(sid, data)
+        await notify_events(events, sid)
+    except Exception:
+        rootlog.exception("error al recivir un nuevo mensaje")
+    return True
+    
 async def notify_events(events, sid):
     """
     recibe una lista de eventos
