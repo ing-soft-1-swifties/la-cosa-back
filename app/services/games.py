@@ -183,9 +183,9 @@ class GamesService(DBSessionMixin):
 
         if result != "GAME_IN_PROGRESS":
             events.append({
-                "name":"on_game_end",
-                "body":json,
-                "broadcast":True
+                "name": "on_game_end",
+                "body": json,
+                "broadcast": True
             })
         else:
             events.extend(self.begin_end_of_turn_exchange(room))
@@ -319,7 +319,16 @@ class GamesService(DBSessionMixin):
         for player in room.players:
             roles.append((player.name, player.rol))
 
+
         ret = 'GAME_IN_PROGRESS'
+        if room.players.select(lambda p:p.rol == 'LA_COSA').first().status == 'MUERTO':
+            ret = 'HUMANS_WON'
+            info = {
+                "winner_team": "HUMANOS",
+                "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
+                "roles": roles
+            }
+
         # Si queda solo un sobreviviente
         if len(room.players.select(lambda p: p.status != 'MUERTO')) == 1:
             survivor: Player = list(room.players.select(lambda p: p.status != 'MUERTO'))[0] # type: ignore
@@ -336,29 +345,8 @@ class GamesService(DBSessionMixin):
                 info = {
                     "winner_team": "HUMANOS",
                     "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
-                    "roles":roles
+                    "roles": roles
                 }
-
-        # Chequeo el estado de la cosa
-        la_cosa: Player = list(room.players.select(lambda p: p.rol == 'LA_COSA'))[0] # type: ignore
-        # la_cosa: Player = room.players.get(rol = 'LA_COSA') # type: ignore
-
-        if la_cosa.status == 'MUERTO':
-            ret = 'HUMANS_WON'
-            info = {
-                "winner_team": "HUMANOS",
-                "winner": list(map(lambda x: x.name, list(room.players.select(rol='HUMANO')))),
-                "roles": roles
-            }
-
-        qty_alive_players = len(room.players.select(lambda p : p.status != 'MUERTO'))
-        qty_alive_non_human_players = len(room.players.select(lambda p : p.status != 'MUERTO' and p.rol != 'HUMANO'))
-        if qty_alive_non_human_players == qty_alive_players:
-            ret='LA_COSA_WON'
-            info = {"winner_team":"LA_COSA",
-                    "winner": list(map(lambda x: x.name, list(room.players.select(rol='LA_COSA')))),
-                    "roles":roles}
-
         return ret, info
 
     @db_session

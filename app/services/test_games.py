@@ -59,7 +59,7 @@ class TestGamesService(unittest.TestCase):
         return room
 
     @db_session
-    def test_end_game_condition(self):
+    def test_end_game_one_player_condition(self):
         # room valido
         room: Room = self.create_valid_room(
             roomname="test_end_game_condition", qty_players=4
@@ -75,17 +75,9 @@ class TestGamesService(unittest.TestCase):
 
         # tan todos los players vivos
         assert self.gs.end_game_condition_one_player("1234")[0] == "GAME_IN_PROGRESS"
-
-        list(room.players.select(lambda p: p.rol == "LA_COSA"))[0].status = "MUERTO"
+        room.players.select(lambda p: p.rol == "LA_COSA").first().status = "MUERTO"
         # esta la cosa muerta
         assert self.gs.end_game_condition_one_player("1234")[0] == "HUMANS_WON"
-
-        for player in room.players.select():
-            player.rol = "INFECTADO"
-            player.status = "VIVO"
-        list(room.players.select())[0].rol = "LA_COSA"
-        # todos lod players estan infectados
-        assert self.gs.end_game_condition_one_player("1234")[0] == "LA_COSA_WON"
 
         for player in room.players.select():
             player.rol = "HUMANO"
@@ -95,10 +87,6 @@ class TestGamesService(unittest.TestCase):
         # solo queda la cosa viva
         assert self.gs.end_game_condition_one_player("1234")[0] == "LA_COSA_WON"
 
-        list(room.players.select(lambda p: p.rol == "LA_COSA"))[0].status = "MUERTO"
-        list(room.players.select(lambda p: p.rol != "LA_COSA"))[0].status = "VIVO"
-        # esta la cosa muerta, y un humano vivo
-        assert self.gs.end_game_condition_one_player("1234")[0] == "HUMANS_WON"
 
     @db_session
     def test_end_game_condition_la_cosa(self):
