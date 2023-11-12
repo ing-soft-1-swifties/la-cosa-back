@@ -99,15 +99,8 @@ class PlayCardsService(DBSessionMixin):
         """
         # validamos el input
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-        
         target_player: Player = Player.get(id = target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room :
-            raise InvalidAccionException("Objetivo Invalido")
 
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
         return [
             {
                 'name': 'on_game_player_play_card',
@@ -160,15 +153,7 @@ class PlayCardsService(DBSessionMixin):
             adjacente de tu eleccion
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         return [
             {   # este se lo mandamos solo al target
@@ -204,15 +189,7 @@ class PlayCardsService(DBSessionMixin):
             Mira la mano de un jugador adjacente
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         return [
             {
@@ -250,15 +227,7 @@ class PlayCardsService(DBSessionMixin):
 
         # validamos el input
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         if target_player.is_in_quarantine():
             raise InvalidAccionException("El objetivo esta en cuarentena")
@@ -311,12 +280,7 @@ class PlayCardsService(DBSessionMixin):
             ignorando cualquier puerta atrancada
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
 
         if target_player.is_in_quarantine():
             raise InvalidAccionException("El objetivo esta en cuarentena")
@@ -404,15 +368,7 @@ class PlayCardsService(DBSessionMixin):
             cartas boca arriba. No puede eliminar jugadores ni cambiar de sitio
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         target_player.set_quarantine(2)
 
