@@ -138,7 +138,7 @@ async def game_exchange_card(sid : str, data):
     return True
 
 @sio_server.event
-async def game_cosa_finishing_game(sid: str):
+async def game_thething_finish_game(sid: str):
     try:
         events = gs.end_game_condition_la_cosa(sid)
         events.extend(rs.end_game(sid))
