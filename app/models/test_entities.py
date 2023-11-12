@@ -123,7 +123,8 @@ class TestEntities(unittest.TestCase):
         position_host = player.position
 
         assert player.id == room.get_player_by_pos(position_host).id
-        assert player.id != room.get_player_by_pos(position_host + 1).id
+        assert player.id != room.get_player_by_pos((position_host + 1) % room.qty_alive_players()).id
+        assert room.get_player_by_pos(13) is None
 
     @db_session
     def test_get_current_player(self):

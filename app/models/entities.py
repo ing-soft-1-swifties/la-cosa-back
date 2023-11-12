@@ -119,7 +119,11 @@ class Room(db.Entity):
                 return player
         raise Exception()   #muerte
 
-    def get_player_by_pos(self, pos) -> Player:
+    def get_player_by_pos(self, pos) -> Player | None:
+        """
+        Retorna el player que se encuentra en la posicion <pos>,
+            en caso de que <pos> sea una posicion invalida, retorna None
+        """
         return self.players.select(lambda p: p.position == pos and p.status == 'VIVO').first()
 
     def json(self):
