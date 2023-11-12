@@ -17,7 +17,7 @@ class GamesService(DBSessionMixin):
     def game_state(self, room : Room):
         rs = RoomsService(self.db)
         def player_state(player):
-            return{
+            return {
                 "name" : player.name,
                 "id" : player.id,
                 "status" : player.status,
@@ -37,6 +37,7 @@ class GamesService(DBSessionMixin):
             },
             "status" : room.status,
             "turn" : room.turn,
+            "direction": room.direction,
             "player_in_turn" : rs.in_turn_player(room).name,
             "players" : [player_state(player) for player in room.players]
         }
@@ -140,6 +141,9 @@ class GamesService(DBSessionMixin):
 
             elif card.name == '¡Cambio de lugar!':
                 events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
+
+            elif card.name == 'Vigila tus espaldas':
+                events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
 
             rs.recalculate_positions(sent_sid)
             player.hand.remove(card)

@@ -266,6 +266,24 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
+    def play_vigila_tus_espaldas(self, player: Player, room: Room, card: Card, card_options):
+        # Invierte el orden de juego.
+        # Ahora, tanto el orden de turnos como los intercambios de cartas van en elsentido contrario
+        room.change_direction()
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True
+            }
+        ]
+
 """
     TODO:
     - P0:

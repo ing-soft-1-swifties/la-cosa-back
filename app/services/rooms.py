@@ -117,7 +117,7 @@ class RoomsService(DBSessionMixin):
 
     @db_session
     def end_game(self, actual_sid : str):
-        #si el jugador es propietario de una partida esta se termina
+        # si el jugador es propietario de una partida esta se termina
         expected_player = Player.get(sid = actual_sid)
         if expected_player is None:
             raise InvalidSidException()
@@ -161,7 +161,6 @@ class RoomsService(DBSessionMixin):
         #se agrega la cosa a las cartas repartibles 
         cards_to_deal.append(list(room.available_cards.select(lambda lacosa : lacosa.name == 'La cosa') ))
         
-        
         # mezclamos las cartas
         random.shuffle(cards_to_deal) 
         # eliminamos todas las cartas a repartir del mazo de cartas disponibles
@@ -186,21 +185,18 @@ class RoomsService(DBSessionMixin):
     def next_player(self, room):
 
         if room.turn is None:
-            print("partida inicializada incorrectamente, turno no pre-seteado")
+            rootlog.exception("partida inicializada incorrectamente, turno no pre-seteado")
             raise Exception
         turn = 0
         if room.machine_state == "INITIAL":
-            turn = 0
+            # TODO: cambiar por get_player_by_pos(0)
+            expected_player = room.players.select(lambda player: player.position==0)
         else:
-            turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))    #cantidad de jugadores que siguen jugando
-        expected_player = None
-        #asumo que las posiciones estan correctas (ie: no estan repetidas y no faltan)
-        for player in room.players:
-            if player.position == turn and player.status == "VIVO":
-                expected_player = player
-        if expected_player is None: 
-            print(f"el jugador con turno {turn} no esta en la partida")
-            raise Exception
+            expected_player = room.next_player()
+            if expected_player is None:
+                rootlog.exception(f"El jugador con turno ({turn}) no esta en la partida")
+                raise Exception
+
         return expected_player
 
     @db_session
@@ -229,8 +225,7 @@ class RoomsService(DBSessionMixin):
                 room.turn = 0
             else:
                 #cantidad de jugadores que siguen jugando
-                room.turn = (room.turn + 1) % room.qty_alive_players()
-
+                room.turn = room.next_player().position
             in_turn_player = self.in_turn_player(room)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"
@@ -238,22 +233,23 @@ class RoomsService(DBSessionMixin):
             from app.services.cards import CardsService
             cs = CardsService(self.db)
             new_card = cs.give_card(in_turn_player)
-            return([
-            {
-                "name":"on_game_player_turn",
-                "body":{"player":in_turn_player.name},
-                "broadcast":True
-            },
-            {
-                "name":"on_game_player_steal_card",
-                "body":{"cards":[new_card.json()]},
-                "broadcast":False,
-                "receiver_sid":in_turn_player.sid
-            }])
-        except:
+            return [
+                {
+                    "name":"on_game_player_turn",
+                    "body":{"player":in_turn_player.name},
+                    "broadcast": True
+                },
+                {
+                    "name":"on_game_player_steal_card",
+                    "body":{"cards":[new_card.json()]},
+                    "broadcast": False,
+                    "receiver_sid":in_turn_player.sid
+                }
+            ]
+        except Exception as e:
             rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sent_sid}")
-            #cleanup pendiente
-        
+            rootlog.exception(f"{e}")
+
     @db_session
     def recalculate_positions(self, sent_sid : str):    
         """
