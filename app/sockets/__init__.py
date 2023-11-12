@@ -153,7 +153,7 @@ async def game_thething_finish_game(sid: str):
 
 
 @sio_server.event
-async def send_player_message(sid : str, data):
+async def game_new_message(sid : str, data):
     try:
         events = rs.new_message(sid, data)
         await notify_events(events, sid)
