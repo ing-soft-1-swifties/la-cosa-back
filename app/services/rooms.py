@@ -225,7 +225,7 @@ class RoomsService(DBSessionMixin):
                 room.turn = 0
             else:
                 #cantidad de jugadores que siguen jugando
-                room.turn = room.next_player()
+                room.turn = room.next_player().position
             in_turn_player = self.in_turn_player(room)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"

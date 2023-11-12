@@ -142,6 +142,9 @@ class GamesService(DBSessionMixin):
             elif card.name == '¡Cambio de lugar!':
                 events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
 
+            elif card.name == 'Vigila tus espaldas':
+                events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
+
             rs.recalculate_positions(sent_sid)
             player.hand.remove(card)
             room.discarted_cards.add(card)
