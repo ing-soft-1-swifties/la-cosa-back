@@ -372,12 +372,14 @@ class GamesService(DBSessionMixin):
 
 
         player = Player.get(sid=sent_sid)
+
+        if player is None:
+            raise InvalidSidException()
+
         if player.rol != 'LA_COSA':
             raise InvalidAccionException(msg="Alguien quiso finalizar la partida y nos es la cosa")
 
-        # inputs validos
-        if player is None:
-            raise InvalidSidException()
+        # inputs
         room: Room = player.playing
 
         roles = []

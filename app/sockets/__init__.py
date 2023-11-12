@@ -140,9 +140,9 @@ async def game_exchange_card(sid : str, data):
 @sio_server.event
 async def game_thething_finish_game(sid: str):
     try:
-        events = gs.end_game_condition_la_cosa(sid)
-        events.extend(rs.end_game(sid))
-        await notify_events(events, sid)
+        event = gs.end_game_condition_la_cosa(sid)
+        rs.end_game(sid)
+        await notify_events(event, sid)
     except Exception as e:
         rootlog.exception("error al querer finalizar la partida siendo la cosa")
         #hay que determinar si eliminamos la partida si ocurre un error
