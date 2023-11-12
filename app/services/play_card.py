@@ -30,17 +30,6 @@ class PlayCardsService(DBSessionMixin):
         if target_player is None or target_player.status != "VIVO":
             raise InvalidAccionException("Objetivo Invalido")
 
-        # veamos que esten al lado
-        if player.position is None or target_player.position is None:
-            # seleccionar una buena excepcion
-            raise Exception()
-        
-        # Vemos que los jugadores esten adyacentes:
-        if abs(player.position - target_player.position) != 1 and \
-            abs(player.position - target_player.position) !=  len(room.players.select(status = "VIVO"))-1:
-            # falta enriquecer con info a este excepcion
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
-
         events.append({
             'name': 'on_game_player_play_card',
             'body': {
