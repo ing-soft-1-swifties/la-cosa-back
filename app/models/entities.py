@@ -1,6 +1,19 @@
+from enum import Enum
 from pony.orm import (Database, PrimaryKey, Required, Set, Optional, Json)
 from app.services.exceptions import *
 db = Database()
+
+class MachineState(str, Enum):
+    PLAYING = "PLAYING"
+    DEFENDING = "DEFENDING"
+    EXCHANGING = "EXCHANGING"
+
+class PlayerState(str, Enum):
+    RECEIVING_EXCHANGE = "RECEIVING_EXCHANGE"
+    OFFERING_EXCHANGE = "OFFERING_EXCHANGE"
+    WAITING = "WAITING"
+    PLAYING = "PLAYING"
+    DEFENDING = "DEFENDING"
 
 class Obstacle(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -20,6 +33,7 @@ class Card(db.Entity):
     player_hand = Set('Player', reverse='hand')
     need_target = Optional(bool, default=False)
     target_adjacent_only = Optional(bool, default=False)
+    suspended_in = Set('Room', reverse="suspended_card")
 
     def json(self):
         return {
@@ -44,8 +58,24 @@ class Player(db.Entity):
     sid = Optional(str, default="")             # socket id
     token = Required(str)
     hand = Set('Card', reverse='player_hand')
+    target_in = Set("Room", reverse="suspended_card_target")
 
     def json(self):
+        
+        room: Room = self.playing;
+
+        state: PlayerState = PlayerState.WAITING
+
+        if room.machine_state == MachineState.PLAYING and room.turn == self.position:
+            state = PlayerState.PLAYING
+        elif room.machine_state == MachineState.DEFENDING and room.suspended_card_target == self:
+            state = PlayerState.DEFENDING
+        elif room.machine_state == MachineState.EXCHANGING:
+            if room.turn == self.position:
+                state = PlayerState.OFFERING_EXCHANGE
+            else:
+                state = PlayerState.RECEIVING_EXCHANGE
+
         return {
                 "name" : self.name,
                 "playerID": self.id,
@@ -54,8 +84,9 @@ class Player(db.Entity):
                 "position":self.position,
                 #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
                 "on_turn": self.status == "VIVO" and self.position == self.playing.turn,
-                "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids"))
-                }
+                "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids")),
+                "state": state
+        }
 
     def add_card(self, card_id: int):
         self.hand.add(Card.get(id=card_id))
@@ -106,6 +137,8 @@ class Room(db.Entity):
     discarted_cards = Set(Card, reverse='roomsD')
     machine_state = Optional(str)
     machine_state_options = Optional(Json)
+    suspended_card = Optional(Card, reverse = "suspended_in")
+    suspended_card_target = Optional(Player, reverse = "target_in")
 
     def qty_alive_players(self)->int:
         return len(list(self.players.select(lambda player:player.status=='VIVO')))

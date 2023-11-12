@@ -30,18 +30,19 @@ class PlayCardsService(DBSessionMixin):
         if target_player is None or target_player.status != "VIVO":
             raise InvalidAccionException("Objetivo Invalido")
 
-        # veamos que esten al lado
-        if player.position is None or target_player.position is None:
-            # seleccionar una buena excepcion
-            raise Exception()
-        
-        # Vemos que los jugadores esten adyacentes:
-        if abs(player.position - target_player.position) != 1 and \
-            abs(player.position - target_player.position) !=  len(room.players.select(status = "VIVO"))-1:
-            # falta enriquecer con info a este excepcion
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
+        events.append({
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card_id': card.id,
+                'card_name': card.name,
+                'card_options': card_options,
+                'player_name': player.name,
+            },
+            'broadcast': True
+        })
 
-        target_player.status = "MUERTO"  
+        room.kill_player(target_player)
+
         events.append({
             "name": "on_game_player_death",
             "body": {
@@ -51,17 +52,19 @@ class PlayCardsService(DBSessionMixin):
             "broadcast": True
         })
 
-        events.append({
-            "name": "on_game_player_play_card",
+        return events
+
+    def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options):
+        return [{
+            "name": "on_game_player_play_defense_card",
             "body": {
-                "card_id": card.id,
+                "player_name": player.name,
                 "card_name": card.name,
                 "card_options": card_options,
-                "player_name": player.name
-            },
+                "card_id": card.id
+                },
             "broadcast": True
-        }) 
-        return events
+            }]
 
     @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
@@ -409,5 +412,3 @@ class PlayCardsService(DBSessionMixin):
             o de un jugador adyacente
         """
         return []
-
-

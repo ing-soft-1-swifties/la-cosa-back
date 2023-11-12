@@ -1,5 +1,6 @@
 from pony.orm import db_session
 from app.models import Player, Room, Card
+from app.models.entities import MachineState
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.services.play_card import PlayCardsService
@@ -61,113 +62,237 @@ class GamesService(DBSessionMixin):
         return player_in_game_state
 
     @db_session
-    def play_card_manager(self, sent_sid : str, payload):
-
+    def play_defense_card_manager(self, sent_sid : str, payload):
         try:
-            # definimos las cartas que no se pueden jugar
-            unplayable_cards = ["La cosa", "Infectado"]
-
-            # inicializamos los servicios
-            rs = RoomsService(self.db)
             ps = PlayersService(self.db)
             cs = CardsService(self.db)
-            pcs = PlayCardsService(self.db)
 
             # lista de eventos a informar a los jugadores
-            events = []
+            events = []     
 
-            # verificamos inputs correctos
+            # verificamos inputs correctos            
             sent_card_id = payload.get("card")
-            card_options = payload.get("card_options")
-            if sent_card_id is None or card_options is None:
-                raise InvalidDataException()
+            on_defense: bool = payload.get("on_defense")
 
             # obtenemos y verificamos el jugador
             player = Player.get(sid = sent_sid)
             if player is None:
                 raise InvalidSidException()
 
-            # obtenemos y verificamos las cartas
-            card = Card.get(id = sent_card_id)
-            if card is None:
-                raise InvalidCidException()
+            if on_defense is None or not isinstance(on_defense, bool):
+                raise InvalidDataException()
 
-            if card.name in unplayable_cards:
-                raise InvalidAccionException(f"No se puede jugar {card.name}")
+            room: Room = player.playing
+            played_card = room.suspended_card
 
-            if ps.has_card(player, card) == False:
+            if room.machine_state != MachineState.DEFENDING:
+                rootlog.exception("No correspondia defenderse de una carta")
+                raise InvalidAccionException("No corresponde defenderse")
+
+            if room.suspended_card_target != player:
+                rootlog.exception(f"No correspondia que esta persona se defienda")
+                raise InvalidAccionException("No estan jugando una carta sobre vos")
+
+            # Early return, ejecutamos el efecto de la carta suspendida
+            if not on_defense:
+                #obtenemos el jugador que jugo la carta inicialmente
+                player_in_turn = Player.get(position = room.turn, playing = room)
+                played_card_options = room.machine_state_options.get("card_options", {})
+
+                if played_card is None:
+                    raise InvalidCidException()
+
+                if player_in_turn is None:
+                    rootlog.exception("deberia estar el jugador que jugo la carta en machine_state_options y no lo esta")
+                    raise Exception()
+
+
+                events.extend(self.dispatch_card_effect(player_in_turn.sid, player_in_turn, room, played_card, played_card_options))
+
+                return events
+
+            defense_card = Card.get(id = sent_card_id) 
+
+            if sent_card_id is None:
+                raise InvalidDataException()
+
+            # TODO: cambiar esto por player.has_card(defense_card.id) luego de hacer rebase
+            if not ps.has_card(player, defense_card):
                 raise InvalidCardException()
 
-            # obtenemos y verificamos la room
-            room = player.playing
-            if room.machine_state != "PLAYING":
-                rootlog.exception("No correspondia jugar una carta")
-                raise InvalidAccionException("No corresponde jugar")
+            assert room.machine_state is not None
 
-            if room.machine_state_options["id"] != player.id:
-                rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}")
-                raise InvalidAccionException("No es tu turno")
+            if defense_card.name not in self.defense_for_card(played_card.name):
+                raise InvalidAccionException(f"No se puede defender {played_card.name} con {defense_card.name}")
 
-            # caso: la carta jugada es lanzallamas ¡ruido de asadoo!
-            events = []
-            # events.append({
-            #     "name":"on_game_player_play_card",
-            #     "body":{
-            #         "player": player.name,
-            #         "card" : card.json(),
-            #         "card_options" : payload["card_options"],
-            #     },
-            #     "broadcast":True
-            # })
+            assert room.machine_state_options is not None
 
+            events.extend(self.dispatch_card_effect(sent_sid, player, room, defense_card, {}))
 
-            if card.name == cards.LANZALLAMAS:
-                events.extend(pcs.play_lanzallamas(player, room, card, card_options))
+            # Descartar la carta
+            player.hand.remove(defense_card)
+            room.discarted_cards.add(defense_card)
 
-            elif card.name == cards.WHISKY:
-                events.extend(pcs.play_whisky(player, room, card, card_options))
-
-            elif card.name == cards.SOSPECHA:
-                events.extend(pcs.play_sospecha(player, room, card, card_options))
-
-            elif card.name == cards.UPS:
-                events.extend(pcs.play_ups(player, room, card, card_options))
-
-            elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
-                events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
-
-            elif card.name == cards.ANALISIS:
-                events.extend(pcs.play_analisis(player, room, card, card_options))
-
-            elif card.name == cards.CAMBIO_DE_LUGAR:
-                events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
-
-            elif card.name == cards.VIGILA_TUS_ESPALDAS:
-                events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
-
-            elif card.name == cards.MAS_VALES_QUE_CORRAS:
-                events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
-
-
-            rs.recalculate_positions(sent_sid)
-            player.hand.remove(card)
-            room.discarted_cards.add(card)
-
-            result, json = self.end_game_condition(sent_sid)
-
-            if result != "GAME_IN_PROGRESS":
-                events.append({
-                    "name":"on_game_end",
-                    "body":json,
-                    "broadcast":True
-                })
-                # si hago esto cuando quireo notificar no existen mass los jugadores
-                # rs.end_game(sent_sid)
-            else:
-                events.extend(self.begin_end_of_turn_exchange(room))
+            # Dar carta "Alejate" al jugador que se defendio
+            cs.give_alejate_card(player)
+            
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
+
+    def dispatch_card_effect(self, sent_sid, player, room, card, card_options):
+        pcs = PlayCardsService(self.db)
+        rs = RoomsService(self.db)
+        events = []
+
+        if card.name == cards.LANZALLAMAS:
+            events.extend(pcs.play_lanzallamas(player, room, card, card_options))
+
+        elif card.name == cards.WHISKY:
+            events.extend(pcs.play_whisky(player, room, card, card_options))
+
+        elif card.name == cards.NADA_DE_BARBACOAS:
+            events.extend(pcs.play_nada_de_barbacoas(player, room, card, card_options))
+
+        elif card.name == cards.SOSPECHA:
+            events.extend(pcs.play_sospecha(player, room, card, card_options))
+
+        elif card.name == cards.UPS:
+            events.extend(pcs.play_ups(player, room, card, card_options))
+
+        elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
+            events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
+
+        elif card.name == cards.ANALISIS:
+            events.extend(pcs.play_analisis(player, room, card, card_options))
+
+        elif card.name == cards.CAMBIO_DE_LUGAR:
+            events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
+
+        elif card.name == cards.VIGILA_TUS_ESPALDAS:
+            events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
+
+        elif card.name == cards.MAS_VALES_QUE_CORRAS:
+            events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
+
+        rs.recalculate_positions(sent_sid)
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+
+        result, json = self.end_game_condition(sent_sid)
+
+        if result != "GAME_IN_PROGRESS":
+            events.append({
+                "name":"on_game_end",
+                "body":json,
+                "broadcast":True
+            })
+        else:
+            events.extend(self.begin_end_of_turn_exchange(room))
+        return events
+
+    @staticmethod
+    def defense_for_card(card_name: str) -> list[str]:
+        defense_dict = {
+            "Lanzallamas": ["¡Nada de barbacoas!"]
+        }
+
+        return defense_dict.get(card_name, [])
+
+
+    @db_session
+    def play_card_manager(self, sent_sid : str, payload):
+
+        # definimos las cartas que no se pueden jugar
+        unplayable_cards = ["La cosa", "Infectado"]
+        
+        # inicializamos los servicios
+        ps = PlayersService(self.db)
+
+        # lista de eventos a informar a los jugadores
+        events = []     
+
+        # verificamos inputs correctos            
+        sent_card_id = payload.get("card")
+        card_options = payload.get("card_options")
+        if sent_card_id is None or card_options is None:
+            raise InvalidDataException()
+
+        # obtenemos y verificamos el jugador
+        player = Player.get(sid = sent_sid)
+        if player is None:
+            raise InvalidSidException()
+
+        # obtenemos y verificamos las cartas
+        card = Card.get(id = sent_card_id) 
+        if card is None:
+            raise InvalidCidException()
+        
+        if card.name in unplayable_cards:
+            raise InvalidAccionException(f"No se puede jugar {card.name}")
+        
+        if not ps.has_card(player, card):
+            rootlog.exception("Un jugador quiso jugar una carta la cual no era de su pertenencia")
+            raise InvalidCardException()
+
+        # obtenemos y verificamos la room
+        room: Room = player.playing
+        assert room is not None
+        assert room.machine_state_options is not None
+        if room.machine_state != "PLAYING":
+            rootlog.exception("No correspondia jugar una carta")
+            raise InvalidAccionException("No corresponde jugar")
+
+        if room.machine_state_options["id"] != player.id: #type:ignore
+            rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}") # type:ignore
+            raise InvalidAccionException("No es tu turno")
+
+        # Evento que avisa al resto que se ha jugado una carta
+        # Independientemente de si se defiende o no
+        events.append({
+            "name": "on_game_player_play_card",
+            "body": {
+                "player": player.name,
+                "card" : card.json(),
+                "card_options" : card_options,
+            },
+            "broadcast": True
+        }); 
+
+        defense = False
+
+        # veamos si es una carta que se juega sobre alguien
+        # vemos tambien si es posible que el jugador objetivo se defienda
+        # en cuyo caso agregamos un evento para avisarle que debe defenderse
+        if card.need_target:
+            target = Player.get(id = card_options["target"])
+            if target is None:
+                raise InvalidDataException()
+
+            if card.target_adjacent_only and not room.are_players_adjacent(player, target):
+                raise InvalidDataException()
+
+            #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
+            defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
+
+            # Si se puede defender, dejamos asentada la info necesaria para ejecutar su efecto luego
+            if defense:
+                room.suspended_card = card
+                room.suspended_card_target = target
+                room.machine_state = MachineState.DEFENDING
+                room.machine_state_options = {
+                    "card_options": card_options
+                }
+
+        # si no es posible defenderse, llamamos al efecto de la carta de una
+        if not defense:
+            events.extend(self.dispatch_card_effect(sent_sid, player, room, card, card_options))
+
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+        
+
+        return events
 
     @db_session
     def discard_card_manager(self, sent_sid : str, payload):
