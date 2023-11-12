@@ -18,9 +18,8 @@ class PlayCardsService(DBSessionMixin):
         return True
 
     def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options) -> list[dict]:
-        """Juega una carta lanzallamas.
-
-        Args: player, card, card_options
+        """
+            Elimina de la partida a un jugador adyacente
         """
         #lista de eventos que vamos a retornar
         events = []
@@ -66,8 +65,10 @@ class PlayCardsService(DBSessionMixin):
 
     @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # Enséñales todas tus cartas a los demás jugadores.
-        # Esta carta sólo puedes jugarla sobre ti mismo
+        """
+            Muestra todas tus cartas a todos los jugadores.
+            Solo puedes jugar esta carta sobre ti mismo.
+        """
         return [{
             'name': 'on_game_player_play_card',
             'body': {
@@ -84,8 +85,9 @@ class PlayCardsService(DBSessionMixin):
         }]
 
     def play_sospecha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # mira una carta aleatoria de la mano de un jugador adjacente
-
+        """
+            Mira una carta aleatoria de la mano de un jugador adjacente
+        """
         # validamos el input
         target_id = card_options.get("target")
         if target_id is None:
@@ -144,8 +146,10 @@ class PlayCardsService(DBSessionMixin):
         }]
 
     def play_que_quede_entre_nosotros(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # muestrale todas las cartas de tu mano a un jugador adjacente de tu eleccion
-        # validamos el input
+        """
+            Muestrale todas las cartas de tu mano a un jugador
+            adjacente de tu eleccion
+        """
         target_id = card_options.get("target")
         if target_id is None:
             raise InvalidAccionException("Objetivo invalido")
@@ -187,7 +191,9 @@ class PlayCardsService(DBSessionMixin):
         ]
 
     def play_analisis(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # mira la mano de un jugador adjacente
+        """
+            Mira la mano de un jugador adjacente
+        """
         target_id = card_options.get("target")
         if target_id is None:
             raise InvalidAccionException("Objetivo invalido")
@@ -229,7 +235,9 @@ class PlayCardsService(DBSessionMixin):
         ]
 
     def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
+        """
+            Cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
+        """
 
         # TODO: "que no este en cuarentena o tras una puerta atrancada"
         # validamos el input
@@ -267,8 +275,10 @@ class PlayCardsService(DBSessionMixin):
         ]
 
     def play_vigila_tus_espaldas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # Invierte el orden de juego.
-        # Ahora, tanto el orden de turnos como los intercambios de cartas van en elsentido contrario
+        """
+            Invierte el orden de juego.
+            Ahora, tanto el orden de turnos como los intercambios de cartas van en elsentido contrario
+        """
         room.change_direction()
 
         return [
@@ -285,11 +295,11 @@ class PlayCardsService(DBSessionMixin):
         ]
 
     def play_mas_vale_que_corras(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
-        # Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
-        # ignorando cualquier puerta atrancada
-
-
-        # TODO: "que no este en cuarentena o tras una puerta atrancada"
+        """
+            Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
+            ignorando cualquier puerta atrancada
+        """
+        # TODO: "que no este en cuarentena"
         target_id = card_options.get("target")
         if target_id is None:
             raise InvalidAccionException("Objetivo invalido")
@@ -320,30 +330,84 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-"""
-    TODO:
-    - P0:
-        - Ataque:
-            [x] Análisis
-            [x] Sospecha
-            [x] Whisky
-            [x] Cambio de lugar
-            [x] Vigila tus espaldas
-            [ ] Más vale que corras
-            [ ] Seducción
-        - Defensa:
-            [ ] Aterrador
-            [ ] Aquí estoy bien
-            [ ] No, gracias
-            [ ] Fallaste
-            [ ] Nada de Barbacoas
-    - P1:
-        - Panico:
-            [ ] Solo entre nosotros
-            [ ] Revelaciones
-            [ ] Cita a ciegas
-            [x] Oops!
-        [ ] Cuarentena
-        [ ] Puerta Atrancada
-        [ ] Hacha
-"""
+    def play_seduccion(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Intercambia una carta con cualquier jugador de tu eleccion
+            que no este en cuarentena.
+            Tu turno termina.
+        """
+        return []
+
+    def play_aterrador(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Niegate a un ofrecimiento de intercambio de cartas y mira
+            la carta que te has negado a recibir.
+            Roba una carta ALEJATE en sustitucion de esta.
+        """
+        return []
+
+    def play_aqui_estoy_bien(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Cancela una carta CAMBIO DE LUGAR o MAS VALE QUE CORRAS de la
+            que seas objetivo. Roba una carta ALEJATE en sustitucion de esta.
+        """
+        return []
+
+    def play_no_gracias(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Niegate a un ofrecimiento de intercambio de cartas. Roba
+            una carta ALEJATE en sustitucion de esta.
+        """
+        return []
+
+    def play_fallaste(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            El siguiente jugador despues de ti realiza el intercambio de
+            cartas en lugar de hacerlo tu. No queda infectado si recibe una carta
+            INFECTADO. Roba una carta ALEJATE en sustitucion de esta
+        """
+        return []
+
+    def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Cancela una carta LANZALLAMAS que te tenga como objetivo. Roba
+            una carta ALEJATE en sustitucion de esta
+        """
+        return []
+
+    def play_solo_entre_nosotros(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        return []
+
+    def play_revelaciones(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        return []
+
+    def play_cita_a_ciegas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Intercambia una carta de tu mano con la primera carta del mazo,
+            descartando cualquier carta de PANICO robada.
+            Tu turno termina
+        """
+        return []
+
+    def play_cuarentena(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Durante dos rondas, un jugador adyacente debe robar, descartar e intercambiar
+            cartas boca arriba. No puede eliminar jugadores ni cambiar de sitio
+        """
+        return []
+
+    def play_puerta_atrancada(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Coloca esta carta entre un jugador adyacente y tu. No
+            se permiten acciones entre este jugdor y tu.
+        """
+        return []
+
+    def play_hacha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        """
+            Retira una carta PUERTA ATRANCADA o CUARENTENA de ti mismo
+            o de un jugador adyacente
+        """
+        return []
+
+
