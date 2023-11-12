@@ -159,6 +159,106 @@ class TestGamesService(unittest.TestCase):
         assert ret[0]["broadcast"] == False
 
     @db_session
+    def test_superinfection(self):
+        # primeras excepciones
+        room: Room = self.create_valid_room(roomname="test_superinfection", qty_players=4)
+        host: Player = room.get_host()
+
+        # setting players for exchanging
+        host.sid = "host_superinfection"
+        room.turn = host.position
+        next_p: Player = room.next_player()
+        next_p.sid = "next_p_superinfection"
+
+        for c in next_p.hand:
+            next_p.hand.remove(c)
+
+        infectado: list[Card] = []
+        infectado.extend(list(Card.select(lambda c: c.name == 'Infectado')))
+
+        next_p.add_card(infectado[0].id)
+        next_p.add_card(infectado[1].id)
+        next_p.add_card(infectado[2].id)
+        next_p.add_card(infectado[3].id)
+        next_p.rol = 'HUMANO'
+
+        assert len(list(next_p.hand.select())) == 4
+
+        card_host: Card = host.hand.select(lambda c: c.name != "La cosa").first()
+        card_next_p: Card = next_p.hand.select(lambda c: c.name != "La cosa").first()
+
+        # setting maquina de estados
+        machine_state_options = {"ids": [host.id, next_p.id], "stage": "STARTING"}
+        room.machine_state = "EXCHANGING"
+        room.machine_state_options = machine_state_options
+
+        # payload setting primera llamada a intercambio
+        payload = {"card": card_host.id, "on_defense": False}
+
+        events = self.gs.exchange_card_manager(host.sid, payload)
+
+        # chequeos
+        assert room.machine_state == "EXCHANGING"
+        assert room.machine_state_options["stage"] == "FINISHING"
+        assert room.machine_state_options["card_id"] == card_host.id
+        assert room.machine_state_options["player_id"] == host.id
+        assert events == []
+
+        # payload setting segunda llamada a intercambio
+        payload = {"card": card_next_p.id, "on_defense": False}
+
+        events = self.gs.begin_exchange(room, host, next_p)
+
+        expected_events = [
+            {
+                "name": "on_game_player_death",
+                "body": {"player": next_p.name, "reason": "SUPERINFECCION"},
+                "broadcast": True
+            },
+            {
+                "name": "on_game_player_turn",
+                "body": {"player": room.get_current_player().name},
+                "broadcast": True
+            }
+        ]
+
+        print(expected_events[0])
+        print(f"\n- {expected_events[0] in events}\n")
+        print(events)
+
+
+        assert room.machine_state == "PLAYING"
+        for event in expected_events:
+            assert event in events
+
+    @db_session
+    def test_superinfection_check(self):
+
+        room: Room = self.create_valid_room()
+        player1: Player = room.get_host()
+        room.turn = player1.position
+        player2 = room.next_player()
+
+        for card in list(player2.hand.select()):
+            player2.remove_card(card.id)
+
+        infectado: list[Card] = []
+        infectado.extend(list(Card.select(lambda c: c.name == 'Infectado')))
+
+        assert len(list(player2.hand.select())) == 0
+
+        player2.add_card(infectado[0].id)
+        player2.add_card(infectado[1].id)
+        player2.add_card(infectado[2].id)
+        player2.add_card(infectado[3].id)
+
+        assert player2.hand.__len__() == 4
+        player2.rol = 'HUMANO'
+
+        is_a_superinfected = self.gs.superinfection_check(player_checked=player2, player_exchanging=player1)
+
+        assert is_a_superinfected
+    @db_session
     def test_exchange_manager_happy(self):
         # primeras excepciones
         room: Room = self.create_valid_room(roomname="test_exchange_manager_happy", qty_players=4)

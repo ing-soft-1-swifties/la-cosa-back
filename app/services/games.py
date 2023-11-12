@@ -9,21 +9,6 @@ from app.services.cards import CardsService
 from app.logger import rootlog
 
 
-def superinfection_check(player_checked: Player, player_exchanging: Player) -> bool:
-    # Superinfeccion
-
-    # - no sos la cosa
-    is_superinfected = player_checked.rol != 'LA_COSA'
-
-    # - solo tenes cartas infectado
-    for card in player_checked.hand.__iter__():
-        is_superinfected &= card.name == 'Infeccion'
-
-    # sos superinfectado si no sos un infectado intercambiando con la cosa
-    is_superinfected &= not (player_checked.rol == 'INFECTADO' and player_exchanging.rol == 'LA_COSA')
-    return is_superinfected
-
-
 class GamesService(DBSessionMixin):
 
 
@@ -244,10 +229,10 @@ class GamesService(DBSessionMixin):
         return ret, info
 
     @db_session
-    def exchange_card_manager(self, sent_sid : str, payload):
+    def exchange_card_manager(self, sent_sid: str, payload):
         try:
             events = []
-            player = Player.get(sid = sent_sid)
+            player = Player.get(sid=sent_sid)
             if player is None:
                 raise InvalidSidException()
             sent_card_id = payload.get("card")
@@ -347,7 +332,25 @@ class GamesService(DBSessionMixin):
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
 
-    def begin_exchange(self, room : Room, player_A: Player, player_B: Player):
+    def superinfection_check(self, player_checked: Player, player_exchanging: Player):
+        # Superinfeccion
+
+        # - no sos la cosa
+        is_not_la_cosa = player_checked.rol != 'LA_COSA'
+
+        # - solo tenes cartas infectado
+        only_infected_cards = True
+        for card in player_checked.hand:
+            only_infected_cards = only_infected_cards and card.name == 'Infectado'
+
+        # solo podes intercambiar cuando vos sos infectado y le das a la cosa
+        exchange_possible = player_checked.rol == 'INFECTADO' and player_exchanging.rol == 'LA_COSA'
+
+        is_superinfected = is_not_la_cosa and only_infected_cards and (not exchange_possible)
+
+        return is_superinfected
+
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player):
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
@@ -355,14 +358,14 @@ class GamesService(DBSessionMixin):
         events = []
         rs = RoomsService(self.db)
 
-        is_player_a_superinfected = superinfection_check(player_A, player_B)
-        is_player_b_superinfected = superinfection_check(player_B, player_A)
+        is_player_a_superinfected = self.superinfection_check(player_A, player_B)
+        is_player_b_superinfected = self.superinfection_check(player_B, player_A)
         if is_player_a_superinfected:
             room: Room = player_A.playing
             room.kill_player(player_B)
             events.append({
                 "name": "on_game_player_death",
-                "body": {"player": player_A.name, "reason": "SUPERINFECCION" },
+                "body": {"player": player_A.name, "reason": "SUPERINFECCION"},
                 "broadcast": True
             })
 
@@ -376,11 +379,8 @@ class GamesService(DBSessionMixin):
             })
 
         if is_player_a_superinfected or is_player_b_superinfected:
-
-
             events.extend(rs.next_turn(player_A.sid))
-
-
+            return events
         else:
             room.machine_state = "EXCHANGING"
             room.machine_state_options = {"ids": [player_A.id, player_B.id],
