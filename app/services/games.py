@@ -362,7 +362,7 @@ class GamesService(DBSessionMixin):
         is_player_b_superinfected = self.superinfection_check(player_B, player_A)
         if is_player_a_superinfected:
             room: Room = player_A.playing
-            room.kill_player(player_B)
+            room.kill_player(player_A)
             events.append({
                 "name": "on_game_player_death",
                 "body": {"player": player_A.name, "reason": "SUPERINFECCION"},
