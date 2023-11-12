@@ -42,12 +42,14 @@ class PlayCardsService(DBSessionMixin):
             raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         events.append({
-            "name": "on_game_player_death",
-            "body": {
-                "player": target_player.name,
-                "reason": "LANZALLAMAS"
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card_id': card.id,
+                'card_name': card.name,
+                'card_options': card_options,
+                'player_name': player.name,
             },
-            "broadcast": True
+            'broadcast': True
         })
 
         room.kill_player(target_player)
@@ -55,7 +57,8 @@ class PlayCardsService(DBSessionMixin):
         events.append({
             "name": "on_game_player_death",
             "body": {
-                "player": target_player.name
+                "player": target_player.name,
+                "reason": "LANZALLAMAS"
             },
             "broadcast": True
         })

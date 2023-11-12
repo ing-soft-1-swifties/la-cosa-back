@@ -96,7 +96,7 @@ class GamesService(DBSessionMixin):
             # Early return, ejecutamos el efecto de la carta suspendida
             if not on_defense:
                 #obtenemos el jugador que jugo la carta inicialmente
-                player_in_turn = Player.get(position = room.turn)
+                player_in_turn = Player.get(position = room.turn, playing = room)
                 played_card_options = room.machine_state_options.get("card_options", {})
 
                 if played_card is None:
@@ -106,14 +106,15 @@ class GamesService(DBSessionMixin):
                     rootlog.exception("deberia estar el jugador que jugo la carta en machine_state_options y no lo esta")
                     raise Exception()
 
-                if sent_card_id is None:
-                    raise InvalidDataException()
 
                 events.extend(self.dispatch_card_effect(player_in_turn.sid, player_in_turn, room, played_card, played_card_options))
 
                 return events
 
             defense_card = Card.get(id = sent_card_id) 
+
+            if sent_card_id is None:
+                raise InvalidDataException()
 
             # TODO: cambiar esto por player.has_card(defense_card.id) luego de hacer rebase
             if not ps.has_card(player, defense_card):
@@ -141,6 +142,7 @@ class GamesService(DBSessionMixin):
 
     def dispatch_card_effect(self, sent_sid, player, room, card, card_options):
         pcs = PlayCardsService(self.db)
+        rs = RoomsService(self.db)
         events = []
 
         if card.name == cards.LANZALLAMAS:
@@ -148,7 +150,8 @@ class GamesService(DBSessionMixin):
 
         elif card.name == cards.WHISKY:
             events.extend(pcs.play_whisky(player, room, card, card_options))
-        elif card.name == "¡Nada de barbacoas!":
+
+        elif card.name == cards.NADA_DE_BARBACOAS:
             events.extend(pcs.play_nada_de_barbacoas(player, room, card, card_options))
 
         elif card.name == cards.SOSPECHA:
@@ -265,6 +268,10 @@ class GamesService(DBSessionMixin):
             target = Player.get(id = card_options["target"])
             if target is None:
                 raise InvalidDataException()
+
+            if card.target_adjacent_only and not room.are_players_adjacent(player, target):
+                raise InvalidDataException()
+
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
             defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
 
