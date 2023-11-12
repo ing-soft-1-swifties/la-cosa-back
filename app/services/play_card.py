@@ -284,6 +284,11 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
+    def play_mas_vale_que_corras(self, player: Player, room: Room, card: Card, card_options):
+        # Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
+        # ignorando cualquier puerta atrancada
+        pass
+
 """
     TODO:
     - P0:
@@ -292,7 +297,7 @@ class PlayCardsService(DBSessionMixin):
             [x] Sospecha
             [x] Whisky
             [x] Cambio de lugar
-            [ ] Vigila tus espaldas
+            [x] Vigila tus espaldas
             [ ] Más vale que corras
             [ ] Seducción
         - Defensa:
