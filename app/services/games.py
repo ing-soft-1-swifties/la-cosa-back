@@ -239,11 +239,11 @@ class GamesService(DBSessionMixin):
         room: Room = player.playing
         assert room is not None
         assert room.machine_state_options is not None
-        if room.machine_state != "PLAYING":
+        if room.machine_state not in [MachineState.PLAYING, MachineState.PANICKING]:
             rootlog.exception("No correspondia jugar una carta")
             raise InvalidAccionException("No corresponde jugar")
 
-        if room.machine_state_options["id"] != player.id: #type:ignore
+        if room.turn != player.position: #type:ignore
             rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}") # type:ignore
             raise InvalidAccionException("No es tu turno")
 
@@ -283,6 +283,9 @@ class GamesService(DBSessionMixin):
                 room.machine_state_options = {
                     "card_options": card_options
                 }
+
+        if room.machine_state == MachineState.PANICKING and card.type != "PANICO":
+            raise InvalidAccionException("Debes jugar la carta de pánico en tu mano.")
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:
@@ -474,7 +477,7 @@ class GamesService(DBSessionMixin):
                     cs.give_alejate_card(second_player)
                     events.extend([{
                         "name":"on_game_player_play_defense_card",
-                        "body":{"player":second_player.name, "card":second_card.json()},
+                        "body":{"player_name":second_player.name, "card_name":second_card.name},
                         "broadcast": True
                     }])
                     events.extend(rs.next_turn(sent_sid))
