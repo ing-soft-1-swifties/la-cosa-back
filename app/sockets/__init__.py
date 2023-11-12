@@ -137,6 +137,20 @@ async def game_exchange_card(sid : str, data):
         rootlog.exception("error al descartar carta")
     return True
 
+@sio_server.event
+async def game_thething_finish_game(sid: str):
+    try:
+        event = gs.end_game_condition_la_cosa(sid)
+        # TODO: descomentar esto cuando el ale termine!!
+        # rs.end_game(sid)
+        await notify_events(event, sid)
+    except Exception as e:
+        rootlog.exception("error al querer finalizar la partida siendo la cosa")
+        #hay que determinar si eliminamos la partida si ocurre un error
+        return True
+    print(f"Partida finalizada")
+
+
 
 @sio_server.event
 async def game_new_message(sid : str, data):
