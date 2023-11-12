@@ -144,9 +144,9 @@ async def game_new_message(sid : str, data):
         events = rs.new_message(sid, data)
         await notify_events(events, sid)
     except Exception:
-        rootlog.exception("error al recivir un nuevo mensaje")
+        rootlog.exception("error al recibir un nuevo mensaje")
     return True
-    
+
 async def notify_events(events, sid):
     """
     recibe una lista de eventos
@@ -155,10 +155,17 @@ async def notify_events(events, sid):
              broadcast: <Bool>
              receiver_sid: <Str>
              except_sid: <Str>
+
+             sid_list: List(Str)
+             //opcional si no se desea eviar por partida derivada de sid
              }
     """
-
     for event in events:
+        if event.get("sid_list") != None:
+            for player_sid in event.get("sid_list"):
+                gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
+                event["body"].update(gameState)
+                await sio_server.emit(event["name"], event["body"], to = player_sid)
         if event["broadcast"]:
             for player_sid in rs.get_players_sid(sid):
                 if event.get('except_sid') is not None:
