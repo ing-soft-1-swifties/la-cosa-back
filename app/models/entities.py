@@ -54,7 +54,7 @@ class Player(db.Entity):
     position = Optional(int, default=0)
     rol = Optional(str, default="HUMANO")             # {HUMANO, LA_COSA, INFECTADO}
     status = Optional(str, default="VIVO")          # {VIVO, MUERTO}
-    in_quarantine = Optional(bool, default = False)
+    quarantine = Optional(int, default=0)
     playing = Required('Room', reverse='players')
     is_host = Required(bool, default=False)
     sid = Optional(str, default="")             # socket id
@@ -123,6 +123,17 @@ class Player(db.Entity):
     def is_alive(self) -> bool:
         return self.status == "VIVO"
 
+    def is_in_quarantine(self) -> bool:
+        return self.quarantine > 0
+
+    def set_quarantine(self, amount: int):
+        self.quarantine = amount
+
+    def decrease_quarantine(self):
+        self.quarantine -= 1
+
+    def quarantine_turns_left(self):
+        return self.quarantine
 
 
 class Room(db.Entity):
@@ -184,7 +195,6 @@ class Room(db.Entity):
         next_turn_position = (self.turn + 1 if self.direction else self.turn - 1) % self.qty_alive_players()
         return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO').first()
 
-
     def swap_cards(self, player1: Player, card1: Card, player2: Player, card2: Card):
         """
         Comportamiento:
@@ -219,7 +229,6 @@ class Room(db.Entity):
             raise InvalidAccionException(msg='Carta para descartar no esta en la mano')
         else:
             player.remove_card(card.id)
-
 
     def are_players_adjacent(self, player1: Player, player2: Player):
 
