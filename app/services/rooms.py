@@ -219,17 +219,18 @@ class RoomsService(DBSessionMixin):
         return expected_player
 
     @db_session
-    def next_turn(self, sent_sid : str):    
+    def next_turn(self, sent_sid : str):
         try:
             player = Player.get(sid = sent_sid)
             if player is None:
                 raise InvalidSidException()
-            room = player.playing
+            room: Room = player.playing
             if room.machine_state == "INITIAL":
                 room.turn = 0
             else:
                 #cantidad de jugadores que siguen jugando
-                room.turn = (room.turn + 1) % (len(room.players.select(lambda player : player.status == "VIVO")))
+                room.turn = (room.turn + 1) % room.qty_alive_players()
+
             in_turn_player = self.in_turn_player(room)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             room.machine_state = "PLAYING"

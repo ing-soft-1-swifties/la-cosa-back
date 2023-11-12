@@ -46,19 +46,21 @@ class PlayCardsService(DBSessionMixin):
         events.append({
             "name": "on_game_player_death",
             "body": {
-                "player": target_player.name
+                "player": target_player.name,
+                "reason": "LANZALLAMAS"
             },
             "broadcast": True
         })
 
         events.append({
-            "name":"on_game_player_play_card",
-            "body":{
-                "player": player.name,
-                "card" : card.json(),
-                "card_options" : card_options,
+            "name": "on_game_player_play_card",
+            "body": {
+                "card_id": card.id,
+                "card_name": card.name,
+                "card_options": card_options,
+                "player_name": player.name
             },
-            "broadcast":True
+            "broadcast": True
         }) 
         return events
 

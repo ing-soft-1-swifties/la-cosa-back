@@ -48,7 +48,7 @@ class PlayersService(DBSessionMixin):
             {
                 "name": "on_room_left_player",
                 "body": {},
-                "broadcast":True
+                "broadcast": True
             }
         ]
 
