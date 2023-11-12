@@ -7,7 +7,7 @@ from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.cards import CardsService
 from app.logger import rootlog
-
+from app.models.constants import CardName as cards
 
 class GamesService(DBSessionMixin):
 
@@ -121,29 +121,33 @@ class GamesService(DBSessionMixin):
             # })
 
 
-            if card.name == "Lanzallamas":
+            if card.name == cards.LANZALLAMAS:
                 events.extend(pcs.play_lanzallamas(player, room, card, card_options))
 
-            elif card.name == 'Whisky':
+            elif card.name == cards.WHISKY:
                 events.extend(pcs.play_whisky(player, room, card, card_options))
 
-            elif card.name == 'Sospecha':
+            elif card.name == cards.SOSPECHA:
                 events.extend(pcs.play_sospecha(player, room, card, card_options))
 
-            elif card.name == '¡Ups!':
+            elif card.name == cards.UPS:
                 events.extend(pcs.play_ups(player, room, card, card_options))
 
-            elif card.name == 'Que quede entre nosotros...':
+            elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
                 events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
 
-            elif card.name == 'Analisis':
+            elif card.name == cards.ANALISIS:
                 events.extend(pcs.play_analisis(player, room, card, card_options))
 
-            elif card.name == '¡Cambio de lugar!':
+            elif card.name == cards.CAMBIO_DE_LUGAR:
                 events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
 
-            elif card.name == 'Vigila tus espaldas':
+            elif card.name == cards.VIGILA_TUS_ESPALDAS:
                 events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
+
+            elif card.name == cards.MAS_VALES_QUE_CORRAS:
+                events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
+
 
             rs.recalculate_positions(sent_sid)
             player.hand.remove(card)

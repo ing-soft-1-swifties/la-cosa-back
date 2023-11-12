@@ -17,7 +17,7 @@ class PlayCardsService(DBSessionMixin):
 
         return True
 
-    def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options):
+    def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options) -> list[dict]:
         """Juega una carta lanzallamas.
 
         Args: player, card, card_options
@@ -65,7 +65,7 @@ class PlayCardsService(DBSessionMixin):
         return events
 
     @db_session
-    def play_whisky(self, player: Player, room: Room, card: Card, card_options):
+    def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # Enséñales todas tus cartas a los demás jugadores.
         # Esta carta sólo puedes jugarla sobre ti mismo
         return [{
@@ -83,7 +83,7 @@ class PlayCardsService(DBSessionMixin):
             'broadcast': True
         }]
 
-    def play_sospecha(self, player: Player, room: Room, card: Card, card_options):
+    def play_sospecha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # mira una carta aleatoria de la mano de un jugador adjacente
 
         # validamos el input
@@ -126,7 +126,7 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    def play_ups(self, player: Player, room: Room, card: Card, card_options):
+    def play_ups(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # muestrele todas las cartas de tu mano a todos los jugadores
         return [{
             'name': 'on_game_player_play_card',
@@ -143,7 +143,7 @@ class PlayCardsService(DBSessionMixin):
             'broadcast': True
         }]
 
-    def play_que_quede_entre_nosotros(self, player: Player, room: Room, card: Card, card_options):
+    def play_que_quede_entre_nosotros(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # muestrale todas las cartas de tu mano a un jugador adjacente de tu eleccion
         # validamos el input
         target_id = card_options.get("target")
@@ -186,7 +186,7 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    def play_analisis(self, player: Player, room: Room, card: Card, card_options):
+    def play_analisis(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # mira la mano de un jugador adjacente
         target_id = card_options.get("target")
         if target_id is None:
@@ -228,7 +228,7 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options):
+    def play_cambio_de_lugar(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
 
         # TODO: "que no este en cuarentena o tras una puerta atrancada"
@@ -266,12 +266,48 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    def play_vigila_tus_espaldas(self, player: Player, room: Room, card: Card, card_options):
+    def play_vigila_tus_espaldas(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         # Invierte el orden de juego.
         # Ahora, tanto el orden de turnos como los intercambios de cartas van en elsentido contrario
         room.change_direction()
 
         return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True
+            }
+        ]
+
+    def play_mas_vale_que_corras(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+        # Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
+        # ignorando cualquier puerta atrancada
+
+
+        # TODO: "que no este en cuarentena o tras una puerta atrancada"
+        target_id = card_options.get("target")
+        if target_id is None:
+            raise InvalidAccionException("Objetivo invalido")
+
+        target_player: Player = Player.get(id=target_id)
+        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
+            raise InvalidAccionException("Objetivo Invalido")
+
+        # cambiamos las posiciones de los jugadores
+        room.swap_players_positions(player, target_player)
+        return [
+            {
+                'name': 'on_game_swap_positions',
+                'body': {
+                    'players': [player.name, target_player.name],
+                },
+                'broadcast': True,
+            },
             {
                 'name': 'on_game_player_play_card',
                 'body': {
@@ -292,7 +328,7 @@ class PlayCardsService(DBSessionMixin):
             [x] Sospecha
             [x] Whisky
             [x] Cambio de lugar
-            [ ] Vigila tus espaldas
+            [x] Vigila tus espaldas
             [ ] Más vale que corras
             [ ] Seducción
         - Defensa:
