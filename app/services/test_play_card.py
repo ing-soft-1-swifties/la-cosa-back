@@ -82,6 +82,8 @@ class TestPlayCardsService(unittest.TestCase):
         
         #next_player sera el jugador que sigue de host
         next_player = list(room.players.select(lambda player: player.position == 1))[0]
+        nada_de_barbacoas = Card.select(name = cards.NADA_DE_BARBACOAS)
+        next_player.hand.remove(nada_de_barbacoas)
 
         #seetamos el room para que le toque a host
         room.status = 'IN_GAME'
@@ -93,15 +95,13 @@ class TestPlayCardsService(unittest.TestCase):
         far_player = list(room.players.select(lambda player: player.position == 2))[0]
         
         json =  {'card': card.id, 'card_options': {'target': far_player.id}}
-        ret = self.gs.play_card_manager('test_play_card_lanzallamas', json)
-        assert ret[0]['name'] == 'on_game_invalid_action'
-        assert ret[0]['broadcast'] == False
+        with self.assertRaises(InvalidDataException):
+            self.gs.play_card_manager('test_play_card_lanzallamas', json)
 
         
         #veamos que si la jugamos correctamente se muere el objetivo
         last_hand_size = len(host.hand)
-        ret = self.gs.play_card_manager('test_play_card_lanzallamas', {'card': card.id, 'card_options': {'target': next_player.id}})
-        assert ret[0]['name'] !=  'on_game_invalid_action'
+        self.gs.play_card_manager('test_play_card_lanzallamas', {'card': card.id, 'card_options': {'target': next_player.id}})
         assert next_player.status == 'MUERTO'
         assert len(host.hand) == last_hand_size-1
 
