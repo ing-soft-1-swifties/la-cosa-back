@@ -16,7 +16,7 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'CONTAGIO',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Infectado',
@@ -24,7 +24,7 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'CONTAGIO',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Sospecha',
@@ -72,7 +72,7 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Analisis',
@@ -88,7 +88,7 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Vigila tus espaldas',
@@ -96,7 +96,7 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Hacha',
@@ -168,7 +168,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : '¿No podemos ser amigos?',
@@ -176,14 +176,14 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },    {
         'name' : 'Cita a ciegas',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
         
     },    {
         'name' : 'Que quede entre nosotros...',
@@ -191,14 +191,14 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },    {
         'name' : 'Cuerdas podridas',
         'amounts' : [0,0,1,0,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : '¿Es aqui la fiesta?',
@@ -206,7 +206,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Uno, dos...',
@@ -214,7 +214,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Tres, cuatro...',
@@ -222,7 +222,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Ups!',
@@ -230,7 +230,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Olvidadizo',
@@ -238,7 +238,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : 'Revelaciones',
@@ -246,7 +246,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     },
     {
         'name' : '¡Sal de aqui!',
@@ -254,7 +254,7 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': True
+        'target_adjacent_only': False
     }
 ]
 
