@@ -141,7 +141,7 @@ async def game_exchange_card(sid : str, data):
 async def game_thething_finish_game(sid: str):
     try:
         event = gs.end_game_condition_la_cosa(sid)
-        rs.end_game(sid)
+        # rs.end_game(sid)
         await notify_events(event, sid)
     except Exception as e:
         rootlog.exception("error al querer finalizar la partida siendo la cosa")

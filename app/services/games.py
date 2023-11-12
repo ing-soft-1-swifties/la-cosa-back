@@ -361,7 +361,7 @@ class GamesService(DBSessionMixin):
 
         return ret, info
 
-
+    @db_session
     def end_game_condition_la_cosa(self, sent_sid: str):
         """La cosa chequea si se finalizo la partida.
 
@@ -512,6 +512,7 @@ class GamesService(DBSessionMixin):
             return events
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
+
 
     def superinfection_check(self, player_checked: Player, player_exchanging: Player):
         # Superinfeccion
