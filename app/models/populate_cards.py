@@ -111,7 +111,7 @@ cardsJSON = [
         'amounts' : [1,0,1,0,1,0,0,1],
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
-        'need_target': True,
+        'need_target': False,
         'target_adjacent_only': False
     },
     {
@@ -119,7 +119,7 @@ cardsJSON = [
         'amounts' : [0,1,1,0,1,0,0,1],
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
-        'need_target': True,
+        'need_target': False,
         'target_adjacent_only': False
     },
     {
@@ -127,7 +127,7 @@ cardsJSON = [
         'amounts' : [1,0,1,0,0,0,0,1],
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
-        'need_target': True,
+        'need_target': False,
         'target_adjacent_only': False
     },
     {
@@ -135,7 +135,7 @@ cardsJSON = [
         'amounts' : [1,0,0,0,0,0,0,1],
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
-        'need_target': True,
+        'need_target': False,
         'target_adjacent_only': False
     },
     {
@@ -143,7 +143,7 @@ cardsJSON = [
         'amounts' : [1,0,1,0,0,0,0,1],
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
-        'need_target': True,
+        'need_target': False,
         'target_adjacent_only': False
     },
     {
