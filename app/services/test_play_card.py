@@ -455,6 +455,50 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[0]['body']['player_name'] == player.name
         assert response[0]['broadcast']
 
+    @db_session
+    def test_play_mas_vale_que_corras(self):
+        TEST_NAME = 'test_play_mas_vale_que_corras'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position == 0).first()
+        room.turn = player.position
+        card = Card.select(lambda c: c.name == '¡Más vale que corras!').first()
+        player.add_card(card.id)
+
+        # seleccionamos un jugador no adjacente
+        adyacent_player: Player = room.players.select(lambda p: p.position == 1).first()
+
+        player_position = player.position
+        adyacent_player_position = adyacent_player.position
+
+        # seleccionamos un jugador adjacente
+        response = self.pcs.play_cambio_de_lugar(
+            player=player,
+            room=room,
+            card=card,
+            card_options={'target': adyacent_player.id}  # INTVALID
+        )
+
+        # comportamiento esperado de rooms
+        assert player.position == adyacent_player_position
+        assert adyacent_player.position == player_position
+
+        # evento on_game_swap_positions
+        assert len(response) == 2
+        assert response[0]['name'] == 'on_game_swap_positions'
+        assert player.name in response[0]['body']['players']
+        assert adyacent_player.name in response[0]['body']['players']
+        assert response[0]['broadcast']
+
+        # evento on_game_player_play_card
+        assert response[1]['name'] == 'on_game_player_play_card'
+        assert response[1]['broadcast']
+        assert response[1]['body']['card_id'] == card.id
+        assert response[1]['body']['card_name'] == card.name
+        assert response[1]['body']['player_name'] == player.name
+
     @classmethod
     @db_session
     def tearDownClass(cls) -> None:
