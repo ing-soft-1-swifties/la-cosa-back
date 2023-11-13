@@ -277,7 +277,7 @@ class RoomsService(DBSessionMixin):
                 {
                     "name": "on_game_player_steal_card",
                     "body": {
-                        "quarantine": None if quarantine else quarantine
+                        "quarantine": None if quarantine == [] else quarantine
                     },
                     "broadcast": True,
                     "except_sid": in_turn_player.sid
