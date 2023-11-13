@@ -224,7 +224,6 @@ class RoomsService(DBSessionMixin):
             if player is None:
                 raise InvalidSidException()
 
-            player.decrease_quarantine()
 
             room: Room = player.playing
             if room.machine_state == "INITIAL":
@@ -235,6 +234,7 @@ class RoomsService(DBSessionMixin):
 
             cs = CardsService(self.db)
             in_turn_player = self.in_turn_player(room)
+            in_turn_player.decrease_quarantine()
             new_card: Card = cs.give_card(in_turn_player)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             if new_card.type == "ALEJATE":
@@ -245,10 +245,10 @@ class RoomsService(DBSessionMixin):
                 room.machine_state = MachineState.PANICKING
 
             quarantine = []
-            if player.is_in_quarantine():
+            if in_turn_player.is_in_quarantine():
                 quarantine.append(
                     {
-                        'player_name': player.name,
+                        'player_name': in_turn_player.name,
                         'card': new_card.json()
                     }
                 )
