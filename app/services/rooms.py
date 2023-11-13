@@ -234,7 +234,7 @@ class RoomsService(DBSessionMixin):
 
             cs = CardsService(self.db)
             in_turn_player = self.in_turn_player(room)
-            in_turn_player.decrease_quarantine()
+            # in_turn_player.decrease_quarantine()
             new_card: Card = cs.give_card(in_turn_player)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             if new_card.type == "ALEJATE":

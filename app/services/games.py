@@ -438,7 +438,7 @@ class GamesService(DBSessionMixin):
             unchangable_cards = ["La cosa"]
             if card.name in unchangable_cards:
                 raise InvalidAccionException(f"No se puede intercambiar {card.name}")
-            room = player.playing
+            room: Room = player.playing
             ps = PlayersService(self.db)
             if ps.has_card(player, card) == False:
                 raise InvalidCardException()
@@ -493,6 +493,8 @@ class GamesService(DBSessionMixin):
                 second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 from .cards import CardsService
                 cs = CardsService(self.db)
+                # CUARENTENA
+                room.get_current_player().decrease_quarantine()
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
                     second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player)
