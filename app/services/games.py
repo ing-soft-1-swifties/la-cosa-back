@@ -217,6 +217,9 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.CUERDAS_PODRIDAS:
             events.extend(pcs.play_cuerdas_podridas(player, room, card, card_options))
 
+        elif card.name == cards.PUERTA_ATRANCADA:
+            events.extend(pcs.play_cuerdas_podridas(player, room, card, card_options))
+
         else:
             events.append(
                 {
