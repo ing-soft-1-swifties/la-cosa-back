@@ -250,18 +250,6 @@ class GamesService(DBSessionMixin):
             rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}") # type:ignore
             raise InvalidAccionException("No es tu turno")
 
-        # Evento que avisa al resto que se ha jugado una carta
-        # Independientemente de si se defiende o no
-        events.append({
-            "name": "on_game_player_play_card",
-            "body": {
-                "player": player.name,
-                "card" : card.json(),
-                "card_options" : card_options,
-            },
-            "broadcast": True
-        }); 
-
         defense = False
 
         # veamos si es una carta que se juega sobre alguien

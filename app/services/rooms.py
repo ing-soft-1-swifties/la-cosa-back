@@ -1,5 +1,3 @@
-from pickle import EMPTY_LIST
-from fastapi import HTTPException
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
 from app.models.entities import MachineState
@@ -11,7 +9,6 @@ from app.services.cards import CardsService
 import random
 from uuid import uuid4
 
-from app.sockets.tester_sockets import player
 
 
 class RoomsService(DBSessionMixin):
