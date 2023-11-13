@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from pony.orm import Database, db_session
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room, Card
+from app.models.entities import Player, Room, Card, Obstacle
 from app.schemas import NewRoomSchema
 from app.services.exceptions import InvalidAccionException
 from app.services.rooms import RoomsService
