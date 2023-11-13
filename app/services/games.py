@@ -153,10 +153,10 @@ class GamesService(DBSessionMixin):
             events.extend(rs.next_turn(sent_sid))
         elif card.name == cards.ATERRADOR:
             events.extend(pcs.play_aterrador(player, room, card, card_options))
+            print(events)
             events.extend(rs.next_turn(sent_sid))
 
-        player.hand.remove(card)
-        room.discarted_cards.add(card)
+        room.discard_card(player, card)
         return events
 
 
