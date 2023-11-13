@@ -561,7 +561,7 @@ P1
         [x] Oops!
     Otras cartas
         [x] Cuarentena
-        [D] Puerta Atrancada
+        [x] Puerta Atrancada
         [ ] Hacha
 P2 
     Pánico:
