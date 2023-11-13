@@ -341,7 +341,18 @@ class PlayCardsService(DBSessionMixin):
             Cancela una carta CAMBIO DE LUGAR o MAS VALE QUE CORRAS de la
             que seas objetivo. Roba una carta ALEJATE en sustitucion de esta.
         """
-        return []
+        return [
+            {
+                "name": "on_game_player_play_defense_card",
+                "body": {
+                    "player_name": player.name,
+                    "card_name": card.name,
+                    "card_options": card_options,
+                    "card_id": card.id
+                    },
+                "broadcast": True
+            }
+        ]
 
     def play_no_gracias(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
