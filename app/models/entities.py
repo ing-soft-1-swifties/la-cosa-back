@@ -79,7 +79,7 @@ class Player(db.Entity):
             card_picking_amount = room.machine_state_options.get("card_picking_amount", None)
             selectable_players = room.machine_state_options.get("selectable_players", None)
             assert card_picking_amount is not None
-            assert selectable_players is not None
+            # assert selectable_players is not None
         elif room.machine_state == MachineState.DEFENDING and room.suspended_card_target == self:
             state = PlayerState.DEFENDING
         elif room.machine_state == MachineState.EXCHANGING:

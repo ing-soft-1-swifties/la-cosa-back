@@ -360,11 +360,11 @@ class GamesService(DBSessionMixin):
             cards = card_options.get("cards")
             assert cards is not None and isinstance(cards, list)
 
-            card_picking_amount = room.machine_state.get("card_picking_amount", None)
+            card_picking_amount = room.machine_state_options.get("card_picking_amount", None)
 
             assert card_picking_amount is not None
 
-            if player.hand.select(lambda c : c.id in cards) != card_picking_amount:
+            if len(player.hand.select(lambda c : c.id in cards)) != card_picking_amount:
                 raise InvalidAccionException(f"Debes elegir {card_picking_amount} cartas para jugar la carta.")
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
