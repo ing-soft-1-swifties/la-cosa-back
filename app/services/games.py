@@ -427,10 +427,13 @@ class GamesService(DBSessionMixin):
     @db_session
     def exchange_card_manager(self, sent_sid: str, payload):
         try:
+            #lista de eventos a enviar al front
             events = []
+            #obtenemos el jugador 
             player = Player.get(sid=sent_sid)
             if player is None:
                 raise InvalidSidException()
+            #obtenemos la carta y la intension de defensa
             sent_card_id = payload.get("card")
             on_defense = payload.get("on_defense")
             if sent_card_id is None or on_defense is None:
@@ -438,17 +441,21 @@ class GamesService(DBSessionMixin):
             card = Card.get(id = sent_card_id)
             if card is None:
                 raise InvalidCidException()
+            #checkeamos que la carta sea cambiable
             unchangable_cards = ["La cosa"]
             if card.name in unchangable_cards:
                 raise InvalidAccionException(f"No se puede intercambiar {card.name}")
             room: Room = player.playing
+            #checkeamos que la presiona tenga la carta que quiere cambiar
             ps = PlayersService(self.db)
             if ps.has_card(player, card) == False:
                 raise InvalidCardException()
-            #maquina de estados
+            #checkeamos maquina de estados en intercambio
+            room = player.playing
             if room.machine_state != "EXCHANGING":
                 rootlog.exception("no correspondia intercambiar una carta")
                 raise InvalidAccionException("No corresponde intercambiar")
+            #obtenemos la lista de ids de jugadores que les corresponde intercambiar
             exchanging_players = room.machine_state_options.get("ids")
             if exchanging_players is None:
                 rootlog.exception("deberia existir campo ids en estado intercambio")
@@ -462,7 +469,7 @@ class GamesService(DBSessionMixin):
                     raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
                 else:
                     #verifiquemos si se puede defender con la carta que esta planteando
-                    defense_cards = ["¡No, gracias!"]
+                    defense_cards = ["¡No, gracias!", "¡Fallaste!"]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
 
@@ -482,6 +489,7 @@ class GamesService(DBSessionMixin):
                 return events
             #esif es la ultima persona que faltaba en decidir
             elif room.machine_state_options["stage"] == "FINISHING" and player.id != room.machine_state_options["player_id"]:
+                #obtengo los datos de que jugadores van a intercambiar y que cartas
                 first_player_id = exchanging_players[0]
                 first_player = Player.get(id = first_player_id)
                 second_player_id = exchanging_players[1]
@@ -496,6 +504,7 @@ class GamesService(DBSessionMixin):
                 second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 from .cards import CardsService
                 cs = CardsService(self.db)
+                
                 # CUARENTENA
                 room.get_current_player().decrease_quarantine()
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
@@ -506,7 +515,9 @@ class GamesService(DBSessionMixin):
                         "body":{"player_name":second_player.name, "card_name":second_card.name},
                         "broadcast": True
                     }])
+                    
                     events.extend(rs.next_turn(sent_sid))
+                #si la persona que no inicio el intercambio no se esta defendiendo
                 else:
                     try:
                         #realizamos el intercambio si no se estaba defendiendo
