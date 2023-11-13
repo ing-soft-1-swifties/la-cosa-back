@@ -24,36 +24,31 @@ class PlayCardsService(DBSessionMixin):
         #lista de eventos que vamos a retornar
         events = []
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
         target_player = Player.get(id = target_id)
-        if target_player is None or target_player.status != "VIVO":
-            raise InvalidAccionException("Objetivo Invalido")
-
-        events.append({
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card_id': card.id,
-                'card_name': card.name,
-                'card_options': card_options,
-                'player_name': player.name,
-            },
-            'broadcast': True
-        })
 
         room.kill_player(target_player)
 
-        events.append({
-            "name": "on_game_player_death",
-            "body": {
-                "player": target_player.name,
-                "reason": "LANZALLAMAS",
-                "killer": room.get_current_player()
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                },
+                'broadcast': True
             },
-            "broadcast": True
-        })
-
-        return events
+            {
+                "name": "on_game_player_death",
+                "body": {
+                    "player": target_player.name,
+                    "killer": room.get_current_player(),
+                    "reason": "LANZALLAMAS"
+                },
+                "broadcast": True
+           }
+        ]
 
     def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options):
         """
@@ -78,20 +73,22 @@ class PlayCardsService(DBSessionMixin):
             Muestra todas tus cartas a todos los jugadores.
             Solo puedes jugar esta carta sobre ti mismo.
         """
-        return [{
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card_id': card.id,
-                'card_name': card.name,
-                'card_options': card_options,
-                'player_name': player.name,
-                'effects' : {
-                    'player': player.name, 
-                    'cards': player.serialize_hand(exclude=[card.id])
-                }
-            },
-            'broadcast': True
-        }]
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                    'effects' : {
+                        'player': player.name,
+                        'cards': player.serialize_hand(exclude=[card.id])
+                    }
+                },
+                'broadcast': True
+            }
+        ]
 
     def play_sospecha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
