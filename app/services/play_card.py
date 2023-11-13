@@ -47,7 +47,8 @@ class PlayCardsService(DBSessionMixin):
             "name": "on_game_player_death",
             "body": {
                 "player": target_player.name,
-                "reason": "LANZALLAMAS"
+                "reason": "LANZALLAMAS",
+                "killer": room.get_current_player()
             },
             "broadcast": True
         })
