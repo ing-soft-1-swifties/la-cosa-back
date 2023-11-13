@@ -37,7 +37,7 @@ cardsJSON = [
         'sub_type' : 'ACCION',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
@@ -48,7 +48,7 @@ cardsJSON = [
         'need_target': True,
         'target_adjacent_only': False,
         'ignore_quarantine': False,
-        'ignore_locked_door': False
+        'ignore_locked_door': True
     },
     {
         'name' : '¡Más vale que corras!',
@@ -58,7 +58,7 @@ cardsJSON = [
         'need_target': True,
         'target_adjacent_only': False,
         'ignore_quarantine': False,
-        'ignore_locked_door': False
+        'ignore_locked_door': True
     },
     {
         'name' : '¡Cambio de lugar!',
@@ -77,7 +77,7 @@ cardsJSON = [
         'sub_type' : 'ACCION',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
@@ -127,7 +127,7 @@ cardsJSON = [
         'sub_type' : 'ACCION',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
@@ -187,7 +187,7 @@ cardsJSON = [
         'sub_type' : 'OBSTACULO',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
@@ -215,10 +215,10 @@ cardsJSON = [
         'amounts' : [0,0,0,1,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
-        'need_target': False,
+        'need_target': True,
         'target_adjacent_only': False,
         'ignore_quarantine': False,
-        'ignore_locked_door': False
+        'ignore_locked_door': True
     },    {
         'name' : 'Cita a ciegas',
         'amounts' : [1,0,0,0,0,1,0,0],
@@ -263,10 +263,10 @@ cardsJSON = [
         'amounts' : [0,1,0,0,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
-        'need_target': False,
+        'need_target': True,
         'target_adjacent_only': False,
-        'ignore_quarantine': False,
-        'ignore_locked_door': False
+        'ignore_quarantine': True,
+        'ignore_locked_door': True
     },
     {
         'name' : 'Tres, cuatro...',
@@ -316,7 +316,7 @@ cardsJSON = [
         'need_target': False,
         'target_adjacent_only': False,
         'ignore_quarantine': False,
-        'ignore_locked_door': False
+        'ignore_locked_door': True
     }
 ]
 

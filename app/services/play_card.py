@@ -498,7 +498,7 @@ class PlayCardsService(DBSessionMixin):
             cambiate de sitio con el tercer jugador que tengas a tu izquierda o a tu derecha (tu eleccion),
             ignorando cualquier carta PUERTA ATRANCADA que haya en juego.
             Si tu o ese jugador estais en CUARENTENA, el cambio no se realiza.
-
+            SI EL OBJETIVO ESTA EN CUARENTENA NO TIENE EFECTO PERO SI SE PUEDE JUGAR
         """
         return []
 
