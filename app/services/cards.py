@@ -152,8 +152,8 @@ class CardsService(DBSessionMixin):
                     "players": [player_A.name, player_B.name],
                     "quarantine": None if quarantine == [] else quarantine
                 },
-                "broadcast": True
-                # TODO: agregar exceptsid
+                "broadcast": True,
+                "except_sid": [player_A.sid, player_B.sid]
             },
             {
                 "name": "on_game_finish_exchange",

@@ -14,4 +14,5 @@ class CardName(str, Enum):
     CUARENTENA = 'Cuarentena'
     SEDUCCION = 'Seducción'
     AQUI_ESTOY_BIEN = "Aquí estoy bien"
+    CUERDAS_PODRIDAS = "Cuerdas podridas"
 

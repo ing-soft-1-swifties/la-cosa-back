@@ -284,23 +284,34 @@ class TestGamesService(unittest.TestCase):
                 "name": "on_game_finish_exchange",
                 "body": {
                     "players": [host.name, next_p.name],
-                    "quarantine": None
+                    "quarantine": None,
                 },
                 "broadcast": True,
+                "except_sid": [host.sid, next_p.sid]
             },
             {
-                "name": "on_game_exchange_result",
-                "body": {"card_in": card_next_p.id, "card_out": card_host.id},
+                "name": "on_game_finish_exchange",
+                "body": {
+                    "players": [host.name, next_p.name],
+                    "quarantine": None,
+                    "card_in": card_next_p.json(),
+                    "card_out": card_host.json()},
                 "broadcast": False,
                 "receiver_sid": host.sid,
             },
             {
-                "name": "on_game_exchange_result",
-                "body": {"card_in": card_host.id, "card_out": card_next_p.id},
+                "name": "on_game_finish_exchange",
+                "body": {
+                    "players": [host.name, next_p.name],
+                    "quarantine": None,
+                    "card_out": card_next_p.json(),
+                    "card_in": card_host.json(),
+                },
                 "broadcast": False,
                 "receiver_sid": next_p.sid,
-            }
+            },
         ]
+
         assert room.machine_state in [MachineState.PLAYING, MachineState.PANICKING]
         for event in expected_events:
             assert event in events
