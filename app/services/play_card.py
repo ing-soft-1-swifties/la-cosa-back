@@ -361,13 +361,27 @@ class PlayCardsService(DBSessionMixin):
         """
         return []
 
-    def play_fallaste(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
+    def play_fallaste(self, starter_player: Player, defending_player: Player, room: Room, card: Card) -> list[dict]:
         """
             El siguiente jugador despues de ti realiza el intercambio de
             cartas en lugar de hacerlo tu. No queda infectado si recibe una carta
             INFECTADO. Roba una carta ALEJATE en sustitucion de esta
         """
-        return []
+        #lista de eventos a comunicar al front-end
+        events = []
+        #obtengo el siguiente jugador a defending_player
+        next_player = room.next_player(defending_player)
+        #si el siguiente a la persona que se defendio es la persona que inicio el intercambio
+        #buscamos a la persona que le sigue al que inicio el intercambio
+        if next_player == starter_player:
+            next_player = room.next_player(defending_player)
+
+        from .games import GamesService
+        gs = GamesService(self.db)
+        #comenzamos el nuevo intercambio
+        #TODO! la persona no se infecta!!
+        events.extend(gs.begin_exchange(room, starter_player, next_player))
+        return events
 
     def play_revelaciones(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
