@@ -142,7 +142,7 @@ class GamesService(DBSessionMixin):
 
     def dispatch_exchange_defense_card_effect(self, sent_sid, player, room, card, card_options):
         pcs = PlayCardsService(self.db)
-        rs = RoomsService(self.db)
+        rs = RoomsService(self.db)g
         events = []
 
         if card.name == cards.FALLASTE:
