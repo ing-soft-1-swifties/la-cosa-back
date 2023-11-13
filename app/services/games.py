@@ -510,7 +510,8 @@ class GamesService(DBSessionMixin):
                                             "stage":"FINISHING",
                                             "card_id" : card.id,    #carta de la primera persona en decidir
                                             "player_id":player.id,  #player_id de la primera persona en decidir
-                                            "on_defense": on_defense if not first_player else False #si es la segunda persona del intercambio, guarda si se esta defendiendo
+                                            "on_defense": on_defense if not first_player else False, #si es la segunda persona del intercambio, guarda si se esta defendiendo
+                                            "compute_infection": room.machine_state_options.get("compute_infection")
                                             }
                 #habria que ver si notificamos al primer jugador en seleccionar carta de intercambio de que se acepto su eleccion
                 #por ahora luego de que los dos seleccionan se realiza el intercambio y se notifica
@@ -559,7 +560,9 @@ class GamesService(DBSessionMixin):
                         compute_infection_actual = room.machine_state_options.get("compute_infection")
                         events.extend(cs.exchange_cards(room, first_player,
                                                         second_player,
-                                                        first_card, second_card))   
+                                                        first_card,
+                                                        second_card,
+                                                        room.machine_state_options["compute_infection"]))   
                         events.extend(rs.next_turn(sent_sid))
                     except Exception as e:
                         #ante algun error que no provocó cambios, volvemos a comenzar el intercambio
@@ -600,7 +603,7 @@ class GamesService(DBSessionMixin):
         return is_superinfected
 
 
-    def begin_exchange(self, room: Room, player_A: Player, player_B: Player, compute_infection = False)-> list[dict]:
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player, compute_infection = True)-> list[dict]:
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
