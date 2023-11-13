@@ -17,3 +17,4 @@ class CardName(str, Enum):
     AQUI_ESTOY_BIEN = "Aquí estoy bien"
     CUERDAS_PODRIDAS = "Cuerdas podridas"
 
+    NO_GRACIAS = '¡No, gracias!'
