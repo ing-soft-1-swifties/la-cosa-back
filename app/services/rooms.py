@@ -234,7 +234,6 @@ class RoomsService(DBSessionMixin):
                 room.turn = room.next_player().position
 
             cs = CardsService(self.db)
-<<<<<<< HEAD
             in_turn_player = self.in_turn_player(room)
             new_card: Card = cs.give_card(in_turn_player)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
@@ -244,8 +243,6 @@ class RoomsService(DBSessionMixin):
                                               "stage":"STARTING"}
             else:
                 room.machine_state = MachineState.PANICKING
-=======
-            new_card = cs.give_card(in_turn_player)
 
             quarantine = []
             if player.is_in_quarantine():
@@ -256,7 +253,6 @@ class RoomsService(DBSessionMixin):
                     }
                 )
 
->>>>>>> dce310d (se ve la carta cuando se descarta y cuando se roba)
             return [
                 {
                     "name": "on_game_player_turn",
