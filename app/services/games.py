@@ -174,6 +174,8 @@ class GamesService(DBSessionMixin):
         rs = RoomsService(self.db)
         events = []
 
+        rootlog.exception(f"El jugador <{player.name}> jugo la carta <{card.name}>")
+
         if card.name == cards.LANZALLAMAS:
             events.extend(pcs.play_lanzallamas(player, room, card, card_options))
 
@@ -218,9 +220,14 @@ class GamesService(DBSessionMixin):
             events.extend(pcs.play_cuerdas_podridas(player, room, card, card_options))
 
         elif card.name == cards.PUERTA_ATRANCADA:
-            events.extend(pcs.play_cuerdas_podridas(player, room, card, card_options))
+            events.extend(pcs.play_puerta_atrancada(player, room, card, card_options))
+
+        elif card.name == cards.HACHA:
+            events.extend(pcs.play_hacha(player, room, card, card_options))
+
 
         else:
+            rootlog.exception(f"Esta carta ({card.name}) no esta implementada")
             events.append(
                 {
                     'name': 'on_game_player_play_card',

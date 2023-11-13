@@ -340,7 +340,9 @@ class Room(db.Entity):
         )
         self.obstacles.add(obstacle)
 
-    def remove_locked_door(self, obstacle: Obstacle):
+    def remove_locked_door(self, obstacle_position: int):
+
+        obstacle: Obstacle = self.obstacles.select(position=obstacle_position).first()
         self.obstacles.remove(obstacle)
 
     def get_obstacles_positions(self) -> list[int]:
