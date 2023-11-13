@@ -128,15 +128,15 @@ class CardsService(DBSessionMixin):
             quarantine.append(
                 {
                     'player_name': player_A.name,
-                    'card': card_B.json()
+                    'card': card_A.json()
                 }
             )
 
         if player_B.is_in_quarantine():
             quarantine.append(
                 {
-                    'player_name': player_A.name,
-                    'card': card_A.json()
+                    'player_name': player_B.name,
+                    'card': card_B.json()
                 }
             )
 
