@@ -35,6 +35,8 @@ class Card(db.Entity):
     player_hand = Set('Player', reverse='hand')
     need_target = Optional(bool, default=False)
     target_adjacent_only = Optional(bool, default=False)
+    ignore_quarantine = Optional(bool, default=False)
+    ignore_locked_door = Optional(bool, default=False)
     suspended_in = Set('Room', reverse="suspended_card")
 
     def json(self):
