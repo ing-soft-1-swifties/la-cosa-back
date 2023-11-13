@@ -515,7 +515,7 @@ P0
         [x] Cambio de lugar
         [x] Más vale que corras
         [x] Seducción
-        [x] Análisis
+        [x] AnálisisP
         [x] Sospecha
         [x] Whisky
     Defensa:
@@ -526,20 +526,20 @@ P0
         [x] Nada de Barbacoas
 P1
     Pánico:
-        [ ] Solo entre nosotros
+        [x] Que quede entre nosotros
         [ ] Revelaciones
         [ ] Cita a ciegas
         [x] Oops!
     Otras cartas
-        [x] Cuarentena ----------------
+        [x] Cuarentena
         [ ] Puerta Atrancada
         [ ] Hacha
 P2 
     Pánico:
-        [ ] Cuerdas podridas ----------------
+        [x] Cuerdas podridas
         [ ] Esta es la fiesta? -----------------
         [x] Oops!
-        [ ] Ronda y ronda
+        [ ] Vuelta y vuelta
         [ ] Podemos ser Amigos?
         [ ] Olvidadizo
         [ ] Carta 1, 2 ... (movimiento) ------------------
