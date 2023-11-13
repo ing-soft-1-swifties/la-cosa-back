@@ -431,6 +431,11 @@ class PlayCardsService(DBSessionMixin):
             Coloca esta carta entre un jugador adyacente y tu. No
             se permiten acciones entre este jugdor y tu.
         """
+
+        
+
+
+
         return []
 
     def play_hacha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
@@ -445,16 +450,6 @@ class PlayCardsService(DBSessionMixin):
             Las viejas cuerdas que usaste son faciles de romper!
             Todas las cartas CUARENTENA que haya en juego son descartadas
         """
-
-        # 'name': 'Cuerdas podridas',
-        # 'amounts': [0, 0, 1, 0, 0, 1, 0, 0],
-        # 'type': 'PANICO',
-        # 'sub_type': '',
-        # 'need_target': False,
-        # 'target_adjacent_only': False,
-        # 'ignore_quarantine': False,
-        # 'ignore_locked_door': False
-
         for player_i in room.get_quarantine_players():
             player_i.set_quarantine(0)
 
@@ -549,7 +544,7 @@ P1
         [x] Oops!
     Otras cartas
         [x] Cuarentena
-        [ ] Puerta Atrancada
+        [D] Puerta Atrancada
         [ ] Hacha
 P2 
     Pánico:

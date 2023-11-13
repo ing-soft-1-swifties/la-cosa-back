@@ -20,7 +20,6 @@ class PlayerState(str, Enum):
 
 class Obstacle(db.Entity):
     id = PrimaryKey(int, auto=True)
-    duration = Required(int)
     position = Required(int)
     room = Required('Room')
 
@@ -333,3 +332,21 @@ class Room(db.Entity):
                 response.append(player)
 
         return response
+
+    def add_locked_door(self, obstacle_position):
+        obstacle = Obstacle(
+            position=obstacle_position,
+            room=self
+        )
+        self.obstacles.add(obstacle)
+
+    def remove_locked_door(self, obstacle: Obstacle):
+        self.obstacles.remove(obstacle)
+
+    def get_obstacles_positions(self) -> list[int]:
+        positions = []
+        for obstacle in self.obstacles:
+            obstacle: Obstacle
+            positions.append(obstacle.position)
+
+        return positions
