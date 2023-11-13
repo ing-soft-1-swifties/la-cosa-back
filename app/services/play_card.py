@@ -427,9 +427,21 @@ class PlayCardsService(DBSessionMixin):
         # 'ignore_quarantine': False,
         # 'ignore_locked_door': False
 
-        room.get
+        # TODO borrar todos los efectos de cuarentena
+        #  (fix de un commit anterior)
 
-        return []
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            },
+        ]
 
     def play_es_aqui_la_fiesta(self, player: Player, room: Room, card: Card, card_options):
         """
