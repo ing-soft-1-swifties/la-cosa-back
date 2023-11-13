@@ -175,6 +175,9 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.MAS_VALES_QUE_CORRAS:
             events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
 
+        elif card.name == cards.CUARENTENA:
+            events.extend(pcs.play_cuarentena(player, room, card, card_options))
+
         rs.recalculate_positions(sent_sid)
         player.hand.remove(card)
         room.discarted_cards.add(card)
