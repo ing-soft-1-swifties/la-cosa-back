@@ -20,6 +20,9 @@ test:
 test-all:
 	pytest -W ignore::DeprecationWarning --cov
 
+ta:
+	make test-all
+
 
 test-report:
 	pytest -W ignore::DeprecationWarning --cov --cov-report=html
