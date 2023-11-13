@@ -460,7 +460,37 @@ class PlayCardsService(DBSessionMixin):
             Retira una carta PUERTA ATRANCADA o CUARENTENA de ti mismo
             o de un jugador adyacente
         """
-        return []
+
+        is_quarantine = card_options.get("is_quarantine")
+        if is_quarantine is None:
+            raise InvalidAccionException("El campo is_quarantine es obligatorio")
+
+
+        target = card_options.get("target")
+
+        if is_quarantine:
+            # tomamos target_id como una POSICION de un JUGADOR
+            target_player: Player = Player.get(id=target)
+            target_player.set_quarantine(0)
+
+        else:
+            # tomamos target_id como una POSICION de una PUERTA ATRANCADA
+            if not target in room.get_obstacles_positions():
+                raise InvalidAccionException("No existe un obstaculo en esa posicion")
+            room.remove_locked_door(target)
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            }
+        ]
 
     def play_cuerdas_podridas(self, player: Player, room: Room, card: Card, card_options):
         """
@@ -562,7 +592,7 @@ P1
     Otras cartas
         [x] Cuarentena
         [x] Puerta Atrancada
-        [ ] Hacha
+        [x] Hacha
 P2 
     Pánico:
         [x] Cuerdas podridas
