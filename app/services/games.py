@@ -39,6 +39,7 @@ class GamesService(DBSessionMixin):
             "status" : room.status,
             "turn" : room.turn,
             "direction": room.direction,
+            "doors_position": room.get_obstacles_positions(),
             "player_in_turn" : rs.in_turn_player(room).name,
             "players" : [player_state(player) for player in room.players]
         }
@@ -320,9 +321,10 @@ class GamesService(DBSessionMixin):
             if not card.ignore_quarantine and target.is_in_quarantine():
                 raise InvalidAccionException("El jugador objetivo esta en cuarentena")
 
-            # TODO: PUERTA ATRANCADA
-            # if not card.ignore_locked_door and room.locked_door_between(player, target):
-            #     raise InvalidDataException()
+            obstacles_positions = room.get_obstacles_positions()
+            are_players_blocked = player.position in obstacles_positions or target.position in obstacles_positions
+            if not card.ignore_locked_door and are_players_blocked:
+                raise InvalidDataException()
 
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
             defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])

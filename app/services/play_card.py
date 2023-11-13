@@ -432,11 +432,28 @@ class PlayCardsService(DBSessionMixin):
             se permiten acciones entre este jugdor y tu.
         """
 
-        
+        # Representamos un obstaculo entre el jugador 3 y 4 como un obstaculo en la posicion
+        # 3, por ende, al obstaculo lo creamos con la posicion tal que sea la minima entre
+        # las posiciones de los jugadores
+        target_id = card_options.get("target")
+        target_player: Player = Player.get(id=target_id)
 
+        # si elijo un target a mi izquierda
 
+        room.add_locked_door(target_player.position)
 
-        return []
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            }
+        ]
 
     def play_hacha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """

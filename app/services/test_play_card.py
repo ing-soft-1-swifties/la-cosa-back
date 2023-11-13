@@ -379,8 +379,6 @@ class TestPlayCardsService(unittest.TestCase):
         other_player: Player = room.players.select(lambda p: p.position == 1).first()
         other_player.set_quarantine(2)
 
-        # TODO test entero
-
         # seleccionamos un jugador adjacente
         response = self.pcs.play_cuerdas_podridas(
             player=player,
