@@ -383,7 +383,7 @@ class PlayCardsService(DBSessionMixin):
         #comenzamos el nuevo intercambio
         #TODO! la persona no se infecta!!
         print(starter_player.name + " " + next_player.name)
-        events.extend(gs.begin_exchange(room, starter_player, next_player))
+        events.extend(gs.begin_exchange(room, starter_player, next_player, compute_infection=False))
         return events
 
     def play_revelaciones(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
