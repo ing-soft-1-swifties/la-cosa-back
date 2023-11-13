@@ -147,6 +147,10 @@ class GamesService(DBSessionMixin):
 
         if card.name == cards.FALLASTE:
             events.extend(pcs.play_fallaste(player, room, card, card_options))
+        elif card.name == cards.NO_GRACIAS:
+            events.extend(pcs.play_no_gracias(player, room, card, card_options))
+            events.extend(self.begin_end_of_turn_exchange(room))
+
         player.hand.remove(card)
         room.discarted_cards.add(card)
 
@@ -540,16 +544,21 @@ class GamesService(DBSessionMixin):
                         "broadcast": True
                     }])
                     #ahora veamos los efectos que induce la defensa para la carta jugada
+                    card_options = {}
                     if(second_card.name == "¡Fallaste!"):
                         card_options = {
                             "starter_player_id" : first_player.id
                         }
                     events.extend(self.dispatch_exchange_defense_card_effect(sent_sid, second_player, room, card, card_options))
+
                 #si la persona que no inicio el intercambio no se esta defendiendo
                 else:
                     try:
                         #realizamos el intercambio si no se estaba defendiendo
-                        events.extend(cs.exchange_cards(room, first_player, second_player, first_card, second_card))    #falta ver si se esta defendiendo
+                        compute_infection_actual = room.machine_state_options.get("compute_infection")
+                        events.extend(cs.exchange_cards(room, first_player,
+                                                        second_player,
+                                                        first_card, second_card))   
                         events.extend(rs.next_turn(sent_sid))
                     except Exception as e:
                         #ante algun error que no provocó cambios, volvemos a comenzar el intercambio
@@ -558,10 +567,11 @@ class GamesService(DBSessionMixin):
                         player_B = Player.get(id=room.machine_state_options["ids"][1])  #el que recive solicitud de intercambio es el segundo id
                         if player_A is None or player_B is None or player_A.playing != player_B.playing:
                             rootlog.exception("los jugadores que estaban intercambiando no eran validos cuando se intento realizar otra vez el intercambio")
+                        compute_infection_actual = room.machine_state_options.get("compute_infection")
                         e = InvalidAccionException("Error al intercambiar, seleccione nuevamente")
                         events.extend(e.generate_event(player_A.sid))
                         events.extend(e.generate_event(player_B.sid))
-                        events.extend(self.begin_exchange(room, player_A, player_B))
+                        events.extend(self.begin_exchange(room, player_A, player_B, compute_infection=compute_infection_actual))
                         return events
             else:
                 raise InvalidAccionException("No corresponde iniciar un intercambio")
@@ -588,7 +598,8 @@ class GamesService(DBSessionMixin):
 
         return is_superinfected
 
-    def begin_exchange(self, room: Room, player_A: Player, player_B: Player) -> list[dict]:
+
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player, compute_infection = False)-> list[dict]:
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
@@ -622,7 +633,8 @@ class GamesService(DBSessionMixin):
         else:
             room.machine_state = "EXCHANGING"
             room.machine_state_options = {"ids": [player_A.id, player_B.id],
-                                          "stage": "STARTING"}
+                                          "stage": "STARTING",
+                                          "compute_infection": compute_infection}
             events.append({
                 "name": "on_game_begin_exchange",
                 "body": {"players": [player_A.name, player_B.name]},
