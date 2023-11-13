@@ -283,12 +283,12 @@ class RoomsService(DBSessionMixin):
             
 
     @db_session
-    def new_message(sent_sid : str, data):
+    def new_message(self, sent_sid: str, data):
         try:
             return [{
                 "name" : "on_player_new_message",
                 "body" : {
-                    "player_name" : Player.get(sid = sent_sid),
+                    "player_name" : Player.get(sid = sent_sid).name,
                     "message" : data["message"]
                 },
                 "broadcast" : True
