@@ -99,7 +99,7 @@ class PlayCardsService(DBSessionMixin):
                     'player_name': player.name
                 },
                 'broadcast': True,
-                'except_sid': player.sid
+                'except_sid': [player.sid]
             },
             {
                 'name': 'on_game_player_play_card',
@@ -168,7 +168,7 @@ class PlayCardsService(DBSessionMixin):
                     'player_name': player.name,
                 },
                 'broadcast': True,
-                'except_sid': player.sid
+                'except_sid': [player.sid]
             }
         ]
 
@@ -189,7 +189,7 @@ class PlayCardsService(DBSessionMixin):
                     'player_name': player.name
                 },
                 'broadcast': True,
-                'except_sid': player.sid
+                'except_sid': [player.sid]
             },
             {
                 'name': 'on_game_player_play_card',
@@ -417,6 +417,18 @@ class PlayCardsService(DBSessionMixin):
             Las viejas cuerdas que usaste son faciles de romper!
             Todas las cartas CUARENTENA que haya en juego son descartadas
         """
+
+        # 'name': 'Cuerdas podridas',
+        # 'amounts': [0, 0, 1, 0, 0, 1, 0, 0],
+        # 'type': 'PANICO',
+        # 'sub_type': '',
+        # 'need_target': False,
+        # 'target_adjacent_only': False,
+        # 'ignore_quarantine': False,
+        # 'ignore_locked_door': False
+
+        room.get
+
         return []
 
     def play_es_aqui_la_fiesta(self, player: Player, room: Room, card: Card, card_options):
@@ -479,7 +491,7 @@ P0
         [x] Vigila tus espaldas
         [x] Cambio de lugar
         [x] Más vale que corras
-        [ ] Seducción
+        [x] Seducción
         [x] Análisis
         [x] Sospecha
         [x] Whisky
@@ -496,7 +508,7 @@ P1
         [ ] Cita a ciegas
         [x] Oops!
     Otras cartas
-        [ ] Cuarentena ----------------
+        [x] Cuarentena ----------------
         [ ] Puerta Atrancada
         [ ] Hacha
 P2 

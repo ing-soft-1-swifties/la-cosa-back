@@ -153,21 +153,26 @@ class CardsService(DBSessionMixin):
                     "quarantine": None if quarantine == [] else quarantine
                 },
                 "broadcast": True
+                # TODO: agregar exceptsid
             },
             {
-                "name": "on_game_exchange_result",
+                "name": "on_game_finish_exchange",
                 "body": {
-                    "card_in": card_B.id,
-                    "card_out":card_A.id
+                    "players": [player_A.name, player_B.name],
+                    "quarantine": None if quarantine == [] else quarantine,
+                    "card_in": card_B.json(),
+                    "card_out": card_A.json()
                 },
                 "broadcast": False,
                 "receiver_sid": player_A.sid
             },
             {
-                "name": "on_game_exchange_result",
+                "name": "on_game_finish_exchange",
                 "body": {
-                    "card_in": card_A.id,
-                    "card_out":card_B.id
+                    "players": [player_A.name, player_B.name],
+                    "quarantine": None if quarantine == [] else quarantine,
+                    "card_in": card_A.json(),
+                    "card_out":card_B.json()
                 },
                 "broadcast": False,
                 "receiver_sid": player_B.sid

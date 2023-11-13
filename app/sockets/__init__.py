@@ -169,14 +169,14 @@ async def notify_events(events, sid):
              body: <Json>
              broadcast: <Bool>
              receiver_sid: <Str>
-             except_sid: <Str>
+             except_sid: List(<Str>)
 
              sid_list: List(Str)
              //opcional si no se desea eviar por partida derivada de sid
              }
     """
     for event in events:
-        if event.get("sid_list") != None:   #si sid_list viene especificado enviamos el evento solo a esos sids
+        if event.get("sid_list") is not None:   #si sid_list viene especificado enviamos el evento solo a esos sids
             for player_sid in event.get("sid_list"):
                 gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 event["body"].update(gameState)
@@ -184,7 +184,7 @@ async def notify_events(events, sid):
         elif event["broadcast"]:    #si sid_list no viene especificado y broadcast si
             for player_sid in rs.get_players_sid(sid):
                 if event.get('except_sid') is not None:
-                    if player_sid == event.get('except_sid'):
+                    if player_sid in event.get('except_sid'):
                         continue
                 gameState = {"gameState": gs.get_personal_game_status_by_sid(player_sid)}
                 event["body"].update(gameState)

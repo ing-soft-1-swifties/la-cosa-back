@@ -279,7 +279,7 @@ class RoomsService(DBSessionMixin):
                         "quarantine": None if quarantine == [] else quarantine,
                     },
                     "broadcast": True,
-                    "except_sid": in_turn_player.sid
+                    "except_sid": [in_turn_player.sid]
                 }
             ]
         except Exception as e:
