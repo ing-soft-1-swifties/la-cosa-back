@@ -252,8 +252,7 @@ class RoomsService(DBSessionMixin):
                 quarantine.append(
                     {
                         'player_name': player.name,
-                        'card_name': new_card.name,
-                        'card_id': new_card.id
+                        'card': new_card.json()
                     }
                 )
 

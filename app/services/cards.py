@@ -128,8 +128,7 @@ class CardsService(DBSessionMixin):
             quarantine.append(
                 {
                     'player_name': player_A.name,
-                    'card_name': card_A.name,
-                    'card_id': card_A.id
+                    'card': card_B.json()
                 }
             )
 
@@ -137,8 +136,7 @@ class CardsService(DBSessionMixin):
             quarantine.append(
                 {
                     'player_name': player_A.name,
-                    'card_name': card_A.name,
-                    'card_id': card_A.id
+                    'card': card_A.json()
                 }
             )
 
@@ -227,8 +225,7 @@ class CardsService(DBSessionMixin):
                 quarantine.append(
                     {
                         'player_name': player.name,
-                        'card_name': card.name,
-                        'card_id': card.id
+                        'card': card.json()
                     }
                 )
 
