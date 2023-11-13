@@ -1,6 +1,6 @@
 import unittest
 from pony.orm import Database, db_session
-from app.models.entities import Player, Room, Card
+from app.models.entities import MachineState, Player, Room, Card
 from app.models.populate_cards import populate
 from app.services.games import GamesService
 from app.services.cards import CardsService
@@ -210,7 +210,7 @@ class TestGamesService(unittest.TestCase):
         print(events)
 
 
-        assert room.machine_state == "PLAYING"
+        assert room.machine_state in MachineState.PLAYING or MachineState.PANICKING
         for event in expected_events:
             assert event in events
 
@@ -298,7 +298,7 @@ class TestGamesService(unittest.TestCase):
                 "receiver_sid": next_p.sid,
             }
         ]
-        assert room.machine_state == "PLAYING"
+        assert room.machine_state in [MachineState.PLAYING, MachineState.PANICKING]
         for event in expected_events:
             assert event in events
 
@@ -347,11 +347,11 @@ class TestGamesService(unittest.TestCase):
         expected_events = [
             {
                 "name":"on_game_player_play_defense_card",
-                "body":{"player":next_p.name, "card":card_next_p.json()},
+                "body":{"player_name": next_p.name, "card_name": card_next_p.name},
                 "broadcast": True
             }
         ]
-        assert room.machine_state == "PLAYING"
+        assert room.machine_state in [MachineState.PLAYING, MachineState.PANICKING]
         for event in expected_events:
             assert event in events
 

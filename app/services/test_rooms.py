@@ -1,7 +1,7 @@
 from pony.orm import Database, db_session
 import unittest
 from app.models.populate_cards import populate
-from app.models.entities import Player, Room, Card
+from app.models.entities import MachineState, Player, Room, Card
 from app.schemas import NewRoomSchema
 from app.services.rooms import RoomsService
 from app.services.exceptions import *
@@ -25,6 +25,8 @@ class TestRoomsService(unittest.TestCase):
 
     @db_session
     def create_valid_room(self, roomname:str='newroom', qty_players:int=12) -> Room:
+        rs = RoomsService(self.db)
+
         Room.select().delete()
         Player.select().delete()
         newroom = NewRoomSchema(
@@ -38,7 +40,75 @@ class TestRoomsService(unittest.TestCase):
         room = Room.get(name=roomname)
         for i in range(qty_players-1):
             self.rs.join_player(f"player-{i}", room.id)
+
         return room
+
+    # TESTS POR ARREGLAR
+
+    @db_session
+    def test_next_turn_is_panic(self):
+
+        rs = RoomsService(self.db)
+
+        room: Room = self.create_valid_room(
+            roomname="test_play_panic_card"
+        )
+
+        rs.assign_turns(room)
+
+        # La unica carta disponible va a ser de panico
+        panic_card = Card.select(type="PANICO").first()
+        assert panic_card is not None
+        room.available_cards.add(panic_card) #type:ignore
+
+        player = room.players.select(position = room.turn).first() #type:ignore
+        player.sid = "test_next_turn_is_panic"
+
+        assert player is not None
+
+        player: Player
+
+        assert len(room.available_cards) != 0
+
+        assert panic_card.type == "PANICO"
+
+        # Le damos la carta de panico al jugador en turno
+        rs.next_turn(player.sid)
+
+        assert room.machine_state == MachineState.PANICKING
+
+    @db_session
+    def test_next_turn_is_alejate(self):
+
+        rs = RoomsService(self.db)
+
+        room: Room = self.create_valid_room(
+            roomname="test_play_alejate_card"
+        )
+
+        rs.assign_turns(room)
+
+        # La unica carta disponible va a ser de panico
+        alejate_card = Card.select(type="ALEJATE").first()
+        assert alejate_card is not None
+        room.available_cards.add(alejate_card) #type:ignore
+
+        player = room.players.select(position = room.turn).first() #type:ignore
+        player.sid = "test_next_turn_is_alejate"
+
+        assert player is not None
+
+        player: Player
+
+        assert len(room.available_cards) != 0
+
+        assert alejate_card.type == "ALEJATE"
+
+        # Le damos la carta de alejate al jugador en turno
+        rs.next_turn(player.sid)
+
+        assert room.machine_state == MachineState.PLAYING
+
 
     @db_session
     def test_create_room_succesful(self):

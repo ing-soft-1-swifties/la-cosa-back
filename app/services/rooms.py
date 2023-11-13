@@ -2,10 +2,12 @@ from pickle import EMPTY_LIST
 from fastapi import HTTPException
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
+from app.models.entities import MachineState
 from app.schemas import NewRoomSchema, RoomSchema
 from app.services.exceptions import *
 from app.services.mixins import DBSessionMixin
 from app.logger import rootlog
+from app.services.cards import CardsService
 import random
 from uuid import uuid4
 
@@ -228,14 +230,17 @@ class RoomsService(DBSessionMixin):
             else:
                 #cantidad de jugadores que siguen jugando
                 room.turn = room.next_player().position
-            in_turn_player = self.in_turn_player(room)
-            # seteamos el estado del juego para esperar que el proximo jugador juegue
-            room.machine_state = "PLAYING"
-            room.machine_state_options = {"id":in_turn_player.id,
-                                          "stage":"STARTING"}
-            from app.services.cards import CardsService
+
             cs = CardsService(self.db)
-            new_card = cs.give_card(in_turn_player)
+            in_turn_player = self.in_turn_player(room)
+            new_card: Card = cs.give_card(in_turn_player)
+            # seteamos el estado del juego para esperar que el proximo jugador juegue
+            if new_card.type == "ALEJATE":
+                room.machine_state = MachineState.PLAYING
+                room.machine_state_options = {"id":in_turn_player.id,
+                                              "stage":"STARTING"}
+            else:
+                room.machine_state = MachineState.PANICKING
             return [
                 {
                     "name":"on_game_player_turn",
@@ -252,6 +257,7 @@ class RoomsService(DBSessionMixin):
         except Exception as e:
             rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sent_sid}")
             rootlog.exception(f"{e}")
+            raise e
 
     @db_session
     def recalculate_positions(self, sent_sid : str):    
@@ -280,7 +286,6 @@ class RoomsService(DBSessionMixin):
                 pass
             pair[1].position = position
             position += 1
-            
 
     @db_session
     def new_message(self, sent_sid: str, data):

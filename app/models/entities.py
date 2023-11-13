@@ -7,12 +7,14 @@ class MachineState(str, Enum):
     PLAYING = "PLAYING"
     DEFENDING = "DEFENDING"
     EXCHANGING = "EXCHANGING"
+    PANICKING = "PANICKING"
 
 class PlayerState(str, Enum):
     RECEIVING_EXCHANGE = "RECEIVING_EXCHANGE"
     OFFERING_EXCHANGE = "OFFERING_EXCHANGE"
     WAITING = "WAITING"
     PLAYING = "PLAYING"
+    PANICKING = "PANICKING"
     DEFENDING = "DEFENDING"
 
 class Obstacle(db.Entity):
@@ -68,6 +70,8 @@ class Player(db.Entity):
 
         if room.machine_state == MachineState.PLAYING and room.turn == self.position:
             state = PlayerState.PLAYING
+        elif room.machine_state == MachineState.PANICKING and room.turn == self.position:
+            state = PlayerState.PANICKING
         elif room.machine_state == MachineState.DEFENDING and room.suspended_card_target == self:
             state = PlayerState.DEFENDING
         elif room.machine_state == MachineState.EXCHANGING:
