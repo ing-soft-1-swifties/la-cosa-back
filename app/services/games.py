@@ -142,14 +142,14 @@ class GamesService(DBSessionMixin):
 
     def dispatch_exchange_defense_card_effect(self, sent_sid, player, room, card, card_options):
         pcs = PlayCardsService(self.db)
-        rs = RoomsService(self.db)g
+        rs = RoomsService(self.db)
         events = []
 
         if card.name == cards.FALLASTE:
             events.extend(pcs.play_fallaste(player, room, card, card_options))
         elif card.name == cards.NO_GRACIAS:
             events.extend(pcs.play_no_gracias(player, room, card, card_options))
-            events.extend(self.begin_end_of_turn_exchange(room))
+            events.extend(rs.next_turn(sent_sid))
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
