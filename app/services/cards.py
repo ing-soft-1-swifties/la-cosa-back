@@ -66,7 +66,7 @@ class CardsService(DBSessionMixin):
         return card_to_deal
 
     @db_session
-    def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card):
+    def exchange_cards(self, room: Room, player_A : Player, player_B : Player, card_A : Card, card_B:Card, compute_infection = True):
         """ Realiza el intercambio de cartas.
         
         Args:
@@ -117,11 +117,12 @@ class CardsService(DBSessionMixin):
         if invalid_infected_exchange:
             raise InvalidCardExchange()
         
-        if card_A.name == 'Infectado' and player_A.rol == 'LA_COSA':
-            player_B.rol = 'INFECTADO'
-        
-        if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
-            player_A.rol = 'INFECTADO'
+        if compute_infection == True:
+            if card_A.name == 'Infectado' and player_A.rol == 'LA_COSA':
+                player_B.rol = 'INFECTADO'
+            
+            if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
+                player_A.rol = 'INFECTADO'
 
         quarantine = []
         if player_A.is_in_quarantine():
@@ -140,6 +141,8 @@ class CardsService(DBSessionMixin):
                 }
             )
 
+        
+            
         player_A.hand.remove(card_A)
         player_A.hand.add(card_B)
         player_B.hand.remove(card_B)

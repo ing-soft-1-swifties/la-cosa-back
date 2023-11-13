@@ -1,6 +1,7 @@
 from enum import Enum
 from pony.orm import (Database, PrimaryKey, Required, Set, Optional, Json)
 from app.services.exceptions import *
+from ..logger import rootlog
 db = Database()
 
 class MachineState(str, Enum):
@@ -191,6 +192,16 @@ class Room(db.Entity):
         """ Retorna el jugador vivo que esta actualmente en su turno
         """
         return self.players.select(lambda p: p.position == self.turn).first()
+
+    def next_player_from_player(self, player : Player) -> Player:
+        """ Retorna el jugador vivo que sigue al player enviado
+        """
+        if player.status != 'VIVO':
+            rootlog.exception("Se quiere calcular quien es el siguiente jugador de un jugador muerto")
+            raise Exception()
+        position = player.position
+        next_turn_position = (position + 1 if self.direction else position - 1) % self.qty_alive_players()
+        return self.players.select(lambda p: p.position == next_turn_position and p.status == 'VIVO').first()
 
     def next_player(self) -> Player:
         """ Retorna el jugador vivo que sigue segun el orden de la ronda

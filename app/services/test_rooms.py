@@ -300,6 +300,30 @@ class TestRoomsService(unittest.TestCase):
         assert response[0]['is_private'] == room.is_private
     
     @db_session
+    def test_next_player_from_player(self):
+        Room.select().delete()
+        Player.select().delete()
+
+        newroom = NewRoomSchema(
+            room_name   = "test_next_player_from_player",
+            host_name   = "hostName",
+            min_players =  4,
+            max_players =  12,
+            is_private  =  False
+        )
+        self.rs.create_room(newroom)
+        room = Room.get(name="test_next_player_from_player")
+        for i in range(3):
+            self.rs.join_player(f"player-{i}", room.id)
+        i = 0
+        for player in room.players:
+            player.position = i
+            i += 1
+        next_player = room.next_player_from_player(room.players.select(lambda x:x.position==2).first())
+        assert next_player.position == 3
+        return room
+
+    @db_session
     def test_start_game(self):
         """
         Deberia popular el set available_cards con la cantidad de cartas correspondientes
