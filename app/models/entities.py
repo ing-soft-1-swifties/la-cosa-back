@@ -130,7 +130,8 @@ class Player(db.Entity):
         self.quarantine = amount
 
     def decrease_quarantine(self):
-        self.quarantine -= 1
+        if self.quarantine > 0:
+            self.quarantine -= 1
 
     def quarantine_turns_left(self):
         return self.quarantine

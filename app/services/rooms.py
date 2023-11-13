@@ -11,6 +11,9 @@ from app.services.cards import CardsService
 import random
 from uuid import uuid4
 
+from app.sockets.tester_sockets import player
+
+
 class RoomsService(DBSessionMixin):
 
     @db_session
@@ -220,9 +223,12 @@ class RoomsService(DBSessionMixin):
     @db_session
     def next_turn(self, sent_sid : str):
         try:
-            player = Player.get(sid = sent_sid)
+            player: Player = Player.get(sid = sent_sid)
             if player is None:
                 raise InvalidSidException()
+
+            player.decrease_quarantine()
+
             room: Room = player.playing
             if room.machine_state == "INITIAL":
                 room.turn = 0
