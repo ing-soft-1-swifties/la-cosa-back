@@ -154,6 +154,9 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.NADA_DE_BARBACOAS:
             events.extend(pcs.play_nada_de_barbacoas(player, room, card, card_options))
 
+        elif card.name == cards.AQUI_ESTOY_BIEN:
+            events.extend(pcs.play_aqui_estoy_bien(player, room, card, card_options))
+
         elif card.name == cards.SOSPECHA:
             events.extend(pcs.play_sospecha(player, room, card, card_options))
 
@@ -215,7 +218,9 @@ class GamesService(DBSessionMixin):
     @staticmethod
     def defense_for_card(card_name: str) -> list[str]:
         defense_dict = {
-            "Lanzallamas": ["¡Nada de barbacoas!"]
+            "Lanzallamas": ["¡Nada de barbacoas!"],
+            "¡Cambio de lugar!": ["Aquí estoy bien"],
+            "¡Más vale que corras!": ["Aquí estoy bien"]
         }
 
         return defense_dict.get(card_name, [])
