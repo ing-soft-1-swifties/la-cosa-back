@@ -295,7 +295,38 @@ class PlayCardsService(DBSessionMixin):
             que no este en cuarentena.
             Tu turno termina.
         """
-        return []
+
+        target_id = card_options.get("target", None)
+
+        assert target_id is not None
+
+        target_player: Player = Player.get(id=target_id)
+
+        assert target_player is not None
+
+        assert target_player.is_alive()
+
+        # seteamos la maquina de estados para que comience el intercambio
+        from app.services.games import GamesService
+        gs = GamesService(self.db)
+        gs.begin_exchange(
+            room=room,
+            player_A=player,
+            player_B=target_player
+        )
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True
+            }
+        ]
 
     def play_aterrador(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """

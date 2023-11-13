@@ -12,4 +12,5 @@ class CardName(str, Enum):
     MAS_VALES_QUE_CORRAS = '¡Más vale que corras!'
     NADA_DE_BARBACOAS = '¡Nada de barbacoas!'
     CUARENTENA = 'Cuarentena'
+    SEDUCCION = 'Seducción'
 
