@@ -140,6 +140,30 @@ class GamesService(DBSessionMixin):
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
 
+    def dispatch_exchange_defense_card_effect(self, sent_sid, player, room, card, card_options):
+        pcs = PlayCardsService(self.db)
+        rs = RoomsService(self.db)
+        events = []
+
+        if card.name == cards.FALLASTE:
+            events.extend(pcs.play_fallaste(player, room, card, card_options))
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+
+        #rs.recalculate_positions(sent_sid)
+        # result, json = self.end_game_condition_one_player(sent_sid)
+
+        # if result != "GAME_IN_PROGRESS":
+        #     events.append({
+        #         "name": "on_game_end",
+        #         "body": json,
+        #         "broadcast": True
+        #     })
+        # else:
+        #     events.extend(self.begin_end_of_turn_exchange(room))
+        return events
+
+
     def dispatch_card_effect(self, sent_sid, player, room, card, card_options):
         pcs = PlayCardsService(self.db)
         rs = RoomsService(self.db)
@@ -518,11 +542,9 @@ class GamesService(DBSessionMixin):
                     #ahora veamos los efectos que induce la defensa para la carta jugada
                     if(second_card.name == "¡Fallaste!"):
                         card_options = {
-                            "starter_player" : first_player
+                            "starter_player_id" : first_player.id
                         }
-                        events.extend(self.dispatch_card_effect(sent_sid, player, room, card, card_options))
-                    
-                    events.extend(rs.next_turn(sent_sid))
+                    events.extend(self.dispatch_exchange_defense_card_effect(sent_sid, second_player, room, card, card_options))
                 #si la persona que no inicio el intercambio no se esta defendiendo
                 else:
                     try:
