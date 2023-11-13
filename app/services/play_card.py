@@ -458,13 +458,11 @@ class PlayCardsService(DBSessionMixin):
     def play_hacha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
             Retira una carta PUERTA ATRANCADA o CUARENTENA de ti mismo
-            o de un jugador adyacente
+            o de un jugador adyacente.
         """
-
         is_quarantine = card_options.get("is_quarantine")
         if is_quarantine is None:
             raise InvalidAccionException("El campo is_quarantine es obligatorio")
-
 
         target = card_options.get("target")
 
