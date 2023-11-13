@@ -438,8 +438,8 @@ class PlayCardsService(DBSessionMixin):
         # 'ignore_quarantine': False,
         # 'ignore_locked_door': False
 
-        # TODO borrar todos los efectos de cuarentena
-        #  (fix de un commit anterior)
+        for player_i in room.get_quarantine_players():
+            player_i.set_quarantine(0)
 
         return [
             {
@@ -515,7 +515,7 @@ P0
         [x] Cambio de lugar
         [x] Más vale que corras
         [x] Seducción
-        [x] Análisis
+        [x] AnálisisP
         [x] Sospecha
         [x] Whisky
     Defensa:
@@ -526,20 +526,20 @@ P0
         [x] Nada de Barbacoas
 P1
     Pánico:
-        [ ] Solo entre nosotros
+        [x] Que quede entre nosotros
         [ ] Revelaciones
         [ ] Cita a ciegas
         [x] Oops!
     Otras cartas
-        [x] Cuarentena ----------------
+        [x] Cuarentena
         [ ] Puerta Atrancada
         [ ] Hacha
 P2 
     Pánico:
-        [ ] Cuerdas podridas ----------------
+        [x] Cuerdas podridas
         [ ] Esta es la fiesta? -----------------
         [x] Oops!
-        [ ] Ronda y ronda
+        [ ] Vuelta y vuelta
         [ ] Podemos ser Amigos?
         [ ] Olvidadizo
         [ ] Carta 1, 2 ... (movimiento) ------------------
