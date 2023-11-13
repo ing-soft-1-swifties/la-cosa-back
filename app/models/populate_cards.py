@@ -97,7 +97,7 @@ cardsJSON = [
         'sub_type' : 'ACCION',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
@@ -197,7 +197,7 @@ cardsJSON = [
         'sub_type' : 'OBSTACULO',
         'need_target': True,
         'target_adjacent_only': True,
-        'ignore_quarantine': False,
+        'ignore_quarantine': True,
         'ignore_locked_door': False
     },
     {
