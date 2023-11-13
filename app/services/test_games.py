@@ -280,11 +280,14 @@ class TestGamesService(unittest.TestCase):
         events = self.gs.exchange_card_manager(next_p.sid, payload)
 
         expected_events = [
-            # {
-            #     "name": "on_game_finish_exchange",
-            #     "body": {"players": [host.name, next_p.name]},
-            #     "broadcast": True,
-            # },
+            {
+                "name": "on_game_finish_exchange",
+                "body": {
+                    "players": [host.name, next_p.name],
+                    "quarantine": None
+                },
+                "broadcast": True,
+            },
             {
                 "name": "on_game_exchange_result",
                 "body": {"card_in": card_next_p.id, "card_out": card_host.id},
