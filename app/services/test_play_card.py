@@ -395,7 +395,34 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[0]['body']['player_name'] == player.name
         assert response[0]['broadcast']
 
+    @db_session
+    def test_play_puerta_atrancada(self):
+        TEST_NAME = 'test_play_puerta_atrancada'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
 
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position == 0).first()
+        room.turn = player.position
+        card = Card.select(lambda c: c.name == cards.PUERTA_ATRANCADA).first()
+        player.add_card(card.id)
+
+        # seleccionamos a un jugador adjacente
+        other_player: Player = room.players.select(lambda p: p.position == 1).first()
+        response = self.pcs.play_puerta_atrancada(
+            player=player,
+            room=room,
+            card=card,
+            card_options={'target': other_player.id}
+        )
+        assert other_player.position in room.get_obstacles_positions()
+
+        assert len(response) == 1
+        assert response[0]['name'] == 'on_game_player_play_card'
+        assert response[0]['body']['card_id'] == card.id
+        assert response[0]['body']['card_name'] == card.name
+        assert response[0]['body']['player_name'] == player.name
+        assert response[0]['broadcast']
 
     @classmethod
     @db_session
