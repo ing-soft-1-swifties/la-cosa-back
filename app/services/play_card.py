@@ -6,17 +6,6 @@ import random
 
 class PlayCardsService(DBSessionMixin):
 
-    def valid_adyacent_player(self, player_1: Player, player_2: Player, room: Room) -> bool:
-
-        if player_1.position is None or player_2.position is None:
-            return False
-
-        if  abs(player_1.position - player_2.position) != 1 and \
-            abs(player_1.position - player_2.position) != room.qty_alive_players() - 1:
-            return False
-
-        return True
-
     def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options) -> list[dict]:
         """
             Elimina de la partida a un jugador adyacente
