@@ -95,7 +95,7 @@ class TestPlayCardsService(unittest.TestCase):
         far_player = list(room.players.select(lambda player: player.position == 2))[0]
         
         json =  {'card': card.id, 'card_options': {'target': far_player.id}}
-        with self.assertRaises(InvalidDataException):
+        with self.assertRaises(InvalidAccionException):
             self.gs.play_card_manager('test_play_card_lanzallamas', json)
 
         
