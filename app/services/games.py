@@ -537,7 +537,7 @@ class GamesService(DBSessionMixin):
                 
                 # CUARENTENA
                 room.get_current_player().decrease_quarantine()
-                if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
+                if room.machine_state_options["on_defense"] or (on_defense and not is_first_player):  #si se esta defendiendo
                     # second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player)
                     events.extend([{
