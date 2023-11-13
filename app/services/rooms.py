@@ -234,6 +234,7 @@ class RoomsService(DBSessionMixin):
                 room.turn = room.next_player().position
 
             cs = CardsService(self.db)
+<<<<<<< HEAD
             in_turn_player = self.in_turn_player(room)
             new_card: Card = cs.give_card(in_turn_player)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
@@ -243,17 +244,43 @@ class RoomsService(DBSessionMixin):
                                               "stage":"STARTING"}
             else:
                 room.machine_state = MachineState.PANICKING
+=======
+            new_card = cs.give_card(in_turn_player)
+
+            quarantine = []
+            if player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': player.name,
+                        'card_name': new_card.name,
+                        'card_id': new_card.id
+                    }
+                )
+
+>>>>>>> dce310d (se ve la carta cuando se descarta y cuando se roba)
             return [
                 {
-                    "name":"on_game_player_turn",
-                    "body":{"player":in_turn_player.name},
+                    "name": "on_game_player_turn",
+                    "body": {
+                        "player": in_turn_player.name
+                    },
                     "broadcast": True
                 },
                 {
-                    "name":"on_game_player_steal_card",
-                    "body":{"cards":[new_card.json()]},
+                    "name": "on_game_player_steal_card",
+                    "body": {
+                        "cards": [new_card.json()]
+                    },
                     "broadcast": False,
-                    "receiver_sid":in_turn_player.sid
+                    "receiver_sid": in_turn_player.sid
+                },
+                {
+                    "name": "on_game_player_steal_card",
+                    "body": {
+                        "quarantine": None if quarantine else quarantine
+                    },
+                    "broadcast": True,
+                    "except_sid": in_turn_player.sid
                 }
             ]
         except Exception as e:

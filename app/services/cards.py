@@ -222,11 +222,26 @@ class CardsService(DBSessionMixin):
             from .rooms import RoomsService
             rs = RoomsService(self.db)
 
-            events.extend([{
-                "name":"on_game_player_discard_card",
-                "body":{"player":player.name},
-                "broadcast":True
-            }])
+            quarantine = []
+            if player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': player.name,
+                        'card_name': card.name,
+                        'card_id': card.id
+                    }
+                )
+
+            events.append(
+                {
+                    "name": "on_game_player_discard_card",
+                    "body": {
+                        "player": player.name,
+                        "quarantine": None if quarantine == [] else quarantine
+                    },
+                    "broadcast": True
+                }
+            )
             # events.extend(rs.next_turn(sent_sid))
             # return events
             from .games import GamesService

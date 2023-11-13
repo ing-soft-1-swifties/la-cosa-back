@@ -16,6 +16,7 @@ class PlayCardsService(DBSessionMixin):
 
         if player.is_in_quarantine():
             raise InvalidAccionException("Un jugador infectado no puede jugar un LANZALLAMAS")
+
         room.kill_player(target_player)
 
         return [
