@@ -265,6 +265,7 @@ class RoomsService(DBSessionMixin):
                     "name": "on_game_player_steal_card",
                     "body": {
                         "cards": [new_card.json()],
+                        "card_type": new_card.type,
                         "player": in_turn_player.name
                     },
                     "broadcast": False,
@@ -274,7 +275,8 @@ class RoomsService(DBSessionMixin):
                     "name": "on_game_player_steal_card",
                     "body": {
                         "player": in_turn_player.name,
-                        "quarantine": None if quarantine == [] else quarantine
+                        "card_type": new_card.type,
+                        "quarantine": None if quarantine == [] else quarantine,
                     },
                     "broadcast": True,
                     "except_sid": in_turn_player.sid
