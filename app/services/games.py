@@ -528,6 +528,7 @@ class GamesService(DBSessionMixin):
                     rootlog.exception("los jugadores no corresponden a una misma partida")
                     InvalidDataException()
                 is_first_player = exchanging_players[0] == player.id
+                #obtenemos las cartas segun quien fue el primer jugador en llamar a el exchange_manager
                 first_card = card if is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 second_card = card if not is_first_player else Card.get(id = room.machine_state_options["card_id"])
                 from .cards import CardsService
@@ -536,7 +537,7 @@ class GamesService(DBSessionMixin):
                 # CUARENTENA
                 room.get_current_player().decrease_quarantine()
                 if room.machine_state_options["on_defense"] or on_defense:  #si se esta defendiendo
-                    second_player.hand.remove(second_card)
+                    # second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player)
                     events.extend([{
                         "name":"on_game_player_play_defense_card",
@@ -549,7 +550,7 @@ class GamesService(DBSessionMixin):
                         card_options = {
                             "starter_player_id" : first_player.id
                         }
-                    events.extend(self.dispatch_exchange_defense_card_effect(sent_sid, second_player, room, card, card_options))
+                    events.extend(self.dispatch_exchange_defense_card_effect(sent_sid, second_player, room, second_card, card_options))
 
                 #si la persona que no inicio el intercambio no se esta defendiendo
                 else:
