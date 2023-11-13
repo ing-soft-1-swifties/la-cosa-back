@@ -438,8 +438,8 @@ class PlayCardsService(DBSessionMixin):
         # 'ignore_quarantine': False,
         # 'ignore_locked_door': False
 
-        # TODO borrar todos los efectos de cuarentena
-        #  (fix de un commit anterior)
+        for player in room.get_quarantine_players():
+            player.set_quarantine(0)
 
         return [
             {

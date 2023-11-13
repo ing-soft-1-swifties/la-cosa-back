@@ -313,3 +313,12 @@ class Room(db.Entity):
             room.turn = player1.position
 
         player1.position, player2.position = player2.position, player1.position
+
+    def get_quarantine_players(self) -> list[Player]:
+        response = []
+        for player in self.players:
+            player : Player
+            if player.is_in_quarantine():
+                response.append(player)
+
+        return response
