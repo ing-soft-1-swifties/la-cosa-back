@@ -581,7 +581,21 @@ class PlayCardsService(DBSessionMixin):
         """
             Todas las cartas PURTA ATRANCADA que haya en juego son descartadas
         """
-        return []
+        for position in room.get_obstacles_positions():
+            room.remove_locked_door(position)
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            }
+        ]
 
 """
 P0 
@@ -595,9 +609,9 @@ P0
         [x] Whisky
     Defensa:
         [ ] Aterrador
-        [ ] Aquí estoy bien
-        [ ] No, gracias
-        [ ] Fallaste
+        [x] Aquí estoy bien
+        [x] No, gracias
+        [x] Fallaste
         [x] Nada de Barbacoas
 P1
     Pánico:
