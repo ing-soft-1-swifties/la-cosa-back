@@ -151,21 +151,12 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.NO_GRACIAS:
             events.extend(pcs.play_no_gracias(player, room, card, card_options))
             events.extend(rs.next_turn(sent_sid))
+        elif card.name == cards.ATERRADOR:
+            events.extend(pcs.play_aterrador(player, room, card, card_options))
+            events.extend(rs.next_turn(sent_sid))
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
-
-        #rs.recalculate_positions(sent_sid)
-        # result, json = self.end_game_condition_one_player(sent_sid)
-
-        # if result != "GAME_IN_PROGRESS":
-        #     events.append({
-        #         "name": "on_game_end",
-        #         "body": json,
-        #         "broadcast": True
-        #     })
-        # else:
-        #     events.extend(self.begin_end_of_turn_exchange(room))
         return events
 
 
@@ -509,7 +500,7 @@ class GamesService(DBSessionMixin):
                     raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
                 else:
                     #verifiquemos si se puede defender con la carta que esta planteando
-                    defense_cards = ["¡No, gracias!", "¡Fallaste!"]
+                    defense_cards = [cards.NO_GRACIAS, cards.FALLASTE, cards.ATERRADOR]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
 
@@ -548,9 +539,9 @@ class GamesService(DBSessionMixin):
                 cs = CardsService(self.db)
                 
                 # CUARENTENA
-                room.get_current_player().decrease_quarantine()
+                room.get_current_player().decrease_quarantine() #TODO! esto no va aca, va dsp de que se concreta intercambio
                 if room.machine_state_options["on_defense"] or (on_defense and not is_first_player):  #si se esta defendiendo
-                    # second_player.hand.remove(second_card)
+                    #second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player)
                     events.extend([{
                         "name":"on_game_player_play_defense_card",
@@ -559,10 +550,16 @@ class GamesService(DBSessionMixin):
                     }])
                     #ahora veamos los efectos que induce la defensa para la carta jugada
                     card_options = {}
-                    if(second_card.name == "¡Fallaste!"):
+                    if(second_card.name == cards.FALLASTE):
                         card_options = {
                             "starter_player_id" : first_player.id
                         }
+                    elif(second_card.name == cards.ATERRADOR):
+                        card_options = {
+                            "starter_card_id" : first_card.id,
+                            "starter_name" : first_player.name
+                        }
+
                     events.extend(self.dispatch_exchange_defense_card_effect(sent_sid, second_player, room, second_card, card_options))
 
                 #si la persona que no inicio el intercambio no se esta defendiendo
