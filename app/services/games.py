@@ -515,6 +515,9 @@ class GamesService(DBSessionMixin):
                         "body":{"player_name":second_player.name, "card_name":second_card.name},
                         "broadcast": True
                     }])
+                    #ahora veamos los efectos que induce la defensa para la carta jugada
+                    if(second_card.name == "¡Fallaste!"):
+                        pass
                     
                     events.extend(rs.next_turn(sent_sid))
                 #si la persona que no inicio el intercambio no se esta defendiendo
