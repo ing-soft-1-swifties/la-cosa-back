@@ -251,7 +251,7 @@ class RoomsService(DBSessionMixin):
                     card_picking_amount = 1
                 elif new_card.name == CardName.OLVIDADIZO:
                     card_picking_amount = 3
-                elif new_card.name == CardName.VUELTA_Y_VUELTA:
+                elif new_card.name == CardName.UNO_DOS:
                     n = room.qty_alive_players()
 
                     assert player.position is not None

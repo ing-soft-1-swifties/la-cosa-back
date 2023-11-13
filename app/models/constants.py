@@ -24,3 +24,4 @@ class CardName(str, Enum):
     CITA_A_CIEGAS = 'Cita a ciegas'
     OLVIDADIZO = 'Olvidadizo'
     VUELTA_Y_VUELTA = "VUELTA_Y_VUELTA"
+    UNO_DOS = "Uno, dos..."

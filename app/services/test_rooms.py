@@ -45,25 +45,25 @@ class TestRoomsService(unittest.TestCase):
         return room
 
     @db_session
-    def test_next_turn_is_vuelta_y_vuelta(self):
+    def test_next_turn_is_uno_dos(self):
 
         rs = RoomsService(self.db)
 
         room: Room = self.create_valid_room(
             qty_players = 3,
-            roomname="test_next_turn_is_vuelta_y_vuelta"
+            roomname="test_next_turn_is_uno_dos"
         )
 
         rs.assign_turns(room)
 
-        # La unica carta disponible va a ser vuelta y vuelta
-        panic_card = Card(type="PANICO", name=CardName.VUELTA_Y_VUELTA, deck = 1)
+        # La unica carta disponible va a ser 'Uno, dos'
+        panic_card = Card(type="PANICO", name=CardName.UNO_DOS, deck = 1)
 
         assert panic_card is not None
         room.available_cards.add(panic_card) #type:ignore
 
         player = room.players.select(position = room.turn).first() #type:ignore
-        player.sid = "test_next_turn_is_vuelta_y_vuelta"
+        player.sid = "test_next_turn_is_uno_dos"
 
         assert player is not None
 
