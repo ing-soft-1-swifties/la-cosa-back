@@ -257,6 +257,7 @@ class RoomsService(DBSessionMixin):
         except Exception as e:
             rootlog.exception(f"error al querer repartir carta al primer jugador de la partida del jugador con sid: {sent_sid}")
             rootlog.exception(f"{e}")
+            raise e
 
     @db_session
     def recalculate_positions(self, sent_sid : str):    
