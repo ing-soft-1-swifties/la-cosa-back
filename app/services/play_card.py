@@ -10,11 +10,12 @@ class PlayCardsService(DBSessionMixin):
         """
             Elimina de la partida a un jugador adyacente
         """
-        #lista de eventos que vamos a retornar
-        events = []
+        # lista de eventos que vamos a retornar
         target_id = card_options.get("target")
         target_player = Player.get(id = target_id)
 
+        if player.is_in_quarantine():
+            raise InvalidAccionException("Un jugador infectado no puede jugar un LANZALLAMAS")
         room.kill_player(target_player)
 
         return [

@@ -564,7 +564,7 @@ class GamesService(DBSessionMixin):
         return events
 
     def begin_end_of_turn_exchange(self, room : Room):
-        in_turn_player = list(room.players.select(lambda player : player.position == room.turn and player.status == "VIVO"))[0]
+        in_turn_player = room.get_player_by_pos(room.turn)
         if in_turn_player is None:
             rootlog.exception(f"el jugador con posicion {room.turn} no esta en la partida")
             raise Exception()
