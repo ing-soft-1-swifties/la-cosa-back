@@ -296,14 +296,15 @@ class PlayCardsService(DBSessionMixin):
             Tu turno termina.
         """
 
-        # TODO: target_player no puede estar en cuarentena
-        target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
+        target_id = card_options.get("target", None)
+
+        assert target_id is not None
 
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
+
+        assert target_player is not None
+
+        assert target_player.is_alive()
 
         # seteamos la maquina de estados para que comience el intercambio
         from app.services.games import GamesService

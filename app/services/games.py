@@ -157,6 +157,10 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.SOSPECHA:
             events.extend(pcs.play_sospecha(player, room, card, card_options))
 
+        elif card.name == cards.SEDUCCION:
+            events.extend(pcs.play_seduccion(player, room, card, card_options))
+            return events
+
         elif card.name == cards.UPS:
             events.extend(pcs.play_ups(player, room, card, card_options))
 
@@ -257,7 +261,7 @@ class GamesService(DBSessionMixin):
         # en cuyo caso agregamos un evento para avisarle que debe defenderse
         if card.need_target:
             target = Player.get(id = card_options["target"])
-            if target is None:
+            if target is None or not target.is_alive():
                 raise InvalidAccionException("Objetivo invalido")
 
             if card.target_adjacent_only and not room.are_players_adjacent(player, target):
