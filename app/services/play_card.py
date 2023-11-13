@@ -6,54 +6,40 @@ import random
 
 class PlayCardsService(DBSessionMixin):
 
-    def valid_adyacent_player(self, player_1: Player, player_2: Player, room: Room) -> bool:
-
-        if player_1.position is None or player_2.position is None:
-            return False
-
-        if  abs(player_1.position - player_2.position) != 1 and \
-            abs(player_1.position - player_2.position) != room.qty_alive_players() - 1:
-            return False
-
-        return True
-
     def play_lanzallamas(self, player : Player, room : Room, card : Card, card_options) -> list[dict]:
         """
             Elimina de la partida a un jugador adyacente
         """
-        #lista de eventos que vamos a retornar
-        events = []
+        # lista de eventos que vamos a retornar
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
         target_player = Player.get(id = target_id)
-        if target_player is None or target_player.status != "VIVO":
-            raise InvalidAccionException("Objetivo Invalido")
 
-        events.append({
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card_id': card.id,
-                'card_name': card.name,
-                'card_options': card_options,
-                'player_name': player.name,
-            },
-            'broadcast': True
-        })
+        if player.is_in_quarantine():
+            raise InvalidAccionException("Un jugador en cuarentena no puede jugar un lanzallamas")
 
         room.kill_player(target_player)
 
-        events.append({
-            "name": "on_game_player_death",
-            "body": {
-                "player": target_player.name,
-                "reason": "LANZALLAMAS",
-                "killer": room.get_current_player()
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                },
+                'broadcast': True
             },
-            "broadcast": True
-        })
-
-        return events
+            {
+                "name": "on_game_player_death",
+                "body": {
+                    "player": target_player.name,
+                    "killer": player.name,
+                    "reason": "LANZALLAMAS"
+                },
+                "broadcast": True
+           }
+        ]
 
     def play_nada_de_barbacoas(self, player: Player, room: Room, card: Card, card_options):
         """
@@ -73,26 +59,27 @@ class PlayCardsService(DBSessionMixin):
             }
         ]
 
-    @db_session
     def play_whisky(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
             Muestra todas tus cartas a todos los jugadores.
             Solo puedes jugar esta carta sobre ti mismo.
         """
-        return [{
-            'name': 'on_game_player_play_card',
-            'body': {
-                'card_id': card.id,
-                'card_name': card.name,
-                'card_options': card_options,
-                'player_name': player.name,
-                'effects' : {
-                    'player': player.name, 
-                    'cards': player.serialize_hand(exclude=[card.id])
-                }
-            },
-            'broadcast': True
-        }]
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                    'effects' : {
+                        'player': player.name,
+                        'cards': player.serialize_hand(exclude=[card.id])
+                    }
+                },
+                'broadcast': True
+            }
+        ]
 
     def play_sospecha(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
@@ -100,15 +87,8 @@ class PlayCardsService(DBSessionMixin):
         """
         # validamos el input
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-        
         target_player: Player = Player.get(id = target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room :
-            raise InvalidAccionException("Objetivo Invalido")
 
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
         return [
             {
                 'name': 'on_game_player_play_card',
@@ -161,15 +141,7 @@ class PlayCardsService(DBSessionMixin):
             adjacente de tu eleccion
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         return [
             {   # este se lo mandamos solo al target
@@ -205,15 +177,7 @@ class PlayCardsService(DBSessionMixin):
             Mira la mano de un jugador adjacente
         """
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         return [
             {
@@ -249,18 +213,9 @@ class PlayCardsService(DBSessionMixin):
             Cambiate de sitio con un jugador adyacente que no este en cuarentena o tras una puerta atrancada
         """
 
-        # TODO: "que no este en cuarentena o tras una puerta atrancada"
         # validamos el input
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
-
-        if not self.valid_adyacent_player(player, target_player, room):
-            raise InvalidAccionException("El objetivo no esta al lado tuyo")
 
         # cambia las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
@@ -309,14 +264,8 @@ class PlayCardsService(DBSessionMixin):
             Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena,
             ignorando cualquier puerta atrancada
         """
-        # TODO: "que no este en cuarentena"
         target_id = card_options.get("target")
-        if target_id is None:
-            raise InvalidAccionException("Objetivo invalido")
-
         target_player: Player = Player.get(id=target_id)
-        if target_player is None or target_player.status != "VIVO" or target_player.playing != room:
-            raise InvalidAccionException("Objetivo Invalido")
 
         # cambiamos las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
@@ -346,7 +295,38 @@ class PlayCardsService(DBSessionMixin):
             que no este en cuarentena.
             Tu turno termina.
         """
-        return []
+
+        target_id = card_options.get("target", None)
+
+        assert target_id is not None
+
+        target_player: Player = Player.get(id=target_id)
+
+        assert target_player is not None
+
+        assert target_player.is_alive()
+
+        # seteamos la maquina de estados para que comience el intercambio
+        from app.services.games import GamesService
+        gs = GamesService(self.db)
+        gs.begin_exchange(
+            room=room,
+            player_A=player,
+            player_B=target_player
+        )
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True
+            }
+        ]
 
     def play_aterrador(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
@@ -400,7 +380,23 @@ class PlayCardsService(DBSessionMixin):
             Durante dos rondas, un jugador adyacente debe robar, descartar e intercambiar
             cartas boca arriba. No puede eliminar jugadores ni cambiar de sitio
         """
-        return []
+        target_id = card_options.get("target")
+        target_player: Player = Player.get(id=target_id)
+
+        target_player.set_quarantine(2)
+
+        return [
+            {
+                'name': 'on_game_player_play_card',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name
+                },
+                'broadcast': True,
+            },
+        ]
 
     def play_puerta_atrancada(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """

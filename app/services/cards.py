@@ -122,27 +122,57 @@ class CardsService(DBSessionMixin):
         
         if card_B.name == 'Infectado' and player_B.rol == 'LA_COSA': 
             player_A.rol = 'INFECTADO'
-            
+
+        quarantine = []
+        if player_A.is_in_quarantine():
+            quarantine.append(
+                {
+                    'player_name': player_A.name,
+                    'card': card_B.json()
+                }
+            )
+
+        if player_B.is_in_quarantine():
+            quarantine.append(
+                {
+                    'player_name': player_A.name,
+                    'card': card_A.json()
+                }
+            )
+
         player_A.hand.remove(card_A)
         player_A.hand.add(card_B)
         player_B.hand.remove(card_B)
         player_B.hand.add(card_A)
-        
-        return[{
-                "name":"on_game_finish_exchange",
-                "body":{"players":[player_A.name, player_B.name]},
-                "broadcast":True
-        },{
-                "name":"on_game_exchange_result",
-                "body":{"card_in":card_B.id, "card_out":card_A.id},
-                "broadcast":False,
-                "receiver_sid":player_A.sid
-        },{
-                "name":"on_game_exchange_result",
-                "body":{"card_in":card_A.id, "card_out":card_B.id},
-                "broadcast":False,
-                "receiver_sid":player_B.sid
-        }]
+
+        return [
+            {
+                "name": "on_game_finish_exchange",
+                "body": {
+                    "players": [player_A.name, player_B.name],
+                    "quarantine": None if quarantine == [] else quarantine
+                },
+                "broadcast": True
+            },
+            {
+                "name": "on_game_exchange_result",
+                "body": {
+                    "card_in": card_B.id,
+                    "card_out":card_A.id
+                },
+                "broadcast": False,
+                "receiver_sid": player_A.sid
+            },
+            {
+                "name": "on_game_exchange_result",
+                "body": {
+                    "card_in": card_A.id,
+                    "card_out":card_B.id
+                },
+                "broadcast": False,
+                "receiver_sid": player_B.sid
+            }
+        ]
 
 
 
@@ -190,11 +220,25 @@ class CardsService(DBSessionMixin):
             from .rooms import RoomsService
             rs = RoomsService(self.db)
 
-            events.extend([{
-                "name":"on_game_player_discard_card",
-                "body":{"player":player.name},
-                "broadcast":True
-            }])
+            quarantine = []
+            if player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': player.name,
+                        'card': card.json()
+                    }
+                )
+
+            events.append(
+                {
+                    "name": "on_game_player_discard_card",
+                    "body": {
+                        "player": player.name,
+                        "quarantine": None if quarantine == [] else quarantine
+                    },
+                    "broadcast": True
+                }
+            )
             # events.extend(rs.next_turn(sent_sid))
             # return events
             from .games import GamesService

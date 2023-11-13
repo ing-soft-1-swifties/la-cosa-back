@@ -1,5 +1,3 @@
-from pickle import EMPTY_LIST
-from fastapi import HTTPException
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
 from app.models.entities import MachineState
@@ -10,6 +8,8 @@ from app.logger import rootlog
 from app.services.cards import CardsService
 import random
 from uuid import uuid4
+
+
 
 class RoomsService(DBSessionMixin):
 
@@ -193,8 +193,7 @@ class RoomsService(DBSessionMixin):
             raise Exception
         turn = 0
         if room.machine_state == "INITIAL":
-            # TODO: cambiar por get_player_by_pos(0)
-            expected_player = room.players.select(lambda player: player.position==0)
+            expected_player = room.get_player_by_pos(0)
         else:
             expected_player = room.next_player()
             if expected_player is None:
@@ -221,9 +220,11 @@ class RoomsService(DBSessionMixin):
     @db_session
     def next_turn(self, sent_sid : str):
         try:
-            player = Player.get(sid = sent_sid)
+            player: Player = Player.get(sid = sent_sid)
             if player is None:
                 raise InvalidSidException()
+
+
             room: Room = player.playing
             if room.machine_state == "INITIAL":
                 room.turn = 0
@@ -233,6 +234,7 @@ class RoomsService(DBSessionMixin):
 
             cs = CardsService(self.db)
             in_turn_player = self.in_turn_player(room)
+            in_turn_player.decrease_quarantine()
             new_card: Card = cs.give_card(in_turn_player)
             # seteamos el estado del juego para esperar que el proximo jugador juegue
             if new_card.type == "ALEJATE":
@@ -241,17 +243,43 @@ class RoomsService(DBSessionMixin):
                                               "stage":"STARTING"}
             else:
                 room.machine_state = MachineState.PANICKING
+
+            quarantine = []
+            if in_turn_player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': in_turn_player.name,
+                        'card': new_card.json()
+                    }
+                )
+
             return [
                 {
-                    "name":"on_game_player_turn",
-                    "body":{"player":in_turn_player.name},
+                    "name": "on_game_player_turn",
+                    "body": {
+                        "player": in_turn_player.name
+                    },
                     "broadcast": True
                 },
                 {
-                    "name":"on_game_player_steal_card",
-                    "body":{"cards":[new_card.json()]},
+                    "name": "on_game_player_steal_card",
+                    "body": {
+                        "cards": [new_card.json()],
+                        "card_type": new_card.type,
+                        "player": in_turn_player.name
+                    },
                     "broadcast": False,
-                    "receiver_sid":in_turn_player.sid
+                    "receiver_sid": in_turn_player.sid
+                },
+                {
+                    "name": "on_game_player_steal_card",
+                    "body": {
+                        "player": in_turn_player.name,
+                        "card_type": new_card.type,
+                        "quarantine": None if quarantine == [] else quarantine,
+                    },
+                    "broadcast": True,
+                    "except_sid": in_turn_player.sid
                 }
             ]
         except Exception as e:

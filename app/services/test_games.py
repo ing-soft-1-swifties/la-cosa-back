@@ -282,7 +282,10 @@ class TestGamesService(unittest.TestCase):
         expected_events = [
             {
                 "name": "on_game_finish_exchange",
-                "body": {"players": [host.name, next_p.name]},
+                "body": {
+                    "players": [host.name, next_p.name],
+                    "quarantine": None
+                },
                 "broadcast": True,
             },
             {

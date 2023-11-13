@@ -16,7 +16,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'CONTAGIO',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Infectado',
@@ -24,7 +26,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'CONTAGIO',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Sospecha',
@@ -32,7 +36,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Seducción',
@@ -40,7 +46,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',  
         'need_target': True,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Más vale que corras!',
@@ -48,7 +56,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Cambio de lugar!',
@@ -56,7 +66,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Lanzallamas',
@@ -64,7 +76,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Determinacion',
@@ -72,7 +86,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Analisis',
@@ -80,7 +96,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Whisky',
@@ -88,7 +106,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Vigila tus espaldas',
@@ -96,7 +116,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Hacha',
@@ -104,7 +126,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'ACCION',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡No, gracias!',
@@ -112,7 +136,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Aterrador',
@@ -120,7 +146,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Fallaste!',
@@ -128,7 +156,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Nada de barbacoas!',
@@ -136,7 +166,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Aquí estoy bien',
@@ -144,7 +176,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'DEFENSA',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Puerta atrancada',
@@ -152,7 +186,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'OBSTACULO',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Cuarentena',
@@ -160,7 +196,9 @@ cardsJSON = [
         'type' : 'ALEJATE',
         'sub_type' : 'OBSTACULO',
         'need_target': True,
-        'target_adjacent_only': True
+        'target_adjacent_only': True,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Vuelta y vuelta',
@@ -168,7 +206,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¿No podemos ser amigos?',
@@ -176,14 +216,18 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },    {
         'name' : 'Cita a ciegas',
         'amounts' : [1,0,0,0,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
         
     },    {
         'name' : 'Que quede entre nosotros...',
@@ -191,14 +235,18 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },    {
         'name' : 'Cuerdas podridas',
         'amounts' : [0,0,1,0,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¿Es aqui la fiesta?',
@@ -206,7 +254,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Uno, dos...',
@@ -214,7 +264,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Tres, cuatro...',
@@ -222,7 +274,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Ups!',
@@ -230,7 +284,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Olvidadizo',
@@ -238,7 +294,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : 'Revelaciones',
@@ -246,7 +304,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     },
     {
         'name' : '¡Sal de aqui!',
@@ -254,7 +314,9 @@ cardsJSON = [
         'type' : 'PANICO',
         'sub_type' : '',
         'need_target': False,
-        'target_adjacent_only': False
+        'target_adjacent_only': False,
+        'ignore_quarantine': False,
+        'ignore_locked_door': False
     }
 ]
 
@@ -269,9 +331,10 @@ def populate():
                         deck=j+4, type=cardsJSON[i]['type'], 
                         sub_type=cardsJSON[i]['sub_type'],
                         need_target=cardsJSON[i]['need_target'],
-                        target_adjacent_only=cardsJSON[i]['target_adjacent_only']
+                        target_adjacent_only=cardsJSON[i]['target_adjacent_only'],
+                        ignore_quarantine=cardsJSON[i]['ignore_quarantine'],
+                        ignore_locked_door=cardsJSON[i]['ignore_locked_door'],
                     )
-
 
 if __name__ == '__main__':
     from .db import db

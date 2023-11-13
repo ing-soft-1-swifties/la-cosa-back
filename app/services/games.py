@@ -23,7 +23,7 @@ class GamesService(DBSessionMixin):
                 "id" : player.id,
                 "status" : player.status,
                 "position" : player.position,
-                "in_quarantine" : player.in_quarantine,
+                "quarantine" : player.quarantine_turns_left(),
                 #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
                 "on_turn": player.status == "VIVO" and player.position == room.turn,
                 "on_exchange": room.machine_state == "EXCHANGING" and (player.id in room.machine_state_options.get("ids"))
@@ -157,6 +157,10 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.SOSPECHA:
             events.extend(pcs.play_sospecha(player, room, card, card_options))
 
+        elif card.name == cards.SEDUCCION:
+            events.extend(pcs.play_seduccion(player, room, card, card_options))
+            return events
+
         elif card.name == cards.UPS:
             events.extend(pcs.play_ups(player, room, card, card_options))
 
@@ -174,6 +178,23 @@ class GamesService(DBSessionMixin):
 
         elif card.name == cards.MAS_VALES_QUE_CORRAS:
             events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
+
+        elif card.name == cards.CUARENTENA:
+            events.extend(pcs.play_cuarentena(player, room, card, card_options))
+
+        else:
+            events.append(
+                {
+                    'name': 'on_game_player_play_card',
+                    'body': {
+                        'card_id': card.id,
+                        'card_name': card.name,
+                        'card_options': card_options,
+                        'player_name': player.name
+                    },
+                    'broadcast': True,
+                },
+            )
 
         rs.recalculate_positions(sent_sid)
         player.hand.remove(card)
@@ -247,18 +268,6 @@ class GamesService(DBSessionMixin):
             rootlog.exception(f"No era el turno de la persona que intento jugar {room.machine_state_options['id']} - {player.id}") # type:ignore
             raise InvalidAccionException("No es tu turno")
 
-        # Evento que avisa al resto que se ha jugado una carta
-        # Independientemente de si se defiende o no
-        events.append({
-            "name": "on_game_player_play_card",
-            "body": {
-                "player": player.name,
-                "card" : card.json(),
-                "card_options" : card_options,
-            },
-            "broadcast": True
-        }); 
-
         defense = False
 
         # veamos si es una carta que se juega sobre alguien
@@ -266,11 +275,18 @@ class GamesService(DBSessionMixin):
         # en cuyo caso agregamos un evento para avisarle que debe defenderse
         if card.need_target:
             target = Player.get(id = card_options["target"])
-            if target is None:
-                raise InvalidDataException()
+            if target is None or not target.is_alive():
+                raise InvalidAccionException("Objetivo invalido")
 
             if card.target_adjacent_only and not room.are_players_adjacent(player, target):
-                raise InvalidDataException()
+                raise InvalidAccionException("El jugador no esta a tu lado")
+
+            if not card.ignore_quarantine and target.is_in_quarantine():
+                raise InvalidAccionException("El jugador objetivo esta en cuarentena")
+
+            # TODO: PUERTA ATRANCADA
+            # if not card.ignore_locked_door and room.locked_door_between(player, target):
+            #     raise InvalidDataException()
 
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
             defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
@@ -523,7 +539,7 @@ class GamesService(DBSessionMixin):
 
         return is_superinfected
 
-    def begin_exchange(self, room: Room, player_A: Player, player_B: Player):
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player) -> list[dict]:
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
@@ -566,7 +582,7 @@ class GamesService(DBSessionMixin):
         return events
 
     def begin_end_of_turn_exchange(self, room : Room):
-        in_turn_player = list(room.players.select(lambda player : player.position == room.turn and player.status == "VIVO"))[0]
+        in_turn_player = room.get_player_by_pos(room.turn)
         if in_turn_player is None:
             rootlog.exception(f"el jugador con posicion {room.turn} no esta en la partida")
             raise Exception()
