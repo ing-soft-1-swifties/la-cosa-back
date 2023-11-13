@@ -193,7 +193,7 @@ class Room(db.Entity):
         """
         return self.players.select(lambda p: p.position == self.turn).first()
 
-    def next_player(self, player : Player) -> Player:
+    def next_player_from_player(self, player : Player) -> Player:
         """ Retorna el jugador vivo que sigue al player enviado
         """
         if player.status != 'VIVO':
