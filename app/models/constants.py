@@ -19,8 +19,7 @@ class CardName(str, Enum):
     PUERTA_ATRANCADA = 'Puerta atrancada'
     HACHA = 'Hacha'
     TRES_CUATRO = 'Tres, cuatro...'
-
-
     ATERRADOR = "Aterrador"
     NO_GRACIAS = '¡No, gracias!'
-    
+    CITA_A_CIEGAS = 'Cita a ciegas'
+    OLVIDADIZO = 'Olvidadizo'

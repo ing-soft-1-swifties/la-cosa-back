@@ -1,3 +1,4 @@
+from typing import List
 from pony.orm import db_session
 from app.models import Player, Room, Card
 from app.models.entities import MachineState
@@ -204,6 +205,12 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.MAS_VALES_QUE_CORRAS:
             events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
 
+        elif card.name == cards.OLVIDADIZO:
+            events.extend(pcs.play_olvidadizo(player, room, card, card_options))
+
+        elif card.name == cards.CITA_A_CIEGAS:
+            events.extend(pcs.play_cita_a_ciegas(player, room, card, card_options))
+
         elif card.name == cards.CUARENTENA:
             events.extend(pcs.play_cuarentena(player, room, card, card_options))
 
@@ -297,6 +304,9 @@ class GamesService(DBSessionMixin):
             rootlog.exception("Un jugador quiso jugar una carta la cual no era de su pertenencia")
             raise InvalidCardException()
 
+        if card.type not in ["PANICO", "ALEJATE"]:
+            raise InvalidDataException()
+
         # obtenemos y verificamos la room
         room: Room = player.playing
         assert room is not None
@@ -343,8 +353,19 @@ class GamesService(DBSessionMixin):
                     "card_options": card_options
                 }
 
+        # Validaciones propias de cuando la carta es de panico
         if room.machine_state == MachineState.PANICKING and card.type != "PANICO":
             raise InvalidAccionException("Debes jugar la carta de pánico en tu mano.")
+        if room.machine_state == MachineState.PANICKING:
+            cards = card_options.get("cards")
+            assert cards is not None and isinstance(cards, list)
+
+            card_picking_amount = room.machine_state.get("card_picking_amount", None)
+
+            assert card_picking_amount is not None
+
+            if player.hand.select(lambda c : c.id in cards) != card_picking_amount:
+                raise InvalidAccionException(f"Debes elegir {card_picking_amount} cartas para jugar la carta.")
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:

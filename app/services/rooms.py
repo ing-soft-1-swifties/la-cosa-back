@@ -1,5 +1,6 @@
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
+from app.models.constants import CardName
 from app.models.entities import MachineState
 from app.schemas import NewRoomSchema, RoomSchema
 from app.services.exceptions import *
@@ -243,6 +244,15 @@ class RoomsService(DBSessionMixin):
                                               "stage":"STARTING"}
             else:
                 room.machine_state = MachineState.PANICKING
+                # cantidad de cartas de su mano que se pueden elegir según este efecto de pánico
+                card_picking_amount = 0
+                if new_card.name == CardName.CITA_A_CIEGAS:
+                    card_picking_amount = 1
+                if new_card.name == CardName.OLVIDADIZO:
+                    card_picking_amount = 3
+                room.machine_state_options = {
+                    "card_picking_amount": card_picking_amount
+                }
 
             quarantine = []
             if in_turn_player.is_in_quarantine():

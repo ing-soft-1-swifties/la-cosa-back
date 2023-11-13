@@ -77,6 +77,8 @@ class TestRoomsService(unittest.TestCase):
 
         assert room.machine_state == MachineState.PANICKING
 
+        assert room.machine_state_options.get("card_picking_amount", None) is not None
+
     @db_session
     def test_next_turn_is_alejate(self):
 

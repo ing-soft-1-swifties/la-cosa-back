@@ -69,11 +69,17 @@ class Player(db.Entity):
         room: Room = self.playing;
 
         state: PlayerState = PlayerState.WAITING
+        card_picking_amount = 0
+        selectable_players = []
 
         if room.machine_state == MachineState.PLAYING and room.turn == self.position:
             state = PlayerState.PLAYING
         elif room.machine_state == MachineState.PANICKING and room.turn == self.position:
             state = PlayerState.PANICKING
+            card_picking_amount = room.machine_state_options.get("card_picking_amount", None)
+            selectable_players = room.machine_state_options.get("selectable_players", None)
+            assert card_picking_amount is not None
+            assert selectable_players is not None
         elif room.machine_state == MachineState.DEFENDING and room.suspended_card_target == self:
             state = PlayerState.DEFENDING
         elif room.machine_state == MachineState.EXCHANGING:
@@ -91,7 +97,8 @@ class Player(db.Entity):
                 #estos son agregados para notificar estado al front, asi deciden como renderizar ciertas cosas
                 "on_turn": self.status == "VIVO" and self.position == self.playing.turn,
                 "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids")),
-                "state": state
+                "state": state,
+                "card_picking_amount": card_picking_amount
         }
 
     def add_card(self, card_id: int):
