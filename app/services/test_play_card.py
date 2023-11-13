@@ -299,30 +299,6 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[1]['body']['player_name'] == player.name
 
     @db_session
-    def test_play_cambio_de_lugar_invalido(self):
-        TEST_NAME = 'test_play_cambio_de_lugar_invalido'
-        # creamos una room valida
-        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
-
-        # seleccionamos un jugador al azar y le damos la carta
-        player: Player = room.players.select(lambda p: p.position == 0).first()
-        cambio_de_lugar = Card.select(lambda c: c.name == cards.CAMBIO_DE_LUGAR).first()
-        player.add_card(cambio_de_lugar.id)
-
-        # seleccionamos un jugador no adjacente
-        other_player: Player = room.players.select(lambda p: p.position==2).first()
-
-        other_player.set_quarantine(2)
-        # seleccionamos un jugador adjacente
-        with self.assertRaises(InvalidAccionException):
-            response = self.pcs.play_cambio_de_lugar(
-                player=player,
-                room=room,
-                card=cambio_de_lugar,
-                card_options={'target': other_player.id}  # INTVALID
-            )
-
-    @db_session
     def test_play_vigila_tus_espaldas(self):
         TEST_NAME = 'test_play_vigila_tus_espaldas'
         # creamos una room valida
@@ -352,60 +328,6 @@ class TestPlayCardsService(unittest.TestCase):
         assert response[0]['body']['card_name'] == card.name
         assert response[0]['body']['player_name'] == player.name
         assert response[0]['broadcast']
-
-    @db_session
-    def test_play_mas_vale_que_corras(self):
-        TEST_NAME = 'test_play_mas_vale_que_corras'
-        # creamos una room valida
-        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
-
-        # seleccionamos un jugador al azar y le damos la carta
-        player: Player = room.players.select(lambda p: p.position == 0).first()
-        room.turn = player.position
-        card = Card.select(lambda c: c.name == cards.MAS_VALES_QUE_CORRAS).first()
-        player.add_card(card.id)
-
-        # seleccionamos un jugador no adjacente
-        other_player: Player = room.players.select(lambda p: p.position == 1).first()
-        player_position = player.position
-        other_player_position = other_player.position
-
-
-        # seleccionamos un jugador adjacente
-        response = self.pcs.play_mas_vale_que_corras(
-            player=player,
-            room=room,
-            card=card,
-            card_options={'target': other_player.id}
-        )
-
-        # comportamiento esperado de rooms
-        assert player.position == other_player_position
-        assert other_player.position == player_position
-
-        # evento on_game_swap_positions
-        assert len(response) == 2
-        assert response[0]['name'] == 'on_game_swap_positions'
-        assert player.name in response[0]['body']['players']
-        assert other_player.name in response[0]['body']['players']
-        assert response[0]['broadcast']
-
-        # evento on_game_player_play_card
-        assert response[1]['name'] == 'on_game_player_play_card'
-        assert response[1]['broadcast']
-        assert response[1]['body']['card_id'] == card.id
-        assert response[1]['body']['card_name'] == card.name
-        assert response[1]['body']['player_name'] == player.name
-
-        other_player.set_quarantine(2)
-
-        with self.assertRaises(InvalidAccionException):
-            response = self.pcs.play_mas_vale_que_corras(
-                player=player,
-                room=room,
-                card=card,
-                card_options={'target': other_player.id}
-            )
 
     @db_session
     def test_play_cuarentena(self):

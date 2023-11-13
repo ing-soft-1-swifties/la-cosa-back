@@ -215,9 +215,6 @@ class PlayCardsService(DBSessionMixin):
         target_id = card_options.get("target")
         target_player: Player = Player.get(id=target_id)
 
-        if target_player.is_in_quarantine():
-            raise InvalidAccionException("El objetivo esta en cuarentena")
-
         # cambia las posiciones de los jugadores
         room.swap_players_positions(player, target_player)
         return [
@@ -267,9 +264,6 @@ class PlayCardsService(DBSessionMixin):
         """
         target_id = card_options.get("target")
         target_player: Player = Player.get(id=target_id)
-
-        if target_player.is_in_quarantine():
-            raise InvalidAccionException("El objetivo esta en cuarentena")
 
         # cambiamos las posiciones de los jugadores
         room.swap_players_positions(player, target_player)

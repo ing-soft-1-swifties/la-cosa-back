@@ -258,10 +258,17 @@ class GamesService(DBSessionMixin):
         if card.need_target:
             target = Player.get(id = card_options["target"])
             if target is None:
-                raise InvalidDataException()
+                raise InvalidAccionException("Objetivo invalido")
 
             if card.target_adjacent_only and not room.are_players_adjacent(player, target):
-                raise InvalidDataException()
+                raise InvalidAccionException("El jugador no esta a tu lado")
+
+            if not card.ignore_quarantine and target.is_in_quarantine():
+                raise InvalidAccionException("El jugador objetivo esta en cuarentena")
+
+            # TODO: PUERTA ATRANCADA
+            # if not card.ignore_locked_door and room.locked_door_between(player, target):
+            #     raise InvalidDataException()
 
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
             defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
