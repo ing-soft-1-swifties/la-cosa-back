@@ -378,6 +378,17 @@ class GamesService(DBSessionMixin):
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:
             events.extend(self.dispatch_card_effect(sent_sid, player, room, card, card_options))
+        else:
+            events.append({
+                    'name': 'on_game_player_play_card',
+                    'body': {
+                        'card_id': card.id,
+                        'card_name': card.name,
+                        'card_options': card_options,
+                        'player_name': player.name
+                    },
+                    'broadcast': True,
+                })
 
         player.hand.remove(card)
         room.discarted_cards.add(card)
