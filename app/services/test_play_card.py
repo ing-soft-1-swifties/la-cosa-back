@@ -128,6 +128,33 @@ class TestPlayCardsService(unittest.TestCase):
         assert player.serialize_hand(exclude=[whisky.id]) == response['body']['effects']['cards']
 
     @db_session
+    def test_play_card_aterrador(self):
+        TEST_NAME = 'test_play_card_aterrador'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # obtenemos un jugador y le damos la carta whisky
+        player: Player = room.players.select(lambda x:x.position == 1).first()
+        aterrador = Card.select(lambda c: c.name== cards.ATERRADOR).first()
+        player.hand.add(aterrador)
+        # obtenemos el jugador anterior y le damos un no gracias (podria haber sido cualquiera)
+        last_player: Player = room.players.select(lambda x:x.position == 0).first()
+        no_gracias = Card.select(lambda c: c.name== cards.NO_GRACIAS).first()
+        last_player.hand.add(no_gracias)
+
+
+        response = self.pcs.play_aterrador(player, room, aterrador, {
+            "starter_card_id":no_gracias.id,
+            "starter_name": last_player.name})
+
+        assert len(response) == 1
+
+        response = response[0]
+
+        assert response['name'] == 'on_game_defend_with_aterrador'
+        assert no_gracias.id == response['body']['card_id']
+
+    @db_session
     def test_play_card_sospecha(self):
         TEST_NAME = 'test_play_card_sospecha'
         # creamos una room valida

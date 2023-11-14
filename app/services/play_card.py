@@ -334,7 +334,25 @@ class PlayCardsService(DBSessionMixin):
             la carta que te has negado a recibir.
             Roba una carta ALEJATE en sustitucion de esta.
         """
-        return []
+        card = Card.get(id = card_options["starter_card_id"])
+        starter_player = room.players.select(lambda x: x.name == card_options["starter_name"]).first()
+        events = [
+            {
+                'name': 'on_game_defend_with_aterrador',
+                'body': {
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'card_options': card_options,
+                    'player_name': player.name,
+                    'effects': {
+                        "card" : card.json(),
+                        "name" : starter_player.name
+                    }
+                },
+                'broadcast': False,
+                'receiver_sid': player.sid
+        }]
+        return events
 
     def play_aqui_estoy_bien(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """

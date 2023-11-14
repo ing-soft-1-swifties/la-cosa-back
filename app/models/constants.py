@@ -20,4 +20,6 @@ class CardName(str, Enum):
     HACHA = 'Hacha'
 
 
+    ATERRADOR = "Aterrador"
     NO_GRACIAS = '¡No, gracias!'
+    
