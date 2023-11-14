@@ -118,7 +118,6 @@ class GamesService(DBSessionMixin):
             if sent_card_id is None:
                 raise InvalidDataException()
 
-            # TODO: cambiar esto por player.has_card(defense_card.id) luego de hacer rebase
             if not ps.has_card(player, defense_card):
                 raise InvalidCardException()
 
@@ -573,7 +572,7 @@ class GamesService(DBSessionMixin):
                 cs = CardsService(self.db)
                 
                 # CUARENTENA
-                room.get_current_player().decrease_quarantine() #TODO! esto no va aca, va dsp de que se concreta intercambio
+                room.get_current_player().decrease_quarantine()
                 if room.machine_state_options["on_defense"] or (on_defense and not is_first_player):  #si se esta defendiendo
                     #second_player.hand.remove(second_card)
                     cs.give_alejate_card(second_player)

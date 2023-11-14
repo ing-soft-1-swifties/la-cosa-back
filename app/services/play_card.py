@@ -831,7 +831,7 @@ P1
 P2 
     Pánico:
         [x] Cuerdas podridas
-        [ ] Esta es la fiesta?
+        [x] Esta es la fiesta?
         [x] Oops!
         [ ] Vuelta y vuelta
         [x] No podemos ser amigos
