@@ -614,23 +614,23 @@ class PlayCardsService(DBSessionMixin):
         events = []
 
         players = room.get_alive_players()
-
         last_player_read = player
         while len(players) > 1:
             next_player = room.next_player_from_player(last_player_read)
+            next_next_player = room.next_player_from_player(next_player)
             room.swap_players_positions(last_player_read, next_player)
-            players.remove(next_player)
-            players.remove(last_player_read)
-            last_player_read = room.next_player_from_player(next_player)
             events.append(
                 {
                     'name': 'on_game_swap_positions',
                     'body': {
-                        'players': [players[i].name, players[i+1].name],
+                        'players': [last_player_read.name, next_player.name],
                     },
                     'broadcast': True,
                 }
             )
+            players.remove(next_player)
+            players.remove(last_player_read)
+            last_player_read = next_next_player
 
         events.append({
             'name': 'on_game_player_play_card',
