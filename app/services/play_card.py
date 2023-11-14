@@ -561,7 +561,12 @@ class PlayCardsService(DBSessionMixin):
         """
             Intercambia una carta con cualquier jugador de tu eleccion que no este en cuarentena
         """
-        return []
+        return self.play_seduccion(
+            player=player,
+            room=room,
+            card=card,
+            card_options=card_options
+        )
 
     def play_olvidadizo(self, player: Player, room: Room, card: Card, card_options):
         """
@@ -621,7 +626,7 @@ P0
         [x] Sospecha
         [x] Whisky
     Defensa:
-        [ ] Aterrador
+        [x] Aterrador
         [x] Aquí estoy bien
         [x] No, gracias
         [x] Fallaste
@@ -639,11 +644,12 @@ P1
 P2 
     Pánico:
         [x] Cuerdas podridas
-        [ ] Esta es la fiesta? -----------------
+        [ ] Esta es la fiesta?
         [x] Oops!
         [ ] Vuelta y vuelta
-        [ ] Podemos ser Amigos?
-        [ ] Olvidadizo
-        [ ] Carta 1, 2 ... (movimiento) ------------------
+        [ ] No podemos ser amigos
+        [x] Olvidadizo
+        [x] Carta 1, 2 ... (movimiento)
         [x] Carta 3, 4 ... (movimiento)
+        [x] Sal de aqui
 """
