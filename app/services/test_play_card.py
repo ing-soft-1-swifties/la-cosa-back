@@ -560,7 +560,7 @@ class TestPlayCardsService(unittest.TestCase):
             card=card,
             card_options={}
         )
-
+        # TODO fix test
         assert not other_player.position in room.get_obstacles_positions()
         assert len(response) == 1
         assert response[0]['name'] == 'on_game_player_play_card'
