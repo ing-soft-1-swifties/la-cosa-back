@@ -104,8 +104,9 @@ async def game_play_card(sid : str, data):
     except InvalidAccionException as e:
         events = e.generate_event(sid)
         await notify_events(events, sid)
-    except Exception:
+    except Exception as e:
         rootlog.exception("ocurrio un error inesperado al jugar una carta, posible estado inconsistente")
+        rootlog.exception(f"{e}")
     return True
 
 @sio_server.event
@@ -115,8 +116,9 @@ async def game_play_defense_card(sid :str, data):
         await notify_events(events, sid)
     except InvalidAccionException as e:
         return e.generate_event(sid)
-    except Exception:
+    except Exception as e:
         rootlog.exception("ocurrio un error inesperado al defenderse de una carta, posible estado inconsistente")
+        rootlog.exception(f"{e}")
     return True
     
 @sio_server.event
