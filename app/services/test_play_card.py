@@ -553,6 +553,7 @@ class TestPlayCardsService(unittest.TestCase):
         # seleccionamos a un jugador adjacente
         other_player: Player = room.players.select(lambda p: p.position == 1).first()
 
+        room.add_locked_door(other_player.position)
         # jugamos hacha sobre una CUARENTENA
         response = self.pcs.play_tres_cuatro(
             player=player,
@@ -693,12 +694,39 @@ class TestPlayCardsService(unittest.TestCase):
             }
         )
 
-        # print(response)
-
         assert len(response) == 1
         assert response[0]['name'] == 'on_game_begin_exchange'
         assert response[0]['broadcast']
 
+    @db_session
+    def test_play_aqui_estoy_bien(self):
+        TEST_NAME = 'test_play_aqui_estoy_bien'
+        # creamos una room valida
+        room = self.create_valid_room(roomname=TEST_NAME, qty_players=12)
+
+        # seleccionamos un jugador al azar y le damos la carta
+        player: Player = room.players.select(lambda p: p.position == 0).first()
+        room.turn = player.position
+        card = Card.select(lambda c: c.name == cards.AQUI_ESTOY_BIEN).first()
+        player.add_card(card.id)
+
+        # seleccionamos a un jugador adjacente
+        other_player: Player = room.players.select(lambda p: p.position == 1).first()
+
+        # jugamos hacha sobre una CUARENTENA
+        response = self.pcs.play_aqui_estoy_bien(
+            player=player,
+            room=room,
+            card=card,
+            card_options={'target': other_player.id}
+        )
+
+        assert len(response) == 1
+        assert response[0]['name'] == 'on_game_player_play_defense_card'
+        assert response[0]['body']['player_name'] == player.name
+        assert response[0]['body']['card_name'] == card.name
+        assert response[0]['body']['card_id'] == card.id
+        assert response[0]['broadcast']
 
     @classmethod
     @db_session
