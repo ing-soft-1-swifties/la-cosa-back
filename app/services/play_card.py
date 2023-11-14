@@ -491,17 +491,17 @@ class PlayCardsService(DBSessionMixin):
             raise InvalidAccionException("El campo is_quarantine es obligatorio")
 
         target = card_options.get("target")
+        target_player: Player = Player.get(id=target)
 
         if is_quarantine:
-            # tomamos target_id como una POSICION de un JUGADOR
-            target_player: Player = Player.get(id=target)
+            # tomamos target_id como una id de un JUGADOR
             target_player.set_quarantine(0)
 
         else:
-            # tomamos target_id como una POSICION de una PUERTA ATRANCADA
-            if not target in room.get_obstacles_positions():
+            # tomamos target_id como una id de jugador que a su derecha tiene una PUERTA ATRANCADA
+            if not target_player.position in room.get_obstacles_positions():
                 raise InvalidAccionException("No existe un obstaculo en esa posicion")
-            room.remove_locked_door(target)
+            room.remove_locked_door(target_player.position)
 
         return [
             {
