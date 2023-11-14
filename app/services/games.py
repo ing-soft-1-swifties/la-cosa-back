@@ -229,6 +229,8 @@ class GamesService(DBSessionMixin):
         elif card.name == CardName.TRES_CUATRO:
             events.extend(pcs.play_tres_cuatro(player, room, card, card_options))
 
+        elif card.name == cards.ES_AQUI_LA_FIESTA:
+            events.extend(pcs.play_es_aqui_la_fiesta(player, room, card, card_options))
 
         else:
             rootlog.exception(f"Esta carta ({card.name}) no esta implementada")
