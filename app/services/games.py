@@ -357,15 +357,16 @@ class GamesService(DBSessionMixin):
         if room.machine_state == MachineState.PANICKING and card.type != "PANICO":
             raise InvalidAccionException("Debes jugar la carta de pánico en tu mano.")
         if room.machine_state == MachineState.PANICKING:
-            cards = card_options.get("cards")
-            assert cards is not None and isinstance(cards, list)
 
             card_picking_amount = room.machine_state_options.get("card_picking_amount", None)
 
             assert card_picking_amount is not None
 
-            if len(player.hand.select(lambda c : c.id in cards)) != card_picking_amount:
-                raise InvalidAccionException(f"Debes elegir {card_picking_amount} cartas para jugar la carta.")
+            if(card_picking_amount > 0):
+                cards = card_options.get("cards")
+                assert cards is not None and isinstance(cards, list)
+                if len(player.hand.select(lambda c : c.id in cards)) != card_picking_amount:
+                    raise InvalidAccionException(f"Debes elegir {card_picking_amount} cartas para jugar la carta.")
 
         # si no es posible defenderse, llamamos al efecto de la carta de una
         if not defense:

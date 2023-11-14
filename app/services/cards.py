@@ -42,7 +42,7 @@ class CardsService(DBSessionMixin):
         return card_to_deal
 
     @db_session
-    def give_alejate_card(self, player:Player):
+    def give_alejate_card(self, player:Player) -> Card:
         """ Toma un jugador y le entrega la primera carta de alejate disponible, no hace shuffle de ser necesario, solo obtiene la carta del maso de descartes
         Returns:
             Carta que se entregó
@@ -216,37 +216,8 @@ class CardsService(DBSessionMixin):
                 rootlog.exception(f"no era el turno de la persona que intento descartar {room.machine_state_options['id']} {player.id}")
                 raise InvalidAccionException(msg="No es tu turno")
 
-            # Carta invalida
-            infected_count = len(player.hand.select(name='Infectado'))
-            invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
-            invalid_discard_la_cosa = card.name == 'La cosa'
-            if invalid_discard_infected or invalid_discard_la_cosa:
-                raise InvalidCardException() 
+            events.extend(self.discard_card_with_validation(player, card))
 
-            player.hand.remove(card)
-            room.discarted_cards.add(card)
-            from .rooms import RoomsService
-            rs = RoomsService(self.db)
-
-            quarantine = []
-            if player.is_in_quarantine():
-                quarantine.append(
-                    {
-                        'player_name': player.name,
-                        'card': card.json()
-                    }
-                )
-
-            events.append(
-                {
-                    "name": "on_game_player_discard_card",
-                    "body": {
-                        "player": player.name,
-                        "quarantine": None if quarantine == [] else quarantine
-                    },
-                    "broadcast": True
-                }
-            )
             # events.extend(rs.next_turn(sent_sid))
             # return events
             from .games import GamesService
@@ -256,3 +227,39 @@ class CardsService(DBSessionMixin):
         except InvalidAccionException as e:
             return e.generate_event(sent_sid)
 
+    def discard_card_with_validation(self, player: Player, card: Card):
+        events = []
+        room: Room = player.playing
+        # Carta invalida
+        infected_count = len(player.hand.select(name='Infectado'))
+        invalid_discard_infected = card.name == 'Infectado' and player.rol == 'INFECTADO' and infected_count == 1
+        invalid_discard_la_cosa = card.name == 'La cosa'
+        if invalid_discard_infected or invalid_discard_la_cosa:
+            raise InvalidCardException() 
+
+        player.hand.remove(card)
+        room.discarted_cards.add(card)
+        from .rooms import RoomsService
+        rs = RoomsService(self.db)
+
+        quarantine = []
+        if player.is_in_quarantine():
+            quarantine.append(
+                {
+                    'player_name': player.name,
+                    'card': card.json()
+                }
+            )
+
+        events.append(
+            {
+                "name": "on_game_player_discard_card",
+                "body": {
+                    "player": player.name,
+                    "quarantine": None if quarantine == [] else quarantine
+                },
+                "broadcast": True
+            }
+        )
+
+        return events

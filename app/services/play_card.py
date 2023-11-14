@@ -419,7 +419,65 @@ class PlayCardsService(DBSessionMixin):
             descartando cualquier carta de PANICO robada.
             Tu turno termina
         """
-        return []
+
+        events = []
+
+        cards_ids = card_options.get("cards", None)
+        
+        assert cards_ids is not None
+        
+        cards = player.hand.select(lambda c : c.id in cards_ids)
+
+        assert len(cards) == 1
+
+        from app.services.cards import CardsService
+
+        cs =  CardsService(self.db)
+
+
+        quarantine = []
+        new_cards = []
+        for card in cards:
+            events.extend(cs.discard_card_with_validation(player, card))
+            new_card = cs.give_alejate_card(player)
+            new_cards.append(new_card)
+
+
+            if player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': player.name,
+                        'card': new_card.json()
+                    }
+                )
+
+        # Evento privado
+        events.append({
+            "name": "on_game_player_steal_card",
+            "body": {
+                "cards": [c.json() for c in new_cards],
+                "card_type": "Alejate",
+                "player": player.name
+            },
+            "broadcast": False,
+            "receiver_sid": player.sid
+        })
+
+        # Evento publico
+        events.append(
+            {
+                "name": "on_game_player_steal_card",
+                "body": {
+                    "player": player.name,
+                    "card_type": "ALEJATE",
+                    "quarantine": None if quarantine == [] else quarantine,
+                },
+                "broadcast": True,
+                "except_sid": [player.sid]
+            }
+        )
+
+        return events
 
     def play_cuarentena(self, player: Player, room: Room, card: Card, card_options) -> list[dict]:
         """
@@ -573,7 +631,65 @@ class PlayCardsService(DBSessionMixin):
             Descarta 3 cartas de tu mano y roba 3 nuevas cartas ALEJATE descartando
             cualquier carta de PANICO robada.
         """
-        return []
+
+        events = []
+
+        cards_ids = card_options.get("cards", None)
+        
+        assert cards_ids is not None
+        
+        cards = player.hand.select(lambda c : c.id in cards_ids)
+
+        assert len(cards) == 3
+
+        from app.services.cards import CardsService
+
+        cs =  CardsService(self.db)
+
+
+        quarantine = []
+        new_cards = []
+        for card in cards:
+            events.extend(cs.discard_card_with_validation(player, card))
+            new_card = cs.give_alejate_card(player)
+            new_cards.append(new_card)
+
+
+            if player.is_in_quarantine():
+                quarantine.append(
+                    {
+                        'player_name': player.name,
+                        'card': new_card.json()
+                    }
+                )
+
+        # Evento privado
+        events.append({
+            "name": "on_game_player_steal_card",
+            "body": {
+                "cards": [c.json() for c in new_cards],
+                "card_type": "Alejate",
+                "player": player.name
+            },
+            "broadcast": False,
+            "receiver_sid": player.sid
+        })
+
+        # Evento publico
+        events.append(
+            {
+                "name": "on_game_player_steal_card",
+                "body": {
+                    "player": player.name,
+                    "card_type": "ALEJATE",
+                    "quarantine": None if quarantine == [] else quarantine,
+                },
+                "broadcast": True,
+                "except_sid": [player.sid]
+            }
+        )
+
+        return events
 
     def play_sal_de_aqui(self, player: Player, room: Room, card: Card, card_options):
         """
