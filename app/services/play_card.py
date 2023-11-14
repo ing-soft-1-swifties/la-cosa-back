@@ -709,7 +709,36 @@ class PlayCardsService(DBSessionMixin):
             Si tu o ese jugador estais en CUARENTENA, el cambio no se realiza.
             SI EL OBJETIVO ESTA EN CUARENTENA NO TIENE EFECTO PERO SI SE PUEDE JUGAR
         """
-        return []
+
+        events = []
+        target_id = card_options.get("target")
+        target_player = Player.get(id = target_id)
+
+        assert target_player is not None
+
+        if not target_player.is_in_quarantine():
+            room.swap_players_positions(player, target_player)
+            events.append(
+                {
+                    'name': 'on_game_swap_positions',
+                    'body': {
+                        'players': [player.name, target_player.name],
+                    },
+                    'broadcast': True,
+                }
+            )
+        events.append({
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card_id': card.id,
+                'card_name': card.name,
+                'card_options': card_options,
+                'player_name': player.name
+            },
+            'broadcast': True
+        })
+
+        return events
 
     def play_tres_cuatro(self, player: Player, room: Room, card: Card, card_options):
         """

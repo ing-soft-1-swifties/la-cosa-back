@@ -223,6 +223,9 @@ class GamesService(DBSessionMixin):
         elif card.name == cards.HACHA:
             events.extend(pcs.play_hacha(player, room, card, card_options))
 
+        elif card.name == cards.UNO_DOS:
+            events.extend(pcs.play_uno_dos(player, room, card, card_options))
+
         elif card.name == cards.TRES_CUATRO:
             events.extend(pcs.play_tres_cuatro(player, room, card, card_options))
 
@@ -325,7 +328,10 @@ class GamesService(DBSessionMixin):
         # vemos tambien si es posible que el jugador objetivo se defienda
         # en cuyo caso agregamos un evento para avisarle que debe defenderse
         if card.need_target:
-            target = Player.get(id = card_options["target"])
+            target_id = card_options.get("target", None)
+            if target_id is None:
+                raise InvalidAccionException("Objetivo invalido")
+            target = Player.get(id = target_id)
             if target is None or not target.is_alive():
                 raise InvalidAccionException("Objetivo invalido")
 

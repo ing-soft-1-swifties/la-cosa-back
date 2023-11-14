@@ -98,7 +98,8 @@ class Player(db.Entity):
                 "on_turn": self.status == "VIVO" and self.position == self.playing.turn,
                 "on_exchange": self.playing.machine_state == "EXCHANGING" and (self.id in self.playing.machine_state_options.get("ids")),
                 "state": state,
-                "card_picking_amount": card_picking_amount
+                "card_picking_amount": card_picking_amount,
+                "selectable_players": selectable_players
         }
 
     def add_card(self, card_id: int):
