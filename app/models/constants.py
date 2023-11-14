@@ -25,3 +25,4 @@ class CardName(str, Enum):
     OLVIDADIZO = 'Olvidadizo'
     VUELTA_Y_VUELTA = "VUELTA_Y_VUELTA"
     UNO_DOS = "Uno, dos..."
+    ES_AQUI_LA_FIESTA = "¿Es aqui la fiesta?"

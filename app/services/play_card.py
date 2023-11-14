@@ -599,10 +599,52 @@ class PlayCardsService(DBSessionMixin):
         """
             Descarta todas las cartas CUARENTENA y PUERTA ATRANCADA que haya en el juego.
             A continuacion, empezando por ti, todos los jugadores cambian de sitio
-            por parejas, en el sentido pde las agujas del reloj.
+            por parejas, en el sentido de las agujas del reloj.
             Si hay un numero impar de jugadores, el ultimo jugador no se mueve.
         """
-        return []
+
+        # Eliminamos todas las PUERTAS ATRANCADAS
+        for obstacle_position in room.get_obstacles_positions():
+            room.remove_locked_door(obstacle_position)
+
+        # Eliminamos todas las CUARENTENAS
+        for player in room.get_quarantine_players():
+            player.set_quarantine(0)
+
+        events = []
+
+        players = room.get_alive_players()
+        last_player_read = player
+        while len(players) > 1:
+            next_player = room.next_player_from_player(last_player_read)
+            next_next_player = room.next_player_from_player(next_player)
+            room.swap_players_positions(last_player_read, next_player)
+            events.append(
+                {
+                    'name': 'on_game_swap_positions',
+                    'body': {
+                        'players': [last_player_read.name, next_player.name],
+                    },
+                    'broadcast': True,
+                }
+            )
+            players.remove(next_player)
+            players.remove(last_player_read)
+            last_player_read = next_next_player
+
+        events.append({
+            'name': 'on_game_player_play_card',
+            'body': {
+                'card_id': card.id,
+                'card_name': card.name,
+                'card_options': card_options,
+                'player_name': player.name
+            },
+            'broadcast': True
+        })
+
+        return events
+
 
     def play_vuelta_y_vuelta(self, player: Player, room: Room, card: Card, card_options):
         """

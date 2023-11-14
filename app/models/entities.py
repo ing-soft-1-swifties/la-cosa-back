@@ -285,7 +285,6 @@ class Room(db.Entity):
         # Matar al jugador
         player.status = "MUERTO"
 
-
         # Reordenar al resto de los jugadores.
         # Las posiciones se mantienen de 0 a cantidad de jugadores - 1
 
@@ -372,3 +371,7 @@ class Room(db.Entity):
             positions.append(obstacle.position)
 
         return positions
+
+    def get_alive_players(self) -> list[Player]:
+        return list(self.players.select(lambda player: player.is_alive()))
+
