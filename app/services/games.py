@@ -342,8 +342,8 @@ class GamesService(DBSessionMixin):
             if not card.ignore_quarantine and target.is_in_quarantine():
                 raise InvalidAccionException("El jugador objetivo esta en cuarentena")
 
-            obstacles_positions = room.get_obstacles_positions()
-            are_players_blocked = player.position in obstacles_positions or target.position in obstacles_positions
+            are_players_blocked = room.are_players_blocked(player, target)
+
             if not card.ignore_locked_door and are_players_blocked:
                 raise InvalidDataException()
 

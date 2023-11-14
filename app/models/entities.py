@@ -166,6 +166,18 @@ class Room(db.Entity):
     suspended_card = Optional(Card, reverse = "suspended_in")
     suspended_card_target = Optional(Player, reverse = "target_in")
 
+    def are_players_blocked(self, p1: Player, p2: Player) -> bool:
+        n = self.qty_alive_players()
+
+        obstacle_positions = self.get_obstacles_positions()
+
+        ret = p1.position == n-1 and p2.position == 0 and p1.position in obstacle_positions
+        ret = ret or p1.position == 0 and p2.position == n-1 and p2.position in obstacle_positions
+        ret = ret or self.are_players_adjacent(p1, p2) and p1.position < p2.position and p1 in obstacle_positions
+        ret = ret or self.are_players_adjacent(p1, p2) and p2.position < p1.position and p2 in obstacle_positions
+
+        return ret
+
     def qty_alive_players(self)->int:
         return len(list(self.players.select(lambda player:player.status=='VIVO')))
 
