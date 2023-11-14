@@ -440,9 +440,9 @@ class TestPlayCardsService(unittest.TestCase):
             player=player,
             room=room,
             card=card,
-            card_options={'target': other_player.id}
+            card_options={'target': player.id}
         )
-        assert other_player.position in room.get_obstacles_positions()
+        assert player.position in room.get_obstacles_positions()
 
         assert len(response) == 1
         assert response[0]['name'] == 'on_game_player_play_card'
@@ -491,7 +491,7 @@ class TestPlayCardsService(unittest.TestCase):
             card=card,
             card_options={
                 'is_quarantine': False,
-                'target': other_player.position
+                'target': other_player.id
             }
         )
 
