@@ -566,7 +566,12 @@ class PlayCardsService(DBSessionMixin):
         """
             Cambiate de sitio con cualquier jugador de tu eleccion que no este en cuarentena
         """
-        return []
+        return self.play_mas_vale_que_corras(
+            player=player,
+            room=room,
+            card=card,
+            card_options=card_options
+        )
 
     def play_uno_dos(self, player: Player, room: Room, card: Card, card_options):
         """
@@ -632,5 +637,5 @@ P2
         [ ] Podemos ser Amigos?
         [ ] Olvidadizo
         [ ] Carta 1, 2 ... (movimiento) ------------------
-        [ ] Carta 3, 4 ... (movimiento)
+        [x] Carta 3, 4 ... (movimiento)
 """
