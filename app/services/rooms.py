@@ -1,5 +1,6 @@
 from pony.orm import count, db_session, Set
 from app.models import Player, Room, Card
+from app.models.constants import CardName
 from app.models.entities import MachineState
 from app.schemas import NewRoomSchema, RoomSchema
 from app.services.exceptions import *
@@ -243,6 +244,49 @@ class RoomsService(DBSessionMixin):
                                               "stage":"STARTING"}
             else:
                 room.machine_state = MachineState.PANICKING
+                # cantidad de cartas de su mano que se pueden elegir según este efecto de pánico
+                card_picking_amount = 0
+                selectable_players = []
+                if new_card.name == CardName.CITA_A_CIEGAS:
+                    card_picking_amount = 1
+                elif new_card.name == CardName.OLVIDADIZO:
+                    card_picking_amount = 3
+                elif new_card.name == CardName.UNO_DOS:
+                    n = room.qty_alive_players()
+
+                    assert player.position is not None
+
+
+                    # Asignamos los jugadores que pueden seleccionarse en VUELTA_Y_VUELTA
+                    left_player_pos = player.position - 3
+
+                    if left_player_pos < 0:
+                        left_player_pos = n + left_player_pos
+
+                    right_player_pos = (player.position + 3) % n
+
+                    # Luego corregimos las posiciones resultantes si resultan ser el mismo jugador que esta jugando
+                    # si es igual al de la izquierda es igual al de la derecha
+                    # asi que basta con checkear lo siguiente:
+                    if player.position == left_player_pos:
+                        # Movemos el izquierdo uno mas a la izquierda
+                        # movemos el derecho uno mas a la derecha
+                        left_player_pos -= 1
+                        if left_player_pos < 0:
+                            left_player_pos = n + left_player_pos
+
+                        right_player_pos = (right_player_pos + 1) % n
+
+                    right_player = room.get_player_by_pos(right_player_pos)
+                    left_player = room.get_player_by_pos(left_player_pos)
+
+                    selectable_players = [right_player.name, left_player.name]
+                    
+
+                room.machine_state_options = {
+                    "card_picking_amount": card_picking_amount,
+                    "selectable_players": selectable_players
+                }
 
             quarantine = []
             if in_turn_player.is_in_quarantine():

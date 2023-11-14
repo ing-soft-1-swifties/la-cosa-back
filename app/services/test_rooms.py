@@ -1,5 +1,6 @@
 from pony.orm import Database, db_session
 import unittest
+from app.models.constants import CardName
 from app.models.populate_cards import populate
 from app.models.entities import MachineState, Player, Room, Card
 from app.schemas import NewRoomSchema
@@ -43,7 +44,49 @@ class TestRoomsService(unittest.TestCase):
 
         return room
 
-    # TESTS POR ARREGLAR
+    @db_session
+    def test_next_turn_is_uno_dos(self):
+
+        rs = RoomsService(self.db)
+
+        room: Room = self.create_valid_room(
+            qty_players = 3,
+            roomname="test_next_turn_is_uno_dos"
+        )
+
+        rs.assign_turns(room)
+
+        # La unica carta disponible va a ser 'Uno, dos'
+        panic_card = Card(type="PANICO", name=CardName.UNO_DOS, deck = 1)
+
+        assert panic_card is not None
+        room.available_cards.add(panic_card) #type:ignore
+
+        player = room.players.select(position = room.turn).first() #type:ignore
+        player.sid = "test_next_turn_is_uno_dos"
+
+        assert player is not None
+
+        player: Player
+
+        assert len(room.available_cards) != 0
+
+        assert panic_card.type == "PANICO"
+
+        # Le damos la carta de panico al jugador en turno
+        rs.next_turn(player.sid)
+
+        assert room.machine_state == MachineState.PANICKING
+
+        assert room.machine_state_options.get("card_picking_amount", None) is not None
+
+        selectable_players = room.machine_state_options.get("selectable_players", None)
+
+        assert selectable_players is not None and isinstance(selectable_players, list)
+
+        assert player.name not in selectable_players
+
+
 
     @db_session
     def test_next_turn_is_panic(self):
@@ -76,6 +119,8 @@ class TestRoomsService(unittest.TestCase):
         rs.next_turn(player.sid)
 
         assert room.machine_state == MachineState.PANICKING
+
+        assert room.machine_state_options.get("card_picking_amount", None) is not None
 
     @db_session
     def test_next_turn_is_alejate(self):
