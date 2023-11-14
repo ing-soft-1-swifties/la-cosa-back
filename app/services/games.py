@@ -9,7 +9,7 @@ from app.services.players import PlayersService
 from app.services.rooms import RoomsService
 from app.services.cards import CardsService
 from app.logger import rootlog
-from app.models.constants import CardName as cards
+from app.models.constants import CardName
 
 class GamesService(DBSessionMixin):
 
@@ -147,12 +147,12 @@ class GamesService(DBSessionMixin):
         rs = RoomsService(self.db)
         events = []
 
-        if card.name == cards.FALLASTE:
+        if card.name == CardName.FALLASTE:
             events.extend(pcs.play_fallaste(player, room, card, card_options))
-        elif card.name == cards.NO_GRACIAS:
+        elif card.name == CardName.NO_GRACIAS:
             events.extend(pcs.play_no_gracias(player, room, card, card_options))
             events.extend(rs.next_turn(sent_sid))
-        elif card.name == cards.ATERRADOR:
+        elif card.name == CardName.ATERRADOR:
             events.extend(pcs.play_aterrador(player, room, card, card_options))
             print(events)
             events.extend(rs.next_turn(sent_sid))
@@ -168,65 +168,65 @@ class GamesService(DBSessionMixin):
 
         rootlog.exception(f"El jugador <{player.name}> jugo la carta <{card.name}>")
 
-        if card.name == cards.LANZALLAMAS:
+        if card.name == CardName.LANZALLAMAS:
             events.extend(pcs.play_lanzallamas(player, room, card, card_options))
 
-        elif card.name == cards.WHISKY:
+        elif card.name == CardName.WHISKY:
             events.extend(pcs.play_whisky(player, room, card, card_options))
 
-        elif card.name == cards.NADA_DE_BARBACOAS:
+        elif card.name == CardName.NADA_DE_BARBACOAS:
             events.extend(pcs.play_nada_de_barbacoas(player, room, card, card_options))
 
-        elif card.name == cards.AQUI_ESTOY_BIEN:
+        elif card.name == CardName.AQUI_ESTOY_BIEN:
             events.extend(pcs.play_aqui_estoy_bien(player, room, card, card_options))
 
-        elif card.name == cards.SOSPECHA:
+        elif card.name == CardName.SOSPECHA:
             events.extend(pcs.play_sospecha(player, room, card, card_options))
 
-        elif card.name == cards.SEDUCCION:
+        elif card.name == CardName.SEDUCCION:
             events.extend(pcs.play_seduccion(player, room, card, card_options))
             return events
 
-        elif card.name == cards.UPS:
+        elif card.name == CardName.UPS:
             events.extend(pcs.play_ups(player, room, card, card_options))
 
-        elif card.name == cards.QUE_QUEDE_ENTRE_NOSOTROS:
+        elif card.name == CardName.QUE_QUEDE_ENTRE_NOSOTROS:
             events.extend(pcs.play_que_quede_entre_nosotros(player, room, card, card_options))
 
-        elif card.name == cards.ANALISIS:
+        elif card.name == CardName.ANALISIS:
             events.extend(pcs.play_analisis(player, room, card, card_options))
 
-        elif card.name == cards.CAMBIO_DE_LUGAR:
+        elif card.name == CardName.CAMBIO_DE_LUGAR:
             events.extend(pcs.play_cambio_de_lugar(player, room, card, card_options))
 
-        elif card.name == cards.VIGILA_TUS_ESPALDAS:
+        elif card.name == CardName.VIGILA_TUS_ESPALDAS:
             events.extend(pcs.play_vigila_tus_espaldas(player, room, card, card_options))
 
-        elif card.name == cards.MAS_VALES_QUE_CORRAS:
+        elif card.name == CardName.MAS_VALES_QUE_CORRAS:
             events.extend(pcs.play_mas_vale_que_corras(player, room, card, card_options))
 
-        elif card.name == cards.OLVIDADIZO:
+        elif card.name == CardName.OLVIDADIZO:
             events.extend(pcs.play_olvidadizo(player, room, card, card_options))
 
-        elif card.name == cards.CITA_A_CIEGAS:
+        elif card.name == CardName.CITA_A_CIEGAS:
             events.extend(pcs.play_cita_a_ciegas(player, room, card, card_options))
 
-        elif card.name == cards.CUARENTENA:
+        elif card.name == CardName.CUARENTENA:
             events.extend(pcs.play_cuarentena(player, room, card, card_options))
 
-        elif card.name == cards.CUERDAS_PODRIDAS:
+        elif card.name == CardName.CUERDAS_PODRIDAS:
             events.extend(pcs.play_cuerdas_podridas(player, room, card, card_options))
 
-        elif card.name == cards.PUERTA_ATRANCADA:
+        elif card.name == CardName.PUERTA_ATRANCADA:
             events.extend(pcs.play_puerta_atrancada(player, room, card, card_options))
 
-        elif card.name == cards.HACHA:
+        elif card.name == CardName.HACHA:
             events.extend(pcs.play_hacha(player, room, card, card_options))
 
-        elif card.name == cards.UNO_DOS:
+        elif card.name == CardName.UNO_DOS:
             events.extend(pcs.play_uno_dos(player, room, card, card_options))
 
-        elif card.name == cards.TRES_CUATRO:
+        elif card.name == CardName.TRES_CUATRO:
             events.extend(pcs.play_tres_cuatro(player, room, card, card_options))
 
 
@@ -336,7 +336,7 @@ class GamesService(DBSessionMixin):
                 raise InvalidAccionException("Objetivo invalido")
 
 
-            if not card.name in [cards.HACHA, cards.PUERTA_ATRANCADA] and (card.target_adjacent_only and not room.are_players_adjacent(player, target)):
+            if not card.name in [CardName.HACHA, CardName.PUERTA_ATRANCADA] and (card.target_adjacent_only and not room.are_players_adjacent(player, target)):
                 raise InvalidAccionException("El jugador no esta a tu lado")
 
             if not card.ignore_quarantine and target.is_in_quarantine():
@@ -532,7 +532,7 @@ class GamesService(DBSessionMixin):
                     raise InvalidAccionException("No te podes defender si sos el que inicia el intercambio")
                 else:
                     #verifiquemos si se puede defender con la carta que esta planteando
-                    defense_cards = [cards.NO_GRACIAS, cards.FALLASTE, cards.ATERRADOR]
+                    defense_cards = [CardName.NO_GRACIAS, CardName.FALLASTE, CardName.ATERRADOR]
                     if card.name not in defense_cards:
                         raise InvalidAccionException(f"No te podes defender con la carta {card.name}")
 
@@ -582,11 +582,11 @@ class GamesService(DBSessionMixin):
                     }])
                     #ahora veamos los efectos que induce la defensa para la carta jugada
                     card_options = {}
-                    if(second_card.name == cards.FALLASTE):
+                    if(second_card.name == CardName.FALLASTE):
                         card_options = {
                             "starter_player_id" : first_player.id
                         }
-                    elif(second_card.name == cards.ATERRADOR):
+                    elif(second_card.name == CardName.ATERRADOR):
                         card_options = {
                             "starter_card_id" : first_card.id,
                             "starter_name" : first_player.name

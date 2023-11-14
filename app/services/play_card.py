@@ -780,7 +780,7 @@ P1
     Pánico:
         [x] Que quede entre nosotros
         [ ] Revelaciones
-        [ ] Cita a ciegas
+        [x] Cita a ciegas
         [x] Oops!
     Otras cartas
         [x] Cuarentena
@@ -792,7 +792,7 @@ P2
         [ ] Esta es la fiesta?
         [x] Oops!
         [ ] Vuelta y vuelta
-        [ ] No podemos ser amigos
+        [x] No podemos ser amigos
         [x] Olvidadizo
         [x] Carta 1, 2 ... (movimiento)
         [x] Carta 3, 4 ... (movimiento)
