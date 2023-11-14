@@ -234,8 +234,8 @@ cardsJSON = [
         'amounts' : [0,0,0,1,0,1,0,0],
         'type' : 'PANICO',
         'sub_type' : '',
-        'need_target': False,
-        'target_adjacent_only': False,
+        'need_target': True,
+        'target_adjacent_only': True,
         'ignore_quarantine': False,
         'ignore_locked_door': False
     },    {
