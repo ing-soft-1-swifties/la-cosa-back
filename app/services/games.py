@@ -684,7 +684,7 @@ class GamesService(DBSessionMixin):
                 "broadcast": True
             })
 
-        if is_player_a_superinfected or is_player_b_superinfected:
+        if is_player_a_superinfected or is_player_b_superinfected or room.are_players_blocked(player_A, player_B):
             events.extend(rs.next_turn(player_A.sid))
             return events
         else:
