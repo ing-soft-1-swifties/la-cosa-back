@@ -128,7 +128,7 @@ cardsJSON = [
         'need_target': True,
         'target_adjacent_only': True,
         'ignore_quarantine': True,
-        'ignore_locked_door': False
+        'ignore_locked_door': True
     },
     {
         'name' : '¡No, gracias!',
