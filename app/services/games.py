@@ -346,7 +346,7 @@ class GamesService(DBSessionMixin):
             are_players_blocked = room.are_players_blocked(player, target)
 
             if not card.ignore_locked_door and are_players_blocked:
-                raise InvalidDataException()
+                raise InvalidAccionException("No puede jugar debido a la puerta atrancada.")
 
             #veamos si la persona sobre la que se esta jugando la carta tiene la posibilidad de defenderse
             defense = any([defense_card in target.hand.name for defense_card in self.defense_for_card(card.name)])
@@ -656,7 +656,7 @@ class GamesService(DBSessionMixin):
         return is_superinfected
 
 
-    def begin_exchange(self, room: Room, player_A: Player, player_B: Player, compute_infection = True)-> list[dict]:
+    def begin_exchange(self, room: Room, player_A: Player, player_B: Player, compute_infection = True, blockable = True)-> list[dict]:
         """
         setea la maquina de estados para un intercambio entre player_A y player_B
         asume que los checkeos pertinentes se realizaron (ej que esten en la misma sala)
@@ -684,7 +684,7 @@ class GamesService(DBSessionMixin):
                 "broadcast": True
             })
 
-        if is_player_a_superinfected or is_player_b_superinfected or room.are_players_blocked(player_A, player_B):
+        if is_player_a_superinfected or is_player_b_superinfected or (room.are_players_blocked(player_A, player_B) and blockable):
             events.extend(rs.next_turn(player_A.sid))
             return events
         else:

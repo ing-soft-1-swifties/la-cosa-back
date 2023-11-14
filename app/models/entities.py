@@ -171,12 +171,19 @@ class Room(db.Entity):
 
         obstacle_positions = self.get_obstacles_positions()
 
-        ret = p1.position == n-1 and p2.position == 0 and p1.position in obstacle_positions
-        ret = ret or (p1.position == 0 and p2.position == n-1 and p2.position in obstacle_positions)
-        ret = ret or (self.are_players_adjacent(p1, p2) and p1.position < p2.position and (p1.position in obstacle_positions))
-        ret = ret or (self.are_players_adjacent(p1, p2) and p2.position < p1.position and (p2.position in obstacle_positions))
+        if not self.are_players_adjacent(p1, p2):
+            return False
 
-        return ret
+
+        pmin = min(p1.position, p2.position)
+        pmax = max(p1.position, p2.position)
+
+        if (pmax == n-1 and pmin == 0 and pmax in obstacle_positions):
+            return True
+        elif pmin in obstacle_positions:
+            return True
+        else:
+            return False
 
     def qty_alive_players(self)->int:
         return len(list(self.players.select(lambda player:player.status=='VIVO')))

@@ -312,7 +312,8 @@ class PlayCardsService(DBSessionMixin):
         gs.begin_exchange(
             room=room,
             player_A=player,
-            player_B=target_player
+            player_B=target_player,
+            blockable=False
         )
 
         return [
