@@ -39,7 +39,7 @@ class GamesService(DBSessionMixin):
             "status" : room.status,
             "turn" : room.turn,
             "direction": room.direction,
-            "doors_position": room.get_obstacles_positions(),
+            "doors_positions": room.get_obstacles_positions(),
             "player_in_turn" : rs.in_turn_player(room).name,
             "players" : [player_state(player) for player in room.players]
         }
@@ -319,7 +319,8 @@ class GamesService(DBSessionMixin):
             if target is None or not target.is_alive():
                 raise InvalidAccionException("Objetivo invalido")
 
-            if card.target_adjacent_only and not room.are_players_adjacent(player, target):
+
+            if not card.name in [cards.HACHA, cards.PUERTA_ATRANCADA] and (card.target_adjacent_only and not room.are_players_adjacent(player, target)):
                 raise InvalidAccionException("El jugador no esta a tu lado")
 
             if not card.ignore_quarantine and target.is_in_quarantine():

@@ -456,7 +456,15 @@ class PlayCardsService(DBSessionMixin):
         target_id = card_options.get("target")
         target_player: Player = Player.get(id=target_id)
 
-        # si elijo un target a mi izquierda
+
+        valid_positions = [player.position]
+        if player.position == 0:
+            valid_positions.append(room.qty_alive_players()-1)
+        else:
+            valid_positions.append(player.position-1)
+
+        if not target_player.position in valid_positions:
+            raise InvalidAccionException("El jugador no esta al lado tuyo")
 
         room.add_locked_door(target_player.position)
 
